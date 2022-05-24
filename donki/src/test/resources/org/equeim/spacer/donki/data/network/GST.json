@@ -1,0 +1,27 @@
+[
+    {
+        "gstID": "2022-04-14T15:00:00-GST-001",
+        "startTime": "2022-04-14T15:00Z",
+        "allKpIndex": [
+            {
+                "observedTime": "2022-04-14T18:00Z",
+                "kpIndex": 6,
+                "source": "NOAA"
+            },
+            {
+                "observedTime": "2022-04-14T18:00Z",
+                "kpIndex": 6,
+                "source": "NOAA"
+            }
+        ],
+        "linkedEvents": [
+            {
+                "activityID": "2022-04-11T06:00:00-CME-001"
+            },
+            {
+                "activityID": "2022-04-14T03:37:00-IPS-001"
+            }
+        ],
+        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/GST/19773/-1"
+    }
+]

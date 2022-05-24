@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name" translatable="false">Spacer</string>
+    <string name="space_weather_events">Space weather events</string>
+    <string name="last_week">Last week</string>
+    <string name="loading">Loading…</string>
+    <string name="error">Error</string>
+    <string name="coronal_mass_ejection">Coronal mass ejection</string>
+    <string name="geomagnetic_storm">Geomagnetic storm</string>
+    <string name="interplanetary_shock">Interplanetary shock</string>
+    <string name="solar_flare">Solar flare</string>
+    <string name="solar_energetic_particle">Solar energetic particle</string>
+    <string name="magnetopause_crossing">Magnetopause crossing</string>
+    <string name="radiation_belt_enhancement">Radiation belt enhancement</string>
+    <string name="high_speed_stream">High speed stream</string>
+</resources>

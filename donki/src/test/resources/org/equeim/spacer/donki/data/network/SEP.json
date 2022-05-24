@@ -1,0 +1,20 @@
+[
+    {
+        "sepID": "2022-04-02T14:39:00-SEP-001",
+        "eventTime": "2022-04-02T14:39Z",
+        "instruments": [
+            {
+                "displayName": "SOHO: COSTEP 28.2-50.1 MeV"
+            }
+        ],
+        "linkedEvents": [
+            {
+                "activityID": "2022-04-02T12:56:00-FLR-001"
+            },
+            {
+                "activityID": "2022-04-02T13:38:00-CME-001"
+            }
+        ],
+        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/SEP/19640/-1"
+    }
+]

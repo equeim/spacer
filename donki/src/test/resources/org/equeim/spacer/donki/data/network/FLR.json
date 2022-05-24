@@ -1,0 +1,22 @@
+[
+    {
+        "flrID": "2022-04-28T02:24:00-FLR-001",
+        "instruments": [
+            {
+                "displayName": "GOES-P: EXIS 1.0-8.0"
+            }
+        ],
+        "beginTime": "2022-04-28T02:24Z",
+        "peakTime": "2022-04-28T03:06Z",
+        "endTime": "2022-04-28T03:27Z",
+        "classType": "C6.7",
+        "sourceLocation": "N27W24",
+        "activeRegionNum": 12996,
+        "linkedEvents": [
+            {
+                "activityID": "2022-04-28T03:09:00-CME-001"
+            }
+        ],
+        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/FLR/19972/-1"
+    }
+]
