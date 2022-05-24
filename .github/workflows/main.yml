@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+jobs:
+  build-app:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v3
+
+      - name: Make latest OpenJDK version the default
+        run: |
+          sudo update-java-alternatives --auto
+
+      - name: Add Kotlin problem matcher
+        uses: equeim/kotlin-problem-matcher@v1
+
+      - name: Build the app
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: build
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+        env:
+          GRADLE_USER_HOME: ${{ runner.temp }}/.gradle
+
+      - name: Archive debug APKs
+        uses: actions/upload-artifact@v3
+        with:
+          name: debug-apks
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: ${{ github.event_name == 'pull_request' && 3 || github.retention_days }}
+
+      - name: Archive test and lint reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: reports
+          path: |
+            */build/reports/*
+          retention-days: ${{ github.event_name == 'pull_request' && 3 || github.retention_days }}
