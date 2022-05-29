@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -25,6 +26,7 @@ import org.equeim.spacer.R
 import org.equeim.spacer.ui.screen.Destination
 import org.equeim.spacer.ui.screen.settings.SettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
+import org.equeim.spacer.ui.utils.collectAsStateWhenStarted
 import org.equeim.spacer.ui.utils.plus
 
 @Parcelize
@@ -36,7 +38,8 @@ object DonkiEventsScreen : Destination {
 @Composable
 private fun DonkiEventsScreen() {
     val model = viewModel<DonkiEventsScreenViewModel>()
-    DonkiEventsScreen(model.uiState)
+    val uiState by model.uiState.collectAsStateWhenStarted()
+    DonkiEventsScreen(uiState)
 }
 
 @Composable
