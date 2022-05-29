@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.plugin.parcelize)
 }
 
 android {
@@ -30,10 +31,13 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core)
     implementation(libs.androidx.compose.material)
+    implementation(libs.androidx.compose.material.icons)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.datastore)
     implementation(libs.androidx.lifecycle.runtime)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.reimagined)
     testImplementation(libs.junit)
     debugImplementation(libs.leakcanary)
     debugImplementation(libs.androidx.compose.ui.tooling)
