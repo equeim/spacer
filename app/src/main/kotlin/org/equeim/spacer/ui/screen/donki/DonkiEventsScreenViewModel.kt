@@ -4,16 +4,12 @@ import android.app.Application
 import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.model.EventSummary
 import org.equeim.spacer.donki.data.model.EventType
@@ -37,9 +33,10 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
     }
 
     private val eventsUseCase = DonkiGetEventsSummariesUseCase(DonkiRepository(application))
+    private val settings = AppSettings(application)
 
-    var uiState: UiState by mutableStateOf(UiState.Loading)
-        private set
+    private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
+    val uiState: StateFlow<UiState> by ::_uiState
 
     private val eventTimeFormatter: DateTimeFormatter =
         DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
@@ -51,37 +48,48 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
     private val eventTitles = ConcurrentHashMap<EventType, String>()
 
     init {
-        viewModelScope.launch { getEventsForLastWeek() }
+        viewModelScope.launch {
+            @OptIn(ExperimentalCoroutinesApi::class)
+            settings.displayEventsTimeInUTC.flow()
+                .mapLatest { displayEventsTimeInUTC ->
+                    // Wait until uiState has subscribers before reloading
+                    _uiState.subscriptionCount.first { it > 0 }
+                    displayEventsTimeInUTC
+                }
+                // In case displayEventsTimeInUTC changed back to the same value before uiState acquired subscribers
+                .distinctUntilChanged()
+                .collectLatest { displayEventsTimeInUTC ->
+                    showEventsForLastWeek(displayEventsTimeInUTC)
+                }
+        }
     }
 
-    private suspend fun getEventsForLastWeek() {
-        withContext(Dispatchers.Main) {
-            uiState = UiState.Loading
-        }
+    private suspend fun showEventsForLastWeek(displayEventsTimeInUTC: Boolean) {
+        Log.d(
+            TAG,
+            "showEventsForLastWeek() called with: displayEventsTimeInUTC = $displayEventsTimeInUTC"
+        )
+        _uiState.value = UiState.Loading
         withContext(Dispatchers.Default) {
             try {
-                val displayLocalTime = true
-                val timeZone = if (displayLocalTime) {
-                    ZoneId.systemDefault()
-                } else {
+                val timeZone = if (displayEventsTimeInUTC) {
                     ZoneId.ofOffset("UTC", ZoneOffset.UTC)
+                } else {
+                    ZoneId.systemDefault()
                 }
                 val timeZoneName =
                     timeZoneFormatter.format(ZonedDateTime.now().withZoneSameInstant(timeZone))
-                val groupedEvents = eventsUseCase.getEventsSummariesGroupedByDateForLastWeek(timeZone)
+                val groupedEvents =
+                    eventsUseCase.getEventsSummariesGroupedByDateForLastWeek(timeZone)
                 val presentations = groupedEvents.map { (date, events) ->
                     EventsGroup(eventDateFormatter.format(date), events.map { it.toPresentation() })
                 }
-                withContext(Dispatchers.Main) {
-                    uiState = UiState.Loaded(presentations, timeZoneName)
-                }
+                _uiState.value = UiState.Loaded(presentations, timeZoneName)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.e(TAG, "getEventsForLastWeek: failed to get events", e)
-                withContext(Dispatchers.Main) {
-                    uiState = UiState.Error
-                }
+                _uiState.value = UiState.Error
             }
         }
     }
@@ -96,16 +104,18 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
 
     private fun EventSummary.getTitle(): String {
         return eventTitles.computeIfAbsent(type) {
-            getString(when (type) {
-                EventType.CoronalMassEjection -> R.string.coronal_mass_ejection
-                EventType.GeomagneticStorm -> R.string.geomagnetic_storm
-                EventType.InterplanetaryShock -> R.string.interplanetary_shock
-                EventType.SolarFlare -> R.string.solar_flare
-                EventType.SolarEnergeticParticle -> R.string.solar_energetic_particle
-                EventType.MagnetopauseCrossing -> R.string.magnetopause_crossing
-                EventType.RadiationBeltEnhancement -> R.string.radiation_belt_enhancement
-                EventType.HighSpeedStream -> R.string.high_speed_stream
-            })
+            getString(
+                when (type) {
+                    EventType.CoronalMassEjection -> R.string.coronal_mass_ejection
+                    EventType.GeomagneticStorm -> R.string.geomagnetic_storm
+                    EventType.InterplanetaryShock -> R.string.interplanetary_shock
+                    EventType.SolarFlare -> R.string.solar_flare
+                    EventType.SolarEnergeticParticle -> R.string.solar_energetic_particle
+                    EventType.MagnetopauseCrossing -> R.string.magnetopause_crossing
+                    EventType.RadiationBeltEnhancement -> R.string.radiation_belt_enhancement
+                    EventType.HighSpeedStream -> R.string.high_speed_stream
+                }
+            )
         }
     }
 
@@ -129,6 +139,7 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
             val eventGroups: List<EventsGroup>,
             val timeZoneName: String
         ) : UiState
+
         object Error : UiState
     }
 }
