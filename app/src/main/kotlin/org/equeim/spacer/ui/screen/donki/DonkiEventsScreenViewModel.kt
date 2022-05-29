@@ -1,4 +1,4 @@
-package org.equeim.spacer.ui.screen
+package org.equeim.spacer.ui.screen.donki
 
 import android.app.Application
 import android.util.Log
@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -30,6 +31,11 @@ import java.util.concurrent.ConcurrentHashMap
 private const val TAG = "DonkiEventsScreenViewModel"
 
 class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(application) {
+    init {
+        Log.d(TAG, "DonkiEventsScreenViewModel() called")
+        LocalViewModelStoreOwner
+    }
+
     private val eventsUseCase = DonkiGetEventsSummariesUseCase(DonkiRepository(application))
 
     var uiState: UiState by mutableStateOf(UiState.Loading)

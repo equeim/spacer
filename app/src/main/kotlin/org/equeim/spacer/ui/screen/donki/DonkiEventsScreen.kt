@@ -1,4 +1,4 @@
-package org.equeim.spacer.ui.screen
+package org.equeim.spacer.ui.screen.donki
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
@@ -8,21 +8,33 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.takeOrElse
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.olshevski.navigation.reimagined.navigate
+import kotlinx.parcelize.Parcelize
+import org.equeim.spacer.LocalNavController
 import org.equeim.spacer.R
+import org.equeim.spacer.ui.screen.Destination
+import org.equeim.spacer.ui.screen.settings.SettingsScreen
+import org.equeim.spacer.ui.theme.Dimens
+import org.equeim.spacer.ui.utils.plus
+
+@Parcelize
+object DonkiEventsScreen : Destination {
+    @Composable
+    override fun Content() = DonkiEventsScreen()
+}
 
 @Composable
-fun DonkiEventsScreen() {
+private fun DonkiEventsScreen() {
     val model = viewModel<DonkiEventsScreenViewModel>()
     DonkiEventsScreen(model.uiState)
 }
@@ -48,7 +60,7 @@ private fun DonkiEventsScreen(state: DonkiEventsScreenViewModel.UiState) {
         TopAppBar(
             backgroundColor = MaterialTheme.colors.surface,
             elevation = appBarElevation,
-            contentPadding = PaddingValues(top = appBarPadding)
+            contentPadding = AppBarDefaults.ContentPadding + PaddingValues(top = appBarPadding)
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 CompositionLocalProvider(
@@ -59,6 +71,15 @@ private fun DonkiEventsScreen(state: DonkiEventsScreenViewModel.UiState) {
                         style = MaterialTheme.typography.h6,
                         modifier = Modifier.align(Alignment.Center)
                     )
+                }
+                CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
+                    val navController = LocalNavController.current
+                    IconButton(
+                        onClick = { navController.navigate(SettingsScreen) },
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    ) {
+                        Icon(Icons.Filled.Settings, stringResource(R.string.settings))
+                    }
                 }
             }
         }
@@ -101,22 +122,19 @@ private fun ScreenContentError(contentPadding: PaddingValues) {
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun ScreenContentLoaded(
     contentPadding: PaddingValues,
     lazyListState: LazyListState,
     state: DonkiEventsScreenViewModel.UiState.Loaded
 ) {
-    val adjustedPadding = run {
-        val addHorizontalPadding = 16.dp
-        val layoutDirection = LocalLayoutDirection.current
-        PaddingValues(
-            start = contentPadding.calculateStartPadding(layoutDirection) + addHorizontalPadding,
-            top = contentPadding.calculateTopPadding(),
-            end = contentPadding.calculateEndPadding(layoutDirection) + addHorizontalPadding,
-            bottom = contentPadding.calculateBottomPadding().takeIf { it.value != 0.0f }
-                ?: WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
-        )
+    val adjustedPadding = (contentPadding + PaddingValues(horizontal = Dimens.ScreenContentPadding)).run {
+        this.takeIf { it.calculateBottomPadding().value == 0.0f }?.plus(
+            PaddingValues(
+                bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
+            )
+        ) ?: this
     }
     LazyColumn(
         state = lazyListState,
@@ -136,17 +154,22 @@ private fun ScreenContentLoaded(
                 key = group.date,
                 contentType = DonkiEventsScreenViewModel.EventsGroup::class
             ) {
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                    Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colors.secondary, elevation = 6.dp) {
+                Row(modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()) {
+                    Surface(
+                        shape = RoundedCornerShape(percent = 50),
+                        color = MaterialTheme.colors.secondary,
+                        elevation = 6.dp,
+                        modifier = Modifier.align(Alignment.CenterVertically)
+                    ) {
                         Text(
                             text = group.date,
                             style = MaterialTheme.typography.h6,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).align(Alignment.Top)
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                         )
                     }
                     Spacer(modifier = Modifier.weight(1.0f))
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(percent = 50),
                         elevation = 6.dp,
                         modifier = Modifier.align(Alignment.CenterVertically)
                     ) {
@@ -170,7 +193,7 @@ private fun ScreenContentLoaded(
                     elevation = 2.dp,
                     shape = RoundedCornerShape(10.dp),
                     onClick = {},
-                    modifier = Modifier.fillMaxSize().padding(vertical = 8.dp)
+                    modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                         Text(text = event.time)
