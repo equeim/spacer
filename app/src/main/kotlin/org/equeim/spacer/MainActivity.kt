@@ -1,5 +1,6 @@
 package org.equeim.spacer
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
@@ -17,17 +18,16 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.core.content.res.getBooleanOrThrow
+import androidx.core.content.res.use
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import dev.olshevski.navigation.reimagined.AnimatedNavHost
 import dev.olshevski.navigation.reimagined.NavBackHandler
 import dev.olshevski.navigation.reimagined.NavController
 import dev.olshevski.navigation.reimagined.rememberNavController
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.equeim.spacer.ui.screen.Destination
 import org.equeim.spacer.ui.screen.donki.DonkiEventsScreen
 import org.equeim.spacer.ui.theme.ApplicationTheme
@@ -85,12 +85,30 @@ class MainActivity : ComponentActivity() {
         super.applyOverrideConfiguration(overrideConfiguration)
     }
 
+    @SuppressLint("ResourceType")
     @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         Log.d(TAG, "onCreate() called with: savedInstanceState = $savedInstanceState")
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate: isNightModeActive = $isNightModeActive")
+        setContent {
+            MainActivityScreen()
+        }
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        val (windowLightStatusBar, windowLightNavigationBar) = obtainStyledAttributes(
+            intArrayOf(
+                android.R.attr.windowLightStatusBar,
+                android.R.attr.windowLightNavigationBar
+            )
+        ).use {
+            it.getBooleanOrThrow(0) to it.getBooleanOrThrow(1)
+        }
+        WindowCompat.getInsetsController(window, window.decorView)?.apply {
+            // On some Android versions these flags may not be set correctly from theme
+            // when recreating Activity and changing night mode. Set them ourselves in code.
+            isAppearanceLightStatusBars = windowLightStatusBar
+            isAppearanceLightNavigationBars = windowLightNavigationBar
+        }
         lifecycleScope.launch {
             DarkThemeModeProvider.darkThemeModeChanges(initialDarkThemeMode).collect {
                 if (it.toNightMode(baseContext) != nightMode) {
@@ -98,9 +116,6 @@ class MainActivity : ComponentActivity() {
                     recreate()
                 }
             }
-        }
-        setContent {
-            MainActivityScreen()
         }
     }
 }
