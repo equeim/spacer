@@ -1,20 +1,24 @@
+@file:UseSerializers(InstantSerializer::class, EventIdSerializer::class)
+
 package org.equeim.spacer.donki.data.network.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
+import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.SolarFlareDetails
 import org.equeim.spacer.donki.data.model.SolarFlareSummary
 import java.time.Instant
 
 @Serializable
 internal data class SolarFlareJson(
-    @SerialName("flrID") override val id: String,
-    @SerialName("beginTime") @Serializable(InstantSerializer::class) override val time: Instant,
+    @SerialName("flrID") override val id: EventId,
+    @SerialName("beginTime") override val time: Instant,
     @SerialName("link") override val link: String,
     @SerialName("linkedEvents") override val linkedEvents: List<EventJson.LinkedEventJson>? = null,
     @SerialName("instruments") val instruments: List<InstrumentJson>,
-    @SerialName("peakTime") @Serializable(InstantSerializer::class) val peakTime: Instant,
-    @SerialName("endTime") @Serializable(InstantSerializer::class) val endTime: Instant?,
+    @SerialName("peakTime") val peakTime: Instant,
+    @SerialName("endTime") val endTime: Instant?,
     @SerialName("classType") val classType: String,
     @SerialName("sourceLocation") val sourceLocation: String
 ) : EventJson {
@@ -29,7 +33,7 @@ internal data class SolarFlareJson(
             id = id,
             time = time,
             link = link,
-            linkedEvents = linkedEvents.toLinkedEvents(),
+            linkedEvents = linkedEvents.toEventIds(),
             instruments = instruments.map { it.displayName },
             peakTime = peakTime,
             endTime = endTime,

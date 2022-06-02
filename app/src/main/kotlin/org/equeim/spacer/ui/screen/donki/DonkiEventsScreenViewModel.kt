@@ -10,7 +10,7 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.equeim.spacer.AppSettings
-import org.equeim.spacer.R
+import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventSummary
 import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.donki.data.repository.DonkiRepository
@@ -32,7 +32,8 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
         LocalViewModelStoreOwner
     }
 
-    private val eventsUseCase = DonkiGetEventsSummariesUseCase(DonkiRepository(application))
+    private val repository = DonkiRepository(application)
+    private val eventsUseCase = DonkiGetEventsSummariesUseCase(repository)
     private val settings = AppSettings(application)
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
@@ -103,26 +104,13 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
     }
 
     private fun EventSummary.getTitle(): String {
-        return eventTitles.computeIfAbsent(type) {
-            getString(
-                when (type) {
-                    EventType.CoronalMassEjection -> R.string.coronal_mass_ejection
-                    EventType.GeomagneticStorm -> R.string.geomagnetic_storm
-                    EventType.InterplanetaryShock -> R.string.interplanetary_shock
-                    EventType.SolarFlare -> R.string.solar_flare
-                    EventType.SolarEnergeticParticle -> R.string.solar_energetic_particle
-                    EventType.MagnetopauseCrossing -> R.string.magnetopause_crossing
-                    EventType.RadiationBeltEnhancement -> R.string.radiation_belt_enhancement
-                    EventType.HighSpeedStream -> R.string.high_speed_stream
-                }
-            )
-        }
+        return eventTitles.computeIfAbsent(type) { getString(type.getTitleResId()) }
     }
 
     private fun getString(@StringRes resId: Int) = getApplication<Application>().getString(resId)
 
     data class EventPresentation(
-        val id: String,
+        val id: EventId,
         val title: String,
         val time: String
     )

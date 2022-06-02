@@ -1,12 +1,15 @@
+@file:UseSerializers(EventIdSerializer::class)
+
 package org.equeim.spacer.donki.data.network.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import org.equeim.spacer.donki.data.model.*
 import java.time.Instant
 
 internal sealed interface EventJson {
-    val id: String
+    val id: EventId
     val time: Instant
     val link: String
     val linkedEvents: List<LinkedEventJson>?
@@ -15,8 +18,8 @@ internal sealed interface EventJson {
     fun toEventDetails(): EventDetails
 
     @Serializable
-    data class LinkedEventJson(@SerialName("activityID") val id: String)
+    data class LinkedEventJson(@SerialName("activityID") val id: EventId)
 }
 
-internal fun List<EventJson.LinkedEventJson>?.toLinkedEvents(): List<EventDetails.LinkedEvent> =
-    this?.map { EventDetails.LinkedEvent(it.id) }.orEmpty()
+internal fun List<EventJson.LinkedEventJson>?.toEventIds(): List<EventId> =
+    this?.map { it.id }.orEmpty()

@@ -3,7 +3,7 @@ package org.equeim.spacer.donki.data.model
 import java.time.Instant
 
 data class GeomagneticStormSummary(
-    override val id: String,
+    override val id: EventId,
     override val time: Instant,
     val kpIndex: Int?
 ) : EventSummary {
@@ -11,10 +11,10 @@ data class GeomagneticStormSummary(
 }
 
 data class GeomagneticStormDetails(
-    override val id: String,
+    override val id: EventId,
     override val time: Instant,
     override val link: String,
-    override val linkedEvents: List<EventDetails.LinkedEvent>,
+    override val linkedEvents: List<EventId>,
     val kpIndexes: List<KpIndex>
 ) : EventDetails {
     override val type = EventType.GeomagneticStorm
