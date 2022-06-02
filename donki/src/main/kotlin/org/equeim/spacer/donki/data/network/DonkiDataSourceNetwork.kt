@@ -7,6 +7,7 @@ import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.ResponseBody
 import org.equeim.spacer.donki.NASA_API_KEY
+import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.donki.data.network.model.EventJson
 import org.equeim.spacer.retrofit.JsonConverterFactory
@@ -19,6 +20,7 @@ import java.lang.reflect.Type
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 private const val TAG = "DonkiDataSourceNetwork"
@@ -60,6 +62,16 @@ internal class DonkiDataSourceNetwork(baseUrl: HttpUrl = baseUrl()) {
     } catch (e: Exception) {
         if (e !is CancellationException) {
             Log.e(TAG, "getEvents: failed to get events summaries", e)
+        }
+        throw e
+    }
+
+    suspend fun getEventById(id: EventId): EventJson = try {
+        val (type, time) = id.parse()
+        getEvents(type, time, time).first { it.id == id }
+    } catch (e: Exception) {
+        if (e !is CancellationException) {
+            Log.e(TAG, "getEventById: failed to get event for id $id", e)
         }
         throw e
     }

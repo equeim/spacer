@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okio.Buffer
+import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.donki.data.network.model.*
 import org.equeim.spacer.donki.instantOf
@@ -20,10 +21,7 @@ import java.nio.file.Paths
 import java.time.*
 import kotlin.io.path.inputStream
 import kotlin.streams.asSequence
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.*
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("BlockingMethodInNonBlockingContext")
@@ -90,12 +88,13 @@ class DonkiDataSourceNetworkTest {
         val event = events.single() as CoronalMassEjectionJson
         validateCommonProperties(
             event,
-            expectedId = "2022-04-07T05:36:00-CME-001",
+            expectedId = EventId("2022-04-07T05:36:00-CME-001"),
+            expectedEventType = EventType.CoronalMassEjection,
             expectedTime = instantOf(2022, 4, 7, 5, 36),
             expectedLink = "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/CME/19695/-1",
             expectedLinkedEvents = listOf(
-                EventJson.LinkedEventJson("2022-04-09T12:46:00-IPS-001"),
-                EventJson.LinkedEventJson("2022-04-10T03:00:00-GST-001")
+                EventJson.LinkedEventJson(EventId("2022-04-09T12:46:00-IPS-001")) to EventType.InterplanetaryShock,
+                EventJson.LinkedEventJson(EventId("2022-04-10T03:00:00-GST-001")) to EventType.GeomagneticStorm
             )
         )
         assertEquals(
@@ -135,7 +134,6 @@ class DonkiDataSourceNetworkTest {
                                 isGlancingBlow = false,
                                 location = "STEREO A",
                                 arrivalTime = instantOf(2022, 4, 10, 14, 54)
-                                    
                             )
                         )
                     )
@@ -163,12 +161,13 @@ class DonkiDataSourceNetworkTest {
         val event = events.single() as GeomagneticStormJson
         validateCommonProperties(
             event,
-            expectedId = "2022-04-14T15:00:00-GST-001",
+            expectedId = EventId("2022-04-14T15:00:00-GST-001"),
+            expectedEventType = EventType.GeomagneticStorm,
             expectedTime = instantOf(2022, 4, 14, 15, 0),
             expectedLink = "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/GST/19773/-1",
             expectedLinkedEvents = listOf(
-                EventJson.LinkedEventJson("2022-04-11T06:00:00-CME-001"),
-                EventJson.LinkedEventJson("2022-04-14T03:37:00-IPS-001")
+                EventJson.LinkedEventJson(EventId("2022-04-11T06:00:00-CME-001")) to EventType.CoronalMassEjection,
+                EventJson.LinkedEventJson(EventId("2022-04-14T03:37:00-IPS-001")) to EventType.InterplanetaryShock
             )
         )
         assertEquals(
@@ -195,7 +194,8 @@ class DonkiDataSourceNetworkTest {
         val event = events.single() as InterplanetaryShockJson
         validateCommonProperties(
             event,
-            expectedId = "2022-04-06T22:45:00-IPS-001",
+            expectedId = EventId("2022-04-06T22:45:00-IPS-001"),
+            expectedEventType = EventType.InterplanetaryShock,
             expectedTime = instantOf(2022, 4, 6, 22, 45),
             expectedLink = "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/IPS/19698/-1",
             expectedLinkedEvents = null
@@ -217,10 +217,11 @@ class DonkiDataSourceNetworkTest {
         val event = events.single() as SolarFlareJson
         validateCommonProperties(
             event,
-            expectedId = "2022-04-28T02:24:00-FLR-001",
+            expectedId = EventId("2022-04-28T02:24:00-FLR-001"),
+            expectedEventType = EventType.SolarFlare,
             expectedTime = instantOf(2022, 4, 28, 2, 24),
             expectedLink = "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/FLR/19972/-1",
-            expectedLinkedEvents = listOf(EventJson.LinkedEventJson("2022-04-28T03:09:00-CME-001"))
+            expectedLinkedEvents = listOf(EventJson.LinkedEventJson(EventId("2022-04-28T03:09:00-CME-001")) to EventType.CoronalMassEjection)
         )
         assertEquals(listOf(InstrumentJson("GOES-P: EXIS 1.0-8.0")), event.instruments)
         assertEquals(instantOf(2022, 4, 28, 3, 6), event.peakTime)
@@ -237,12 +238,13 @@ class DonkiDataSourceNetworkTest {
         val event = events.single() as SolarEnergeticParticleJson
         validateCommonProperties(
             event,
-            expectedId = "2022-04-02T14:39:00-SEP-001",
+            expectedId = EventId("2022-04-02T14:39:00-SEP-001"),
+            expectedEventType = EventType.SolarEnergeticParticle,
             expectedTime = instantOf(2022, 4, 2, 14, 39),
             expectedLink = "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/SEP/19640/-1",
             expectedLinkedEvents = listOf(
-                EventJson.LinkedEventJson("2022-04-02T12:56:00-FLR-001"),
-                EventJson.LinkedEventJson("2022-04-02T13:38:00-CME-001")
+                EventJson.LinkedEventJson(EventId("2022-04-02T12:56:00-FLR-001")) to EventType.SolarFlare,
+                EventJson.LinkedEventJson(EventId("2022-04-02T13:38:00-CME-001")) to EventType.CoronalMassEjection
             )
         )
         assertEquals(listOf(InstrumentJson("SOHO: COSTEP 28.2-50.1 MeV")), event.instruments)
@@ -256,13 +258,14 @@ class DonkiDataSourceNetworkTest {
         val event = events.single() as MagnetopauseCrossingJson
         validateCommonProperties(
             event,
-            expectedId = "2022-03-31T04:10:00-MPC-001",
+            expectedId = EventId("2022-03-31T04:10:00-MPC-001"),
+            expectedEventType = EventType.MagnetopauseCrossing,
             expectedTime = instantOf(2022, 3, 31, 4, 10),
             expectedLink = "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/MPC/19603/-1",
             expectedLinkedEvents = listOf(
-                EventJson.LinkedEventJson("2022-03-28T12:09:00-CME-001"),
-                EventJson.LinkedEventJson("2022-03-28T20:23:00-CME-001"),
-                EventJson.LinkedEventJson("2022-03-31T01:41:00-IPS-001")
+                EventJson.LinkedEventJson(EventId("2022-03-28T12:09:00-CME-001")) to EventType.CoronalMassEjection,
+                EventJson.LinkedEventJson(EventId("2022-03-28T20:23:00-CME-001")) to EventType.CoronalMassEjection,
+                EventJson.LinkedEventJson(EventId("2022-03-31T01:41:00-IPS-001")) to EventType.InterplanetaryShock
             )
         )
         assertEquals(listOf(InstrumentJson("MODEL: SWMF")), event.instruments)
@@ -276,13 +279,14 @@ class DonkiDataSourceNetworkTest {
         val event = events.single() as RadiationBeltEnhancementJson
         validateCommonProperties(
             event,
-            expectedId = "2022-04-02T20:05:00-RBE-001",
+            expectedId = EventId("2022-04-02T20:05:00-RBE-001"),
+            expectedEventType = EventType.RadiationBeltEnhancement,
             expectedTime = instantOf(2022, 4, 2, 20, 5),
             expectedLink = "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/RBE/19647/-1",
             expectedLinkedEvents = listOf(
-                EventJson.LinkedEventJson("2022-03-28T12:09:00-CME-001"),
-                EventJson.LinkedEventJson("2022-03-28T20:23:00-CME-001"),
-                EventJson.LinkedEventJson("2022-04-02T00:33:00-HSS-001")
+                EventJson.LinkedEventJson(EventId("2022-03-28T12:09:00-CME-001")) to EventType.CoronalMassEjection,
+                EventJson.LinkedEventJson(EventId("2022-03-28T20:23:00-CME-001")) to EventType.CoronalMassEjection,
+                EventJson.LinkedEventJson(EventId("2022-04-02T00:33:00-HSS-001")) to EventType.HighSpeedStream
             )
         )
         assertEquals(listOf(InstrumentJson("GOES-P: SEISS >2MeV")), event.instruments)
@@ -296,12 +300,13 @@ class DonkiDataSourceNetworkTest {
         val event = events.single() as HighSpeedStreamJson
         validateCommonProperties(
             event,
-            expectedId = "2022-04-02T00:33:00-HSS-001",
+            expectedId = EventId("2022-04-02T00:33:00-HSS-001"),
+            expectedEventType = EventType.HighSpeedStream,
             expectedTime = instantOf(2022, 4, 2, 0, 33),
             expectedLink = "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/HSS/19661/-1",
             expectedLinkedEvents = listOf(
-                EventJson.LinkedEventJson("2022-04-02T00:33:00-IPS-001"),
-                EventJson.LinkedEventJson("2022-04-02T20:05:00-RBE-001")
+                EventJson.LinkedEventJson(EventId("2022-04-02T00:33:00-IPS-001")) to EventType.InterplanetaryShock,
+                EventJson.LinkedEventJson(EventId("2022-04-02T20:05:00-RBE-001")) to EventType.RadiationBeltEnhancement
             )
         )
         assertEquals(
@@ -315,18 +320,24 @@ class DonkiDataSourceNetworkTest {
 
     private fun validateCommonProperties(
         event: EventJson,
-        expectedId: String,
+        expectedId: EventId,
+        expectedEventType: EventType,
         expectedTime: Instant,
         expectedLink: String,
-        expectedLinkedEvents: List<EventJson.LinkedEventJson>?
+        expectedLinkedEvents: List<Pair<EventJson.LinkedEventJson, EventType>>?
     ) {
         assertEquals(expectedId, event.id)
+        val (eventTypeFromId, _) = event.id.parse()
+        assertEquals(expectedEventType, eventTypeFromId)
         assertEquals(expectedTime, event.time)
         assertEquals(expectedLink, event.link)
-        assertEquals(expectedLinkedEvents, event.linkedEvents)
+        assertEquals(expectedLinkedEvents?.map { it.first }, event.linkedEvents)
+        assertEquals(
+            expectedLinkedEvents?.map { it.second },
+            event.linkedEvents?.map { it.id.parse().type })
     }
 
-    private fun readSampleEvent(eventType: EventType): Buffer {
+    private fun readSampleEvent(eventType: EventType, suffix: String = ""): Buffer {
         val cl = DonkiDataSourceNetworkTest::class.java
         val url = cl.getResource(
             "/${
@@ -334,9 +345,37 @@ class DonkiDataSourceNetworkTest {
                     '.',
                     '/'
                 )
-            }/${eventType.getExpectedUrlPath()}.json"
+            }/${eventType.getExpectedUrlPath()}${suffix}.json"
         )
         return checkNotNull(url).readToBuffer()
+    }
+
+    @Test
+    fun `Check that getEventById() throws if response is empty`() = runTest {
+        server.enqueue(MockResponse().setBody(""))
+        assertFails { dataSource.getEventById(EventId("2022-04-07T05:36:00-CME-001")) }
+    }
+
+    @Test
+    fun `Check that getEventById() throws if there is no event with given id`() = runTest {
+        server.enqueue(MockResponse().setBody(readSampleEvent(EventType.CoronalMassEjection)))
+        assertFails { dataSource.getEventById(EventId("2022-04-07T05:36:00-CME-002")) }
+    }
+
+    @Test
+    fun `Check that getEventById() succeeds`() = runTest {
+        server.enqueue(MockResponse().setBody(readSampleEvent(EventType.CoronalMassEjection)))
+        val expectedId = EventId("2022-04-07T05:36:00-CME-001")
+        val event = dataSource.getEventById(expectedId)
+        assertEquals(expectedId, event.id)
+    }
+
+    @Test
+    fun `Check that getEventById() succeeds if there are multiple events`() = runTest {
+        server.enqueue(MockResponse().setBody(readSampleEvent(EventType.CoronalMassEjection, "_multiple")))
+        val expectedId = EventId("2022-04-07T05:36:00-CME-002")
+        val event = dataSource.getEventById(expectedId)
+        assertEquals(expectedId, event.id)
     }
 }
 

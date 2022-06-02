@@ -1,15 +1,19 @@
+@file:UseSerializers(InstantSerializer::class, EventIdSerializer::class)
+
 package org.equeim.spacer.donki.data.network.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
+import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.GeomagneticStormDetails
 import org.equeim.spacer.donki.data.model.GeomagneticStormSummary
 import java.time.Instant
 
 @Serializable
 internal data class GeomagneticStormJson(
-    @SerialName("gstID") override val id: String,
-    @SerialName("startTime") @Serializable(InstantSerializer::class) override val time: Instant,
+    @SerialName("gstID") override val id: EventId,
+    @SerialName("startTime") override val time: Instant,
     @SerialName("link") override val link: String,
     @SerialName("linkedEvents") override val linkedEvents: List<EventJson.LinkedEventJson>? = null,
     @SerialName("allKpIndex") val kpIndexes: List<KpIndexJson>
@@ -17,7 +21,7 @@ internal data class GeomagneticStormJson(
     @Serializable
     data class KpIndexJson(
         @SerialName("kpIndex") val kpIndex: Int,
-        @SerialName("observedTime") @Serializable(InstantSerializer::class) val observedTime: Instant,
+        @SerialName("observedTime") val observedTime: Instant,
         @SerialName("source") val source: String
     )
 
@@ -33,7 +37,7 @@ internal data class GeomagneticStormJson(
             id = id,
             time = time,
             link = link,
-            linkedEvents = linkedEvents.toLinkedEvents(),
+            linkedEvents = linkedEvents.toEventIds(),
             kpIndexes = kpIndexes.map {
                 GeomagneticStormDetails.KpIndex(
                     kpIndex = it.kpIndex,
