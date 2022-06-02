@@ -1,23 +1,27 @@
+@file:UseSerializers(InstantSerializer::class, EventIdSerializer::class)
+
 package org.equeim.spacer.donki.data.network.model
 
 import androidx.annotation.Keep
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import org.equeim.spacer.donki.data.model.CoronalMassEjectionDetails
 import org.equeim.spacer.donki.data.model.CoronalMassEjectionSummary
+import org.equeim.spacer.donki.data.model.EventId
 import java.time.Duration
 import java.time.Instant
 
 @Serializable
 @Keep
 internal data class CoronalMassEjectionJson(
-    @SerialName("activityID") override val id: String,
-    @SerialName("startTime") @Serializable(InstantSerializer::class) override val time: Instant,
+    @SerialName("activityID") override val id: EventId,
+    @SerialName("startTime") override val time: Instant,
     @SerialName("link") override val link: String,
     @SerialName("linkedEvents") override val linkedEvents: List<EventJson.LinkedEventJson>? = null,
     @SerialName("note") val note: String,
@@ -26,7 +30,7 @@ internal data class CoronalMassEjectionJson(
 ) : EventJson {
     @Serializable
     data class AnalysisJson(
-        @SerialName("time21_5") @Serializable(InstantSerializer::class) val time215: Instant?,
+        @SerialName("time21_5") val time215: Instant?,
         @SerialName("latitude") val latitude: Float?,
         @SerialName("longitude") val longitude: Float?,
         @SerialName("halfAngle") val halfAngle: Float?,
@@ -39,7 +43,7 @@ internal data class CoronalMassEjectionJson(
     @Serializable
     data class EnlilSimulationJson(
         @SerialName("au") val au: Float?,
-        @SerialName("estimatedShockArrivalTime") @Serializable(InstantSerializer::class) val estimatedShockArrivalTime: Instant?,
+        @SerialName("estimatedShockArrivalTime") val estimatedShockArrivalTime: Instant?,
         @SerialName("estimatedDuration") @Serializable(EnlilSimulationEstimatedDurationSerializer::class) val estimatedDuration: Duration?,
         @SerialName("rmin_re") val rminRe: Float?,
         @SerialName("kp_18") val kp18: Int?,
@@ -55,7 +59,7 @@ internal data class CoronalMassEjectionJson(
     data class ImpactJson(
         @SerialName("isGlancingBlow") val isGlancingBlow: Boolean,
         @SerialName("location") val location: String,
-        @SerialName("arrivalTime") @Serializable(InstantSerializer::class) val arrivalTime: Instant
+        @SerialName("arrivalTime") val arrivalTime: Instant
     )
 
     override fun toEventSummary() =
@@ -72,7 +76,7 @@ internal data class CoronalMassEjectionJson(
             id = id,
             time = time,
             link = link,
-            linkedEvents = linkedEvents.toLinkedEvents(),
+            linkedEvents = linkedEvents.toEventIds(),
             note = note,
             instruments = instruments.map { it.displayName },
             cmeAnalyses = cmeAnalyses?.map { analysis ->

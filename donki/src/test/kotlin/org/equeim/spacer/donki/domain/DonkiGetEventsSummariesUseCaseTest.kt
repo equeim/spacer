@@ -51,17 +51,17 @@ class DonkiGetEventsSummariesUseCaseTest(private val systemTimeZone: ZoneId, pri
             set(
                 EventType.CoronalMassEjection, listOf(
                     CoronalMassEjectionSummary(
-                        "CME-1",
+                        EventId("2022-CME-1"),
                         instantOf(2022, 1, 1, 4, 2),
                         false
                     ),
                     CoronalMassEjectionSummary(
-                        "CME-2",
+                        EventId("2022-CME-2"),
                         instantOf(2022, 1, 1, 4, 2),
                         true
                     ),
                     CoronalMassEjectionSummary(
-                        "CME-3",
+                        EventId("2022-CME-3"),
                         instantOf(2022, 1, 1, 1, 44),
                         false
                     )
@@ -69,47 +69,47 @@ class DonkiGetEventsSummariesUseCaseTest(private val systemTimeZone: ZoneId, pri
             )
             set(
                 EventType.GeomagneticStorm, listOf(
-                    GeomagneticStormSummary("GST-1", instantOf(221, 12, 4, 2, 42), 6),
-                    GeomagneticStormSummary("GST-2", instantOf(221, 12, 4, 2, 2), null)
+                    GeomagneticStormSummary(EventId("2022-GST-1"), instantOf(221, 12, 4, 2, 42), 6),
+                    GeomagneticStormSummary(EventId("2022-GST-2"), instantOf(221, 12, 4, 2, 2), null)
                 )
             )
             set(
                 EventType.InterplanetaryShock, listOf(
-                    InterplanetaryShockSummary("IPS-1", instantOf(2022, 6, 6, 6, 6)),
-                    InterplanetaryShockSummary("IPS-2", instantOf(2022, 6, 6, 6, 7))
+                    InterplanetaryShockSummary(EventId("2022-IPS-1"), instantOf(2022, 6, 6, 6, 6)),
+                    InterplanetaryShockSummary(EventId("2022-IPS-2"), instantOf(2022, 6, 6, 6, 7))
                 )
             )
             set(
                 EventType.SolarFlare, listOf(
-                    SolarFlareSummary("FLR-1", instantOf(666, 6, 6, 6, 6))
+                    SolarFlareSummary(EventId("2022-FLR-1"), instantOf(666, 6, 6, 6, 6))
                 )
             )
             set(
                 EventType.SolarEnergeticParticle, listOf(
-                    SolarEnergeticParticleSummary("SEP-1", instantOf(2022, 5, 22, 0, 13)),
-                    SolarEnergeticParticleSummary("SEP-2", instantOf(2022, 5, 22, 0, 10)),
-                    SolarEnergeticParticleSummary("SEP-3", instantOf(2022, 5, 21, 20, 0))
+                    SolarEnergeticParticleSummary(EventId("2022-SEP-1"), instantOf(2022, 5, 22, 0, 13)),
+                    SolarEnergeticParticleSummary(EventId("2022-SEP-2"), instantOf(2022, 5, 22, 0, 10)),
+                    SolarEnergeticParticleSummary(EventId("2022-SEP-3"), instantOf(2022, 5, 21, 20, 0))
                 )
             )
             set(
                 EventType.MagnetopauseCrossing, listOf(
-                    MagnetopauseCrossingSummary("MPC-1", instantOf(2022, 1, 2, 3, 4)),
-                    MagnetopauseCrossingSummary("MPC-2", instantOf(2021, 5, 6, 7, 8)),
-                    MagnetopauseCrossingSummary("MPC-3", instantOf(2020, 9, 10, 11, 12))
+                    MagnetopauseCrossingSummary(EventId("2022-MPC-1"), instantOf(2022, 1, 2, 3, 4)),
+                    MagnetopauseCrossingSummary(EventId("2022-MPC-2"), instantOf(2021, 5, 6, 7, 8)),
+                    MagnetopauseCrossingSummary(EventId("2022-MPC-3"), instantOf(2020, 9, 10, 11, 12))
                 )
             )
             set(
                 EventType.RadiationBeltEnhancement, listOf(
-                    RadiationBeltEnhancementSummary("RBE-1", instantOf(1917, 11, 7, 1, 1)),
-                    RadiationBeltEnhancementSummary("RBE-2", instantOf(1918, 11, 9, 1, 1)),
-                    RadiationBeltEnhancementSummary("RBE-3", instantOf(1917, 3, 8, 1, 1))
+                    RadiationBeltEnhancementSummary(EventId("2022-RBE-1"), instantOf(1917, 11, 7, 1, 1)),
+                    RadiationBeltEnhancementSummary(EventId("2022-RBE-2"), instantOf(1918, 11, 9, 1, 1)),
+                    RadiationBeltEnhancementSummary(EventId("2022-RBE-3"), instantOf(1917, 3, 8, 1, 1))
                 )
             )
             set(
                 EventType.HighSpeedStream, listOf(
-                    RadiationBeltEnhancementSummary("HSS-1", instantOf(1874, 11, 16, 1, 1)),
-                    RadiationBeltEnhancementSummary("HSS-2", instantOf(1920, 2, 7, 1, 1)),
-                    RadiationBeltEnhancementSummary("HSS-3", instantOf(1917, 3, 8, 0, 0))
+                    RadiationBeltEnhancementSummary(EventId("2022-HSS-1"), instantOf(1874, 11, 16, 1, 1)),
+                    RadiationBeltEnhancementSummary(EventId("2022-HSS-2"), instantOf(1920, 2, 7, 1, 1)),
+                    RadiationBeltEnhancementSummary(EventId("2022-HSS-3"), instantOf(1917, 3, 8, 0, 0))
                 )
             )
         }

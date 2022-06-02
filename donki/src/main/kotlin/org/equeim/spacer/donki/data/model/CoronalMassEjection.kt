@@ -4,7 +4,7 @@ import java.time.Duration
 import java.time.Instant
 
 data class CoronalMassEjectionSummary(
-    override val id: String,
+    override val id: EventId,
     override val time: Instant,
     val isEarthShockPredicted: Boolean
 ) : EventSummary {
@@ -12,10 +12,10 @@ data class CoronalMassEjectionSummary(
 }
 
 data class CoronalMassEjectionDetails(
-    override val id: String,
+    override val id: EventId,
     override val time: Instant,
     override val link: String,
-    override val linkedEvents: List<EventDetails.LinkedEvent>,
+    override val linkedEvents: List<EventId>,
     val note: String,
     val instruments: List<String>,
     val cmeAnalyses: List<Analysis>

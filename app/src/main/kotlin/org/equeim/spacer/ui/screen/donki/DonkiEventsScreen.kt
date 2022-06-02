@@ -23,6 +23,7 @@ import dev.olshevski.navigation.reimagined.navigate
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.LocalNavController
 import org.equeim.spacer.R
+import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.ui.screen.Destination
 import org.equeim.spacer.ui.screen.settings.SettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
@@ -220,7 +221,11 @@ private fun PreviewDonkiEventsScreen() {
             listOf(
                 DonkiEventsScreenViewModel.EventsGroup(
                     "This is date", listOf(
-                        DonkiEventsScreenViewModel.EventPresentation("", "Solar flare", "22:44")
+                        DonkiEventsScreenViewModel.EventPresentation(
+                            EventId(""),
+                            "Solar flare",
+                            "22:44"
+                        )
                     )
                 )
             ),
