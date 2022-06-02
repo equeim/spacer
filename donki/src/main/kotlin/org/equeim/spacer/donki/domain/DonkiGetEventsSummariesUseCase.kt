@@ -10,6 +10,7 @@ import org.equeim.spacer.donki.data.model.EventSummary
 import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.donki.data.repository.DonkiRepository
 import java.time.*
+import java.time.temporal.ChronoUnit
 
 class DonkiGetEventsSummariesUseCase(
     private val repository: DonkiRepository,
@@ -57,7 +58,7 @@ class DonkiGetEventsSummariesUseCase(
     }
 
     suspend fun getEventsSummariesGroupedByDateForLastWeek(timeZone: ZoneId): List<EventsSummariesGroup> {
-        val endDate = ZonedDateTime.now(clock)
+        val endDate = ZonedDateTime.now(clock).truncatedTo(ChronoUnit.DAYS)
         val startDate = endDate.minusDays(6)
         return getEventsSummariesGroupedByDate(startDate.toInstant(), endDate.toInstant(), timeZone)
     }
