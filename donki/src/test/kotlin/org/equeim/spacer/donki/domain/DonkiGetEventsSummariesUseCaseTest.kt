@@ -1,9 +1,6 @@
 package org.equeim.spacer.donki.domain
 
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.confirmVerified
-import io.mockk.mockk
+import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.equeim.spacer.donki.data.model.*
@@ -18,27 +15,33 @@ import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(Parameterized::class)
-class DonkiGetEventsSummariesUseCaseTest(private val timeZone: ZoneId) {
-    private val clock = Clock.fixed(Instant.EPOCH, SYSTEM_TIME_ZONE)
+class DonkiGetEventsSummariesUseCaseTest(private val systemTimeZone: ZoneId, private val requestedTimeZone: ZoneId) {
+    private val clock = Clock.fixed(Instant.now(), systemTimeZone)
 
     private val repository = mockk<DonkiRepository>()
     private val useCase = DonkiGetEventsSummariesUseCase(repository, clock)
 
     @Test
     fun `Validate dates when getting events for last week`() = runTest {
-        coEvery { repository.getEventsSummaries(any(), any(), any()) } returns emptyList()
-        useCase.getEventsSummariesGroupedByDateForLastWeek(timeZone)
-        val expectedStartDate = ZonedDateTime.now(clock).minusDays(6).toInstant()
-        val expectedEndDate = Instant.now(clock)
-        coVerify { repository.getEventsSummaries(any(), expectedStartDate, expectedEndDate) }
+        val startDates = mutableListOf<Instant>()
+        val endDates = mutableListOf<Instant>()
+        coEvery { repository.getEventsSummaries(any(), capture(startDates), capture(endDates)) } returns emptyList()
+        useCase.getEventsSummariesGroupedByDateForLastWeek(requestedTimeZone)
+        coVerify { repository.getEventsSummaries(any(), any(), any()) }
         confirmVerified(repository)
+        val expectedDifference = Duration.ofDays(6)
+        startDates.asSequence().zip(endDates.asSequence()).forEach { (startDate, endDate) ->
+            assertEquals(expectedDifference, Duration.between(startDate, endDate))
+            assertEquals(LocalTime.MIDNIGHT, LocalTime.ofInstant(startDate, systemTimeZone))
+            assertEquals(LocalTime.MIDNIGHT, LocalTime.ofInstant(endDate, systemTimeZone))
+        }
     }
 
     @Test
     fun `No events for any type`() = runTest {
         coEvery { repository.getEventsSummaries(any(), any(), any()) } returns emptyList()
         val groupedEvents =
-            useCase.getEventsSummariesGroupedByDate(Instant.EPOCH, Instant.EPOCH, timeZone)
+            useCase.getEventsSummariesGroupedByDate(Instant.EPOCH, Instant.EPOCH, requestedTimeZone)
         assertTrue(groupedEvents.isEmpty())
     }
 
@@ -118,13 +121,13 @@ class DonkiGetEventsSummariesUseCaseTest(private val timeZone: ZoneId) {
             )
         } answers { repositoryEvents[firstArg()]!! }
         val groupedEvents =
-            useCase.getEventsSummariesGroupedByDate(Instant.EPOCH, Instant.EPOCH, timeZone)
+            useCase.getEventsSummariesGroupedByDate(Instant.EPOCH, Instant.EPOCH, requestedTimeZone)
 
         val expectedDays = repositoryEvents
             .values
             .asSequence()
             .flatten()
-            .map { it.time.atZone(timeZone).toLocalDate() }
+            .map { it.time.atZone(requestedTimeZone).toLocalDate() }
             .sortedDescending()
             .distinct()
             .toList()
@@ -134,7 +137,7 @@ class DonkiGetEventsSummariesUseCaseTest(private val timeZone: ZoneId) {
         for ((date, events) in groupedEvents) {
             events.forEach { event ->
                 assertEquals(date, event.zonedTime.toLocalDate())
-                assertEquals(event.event.time.atZone(timeZone), event.zonedTime)
+                assertEquals(event.event.time.atZone(requestedTimeZone), event.zonedTime)
                 allRepositoryEvents.remove(event.event)
             }
         }
@@ -142,17 +145,24 @@ class DonkiGetEventsSummariesUseCaseTest(private val timeZone: ZoneId) {
     }
 
     private fun instantOf(year: Int, month: Int, dayOfMonth: Int, hour: Int, minute: Int) =
-        instantOf(year, month, dayOfMonth, hour, minute, timeZone)
+        instantOf(year, month, dayOfMonth, hour, minute, ZoneOffset.UTC)
 
     companion object {
-        private val SYSTEM_TIME_ZONE: ZoneId = ZoneId.of("Asia/Yakutsk")
-
-        @Parameterized.Parameters(name = "{0}")
-        @JvmStatic
-        fun timeZones(): Iterable<Any> = listOf(
-            SYSTEM_TIME_ZONE,
+        private val timeZones = setOf(
             ZoneId.ofOffset("UTC", ZoneOffset.UTC),
+            ZoneId.systemDefault(),
+            ZoneId.of("Asia/Yakutsk"),
             ZoneId.of("America/Los_Angeles")
         )
+
+        @Parameterized.Parameters(name = "system={0}, requested={1}")
+        @JvmStatic
+        fun timeZones(): Iterable<Array<ZoneId>> = buildSet<Pair<ZoneId, ZoneId>> {
+            timeZones.forEach { system ->
+                timeZones.forEach { requested ->
+                    add(system to requested)
+                }
+            }
+        }.map { (system, requested) -> arrayOf(system, requested) }
     }
 }
