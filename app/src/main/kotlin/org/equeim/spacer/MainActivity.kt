@@ -12,9 +12,7 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -145,9 +143,11 @@ private fun MainActivityScreen() {
             color = MaterialTheme.colors.background
         ) {
             val navController = rememberNavController<Destination>(DonkiEventsScreen)
+            val context = LocalContext.current
+            val settings = remember(context) { AppSettings(context.getApplicationOrThrow()) }
             CompositionLocalProvider(
                 LocalNavController provides navController,
-                LocalAppSettings provides AppSettings(LocalContext.current.getApplicationOrThrow())
+                LocalAppSettings provides settings
             ) {
                 NavBackHandler(navController)
                 @OptIn(ExperimentalAnimationApi::class)
