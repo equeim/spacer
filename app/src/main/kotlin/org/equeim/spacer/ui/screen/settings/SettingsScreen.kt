@@ -26,7 +26,7 @@ import org.equeim.spacer.ui.components.Dialog
 import org.equeim.spacer.ui.components.RadioButtonListItem
 import org.equeim.spacer.ui.screen.Destination
 import org.equeim.spacer.ui.theme.Dimens
-import org.equeim.spacer.ui.utils.SubScreenTopAppBar
+import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.utils.collectAsStateWhenStarted
 import org.equeim.spacer.ui.utils.plus
 
