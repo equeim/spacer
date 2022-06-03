@@ -101,7 +101,7 @@ class MainActivity : ComponentActivity() {
         ).use {
             it.getBooleanOrThrow(0) to it.getBooleanOrThrow(1)
         }
-        WindowCompat.getInsetsController(window, window.decorView)?.apply {
+        WindowCompat.getInsetsController(window, window.decorView).apply {
             // On some Android versions these flags may not be set correctly from theme
             // when recreating Activity and changing night mode. Set them ourselves in code.
             isAppearanceLightStatusBars = windowLightStatusBar
