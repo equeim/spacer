@@ -53,21 +53,21 @@ class AppSettings(private val context: Context) {
             } else {
                 On
             }
+
+            val enumToString = mapOf(
+                FollowSystem to "followSystem",
+                On to "on",
+                Off to "off"
+            )
+            val stringToEnum = enumToString.entries.associate { (k, v) -> v to k }
         }
     }
 
-    private val darkThemeModeEnumToString = mapOf(
-        DarkThemeMode.FollowSystem to "followSystem",
-        DarkThemeMode.On to "on",
-        DarkThemeMode.Off to "off"
-    )
-    private val darkThemeModeStringToEnum =
-        darkThemeModeEnumToString.entries.associate { (k, v) -> v to k }
     val darkThemeMode: Preference<DarkThemeMode> =
-        preference(stringPreferencesKey("darkTheme")) { darkThemeModeEnumToString[DarkThemeMode.Default]!! }
+        preference(stringPreferencesKey("darkTheme")) { DarkThemeMode.enumToString[DarkThemeMode.Default]!! }
             .map(
-                transformFromBase = { darkThemeModeStringToEnum[it] ?: DarkThemeMode.Default },
-                transformToBase = { darkThemeModeEnumToString[it]!! }
+                transformFromBase = { DarkThemeMode.stringToEnum[it] ?: DarkThemeMode.Default },
+                transformToBase = { DarkThemeMode.enumToString[it]!! }
             )
 
     val displayEventsTimeInUTC: Preference<Boolean> = preference(booleanPreferencesKey("displayEventsTimeInUTC")) { false }
