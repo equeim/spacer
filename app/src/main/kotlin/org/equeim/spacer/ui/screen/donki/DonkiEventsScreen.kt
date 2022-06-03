@@ -11,7 +11,6 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,11 +23,13 @@ import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.LocalNavController
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.model.EventId
+import org.equeim.spacer.ui.components.RootScreenTopAppBar
 import org.equeim.spacer.ui.screen.Destination
 import org.equeim.spacer.ui.screen.settings.SettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.utils.collectAsStateWhenStarted
 import org.equeim.spacer.ui.utils.plus
+import org.equeim.spacer.ui.utils.toAppBarElevation
 
 @Parcelize
 object DonkiEventsScreen : Destination {
@@ -47,44 +48,10 @@ private fun DonkiEventsScreen() {
 private fun DonkiEventsScreen(state: DonkiEventsScreenViewModel.UiState) {
     val lazyListState = rememberLazyListState()
     Scaffold(topBar = {
-        val appBarElevation = if (lazyListState.firstVisibleItemIndex == 0) {
-            val itemSize = lazyListState.layoutInfo.visibleItemsInfo.find { it.index == 0 }?.size
-            if (itemSize != null) {
-                val firstVisibleItemOffsetRelative =
-                    lazyListState.firstVisibleItemScrollOffset.toFloat() / itemSize.toFloat()
-                (firstVisibleItemOffsetRelative * AppBarDefaults.TopAppBarElevation.value).dp
-            } else {
-                0.dp
-            }
-        } else {
-            AppBarDefaults.TopAppBarElevation
-        }
-
-        val appBarPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
-        TopAppBar(
-            backgroundColor = MaterialTheme.colors.surface,
-            elevation = appBarElevation,
-            contentPadding = AppBarDefaults.ContentPadding + PaddingValues(top = appBarPadding)
-        ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                CompositionLocalProvider(
-                    LocalContentAlpha provides ContentAlpha.high,
-                ) {
-                    Text(
-                        text = stringResource(R.string.space_weather_events),
-                        style = MaterialTheme.typography.h6,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
-                    val navController = LocalNavController.current
-                    IconButton(
-                        onClick = { navController.navigate(SettingsScreen) },
-                        modifier = Modifier.align(Alignment.CenterEnd)
-                    ) {
-                        Icon(Icons.Filled.Settings, stringResource(R.string.settings))
-                    }
-                }
+        RootScreenTopAppBar(stringResource(R.string.space_weather_events), elevation = lazyListState.toAppBarElevation()) {
+            val navController = LocalNavController.current
+            IconButton(onClick = { navController.navigate(SettingsScreen) }) {
+                Icon(Icons.Filled.Settings, stringResource(R.string.settings))
             }
         }
     }) { contentPadding ->
@@ -133,13 +100,14 @@ private fun ScreenContentLoaded(
     lazyListState: LazyListState,
     state: DonkiEventsScreenViewModel.UiState.Loaded
 ) {
-    val adjustedPadding = (contentPadding + PaddingValues(horizontal = Dimens.ScreenContentPadding)).run {
-        this.takeIf { it.calculateBottomPadding().value == 0.0f }?.plus(
-            PaddingValues(
-                bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
-            )
-        ) ?: this
-    }
+    val adjustedPadding =
+        (contentPadding + PaddingValues(horizontal = Dimens.ScreenContentPadding)).run {
+            this.takeIf { it.calculateBottomPadding().value == 0.0f }?.plus(
+                PaddingValues(
+                    bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
+                )
+            ) ?: this
+        }
     LazyColumn(
         state = lazyListState,
         contentPadding = adjustedPadding,
