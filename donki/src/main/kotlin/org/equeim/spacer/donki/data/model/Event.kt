@@ -7,15 +7,19 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-enum class EventType {
-    CoronalMassEjection,
-    GeomagneticStorm,
-    InterplanetaryShock,
-    SolarFlare,
-    SolarEnergeticParticle,
-    MagnetopauseCrossing,
-    RadiationBeltEnhancement,
-    HighSpeedStream
+enum class EventType(internal val stringValue: String) {
+    CoronalMassEjection("CME"),
+    GeomagneticStorm("GST"),
+    InterplanetaryShock("IPS"),
+    SolarFlare("FLR"),
+    SolarEnergeticParticle("SEP"),
+    MagnetopauseCrossing("MPC"),
+    RadiationBeltEnhancement("RBE"),
+    HighSpeedStream("HSS");
+
+    internal companion object {
+        val values = values()
+    }
 }
 
 @JvmInline
@@ -29,17 +33,9 @@ value class EventId(internal val id: String) : Parcelable {
     fun parse(): Parsed = runCatching {
         val typeEnd = id.lastIndexOf('-')
         val typeStart = id.lastIndexOf('-', typeEnd - 1) + 1
-        val type = when (val typeString = id.substring(typeStart, typeEnd)) {
-            "CME" -> EventType.CoronalMassEjection
-            "GST" -> EventType.GeomagneticStorm
-            "IPS" -> EventType.InterplanetaryShock
-            "FLR" -> EventType.SolarFlare
-            "SEP" -> EventType.SolarEnergeticParticle
-            "MPC" -> EventType.MagnetopauseCrossing
-            "RBE" -> EventType.RadiationBeltEnhancement
-            "HSS" -> EventType.HighSpeedStream
-            else -> throw RuntimeException("Unknown event type string $typeString")
-        }
+        val typeString = id.substring(typeStart, typeEnd)
+        val type = EventType.values.find { it.stringValue == typeString }
+            ?: throw RuntimeException("Unknown event type string $typeString")
         val time = DateTimeFormatter.ISO_DATE_TIME.parse(id.substring(0, typeStart - 1), LocalDateTime::from).toInstant(ZoneOffset.UTC)
         Parsed(type, time)
     }.getOrElse {
