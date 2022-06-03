@@ -58,7 +58,7 @@ class DonkiDataSourceNetworkTest {
             val request = server.takeRequest()
             val url = checkNotNull(request.requestUrl)
 
-            assertEquals(eventType.getExpectedUrlPath(), url.pathSegments.single())
+            assertEquals(eventType.stringValue, url.pathSegments.single())
 
             val startDateQuery = checkNotNull(url.queryParameter("startDate"))
             assertEquals("2016-09-01", startDateQuery)
@@ -74,7 +74,7 @@ class DonkiDataSourceNetworkTest {
             checkNotNull(cl.getResource("/${cl.packageName.replace('.', '/')}/datasets"))
         Files.list(Paths.get(datasetsUrl.toURI())).asSequence().forEach { datasetPath ->
             val urlPath = datasetPath.fileName.toString().split('_').first()
-            val eventType = EventType.values().first { it.getExpectedUrlPath() == urlPath }
+            val eventType = EventType.values().first { it.stringValue == urlPath }
             server.enqueue(MockResponse().setBody(datasetPath.readToBuffer()))
             dataSource.getEvents(eventType, Instant.EPOCH, Instant.EPOCH)
         }
@@ -345,7 +345,7 @@ class DonkiDataSourceNetworkTest {
                     '.',
                     '/'
                 )
-            }/${eventType.getExpectedUrlPath()}${suffix}.json"
+            }/${eventType.stringValue}${suffix}.json"
         )
         return checkNotNull(url).readToBuffer()
     }
@@ -377,17 +377,6 @@ class DonkiDataSourceNetworkTest {
         val event = dataSource.getEventById(expectedId)
         assertEquals(expectedId, event.id)
     }
-}
-
-private fun EventType.getExpectedUrlPath() = when (this) {
-    EventType.CoronalMassEjection -> "CME"
-    EventType.GeomagneticStorm -> "GST"
-    EventType.InterplanetaryShock -> "IPS"
-    EventType.SolarFlare -> "FLR"
-    EventType.SolarEnergeticParticle -> "SEP"
-    EventType.MagnetopauseCrossing -> "MPC"
-    EventType.RadiationBeltEnhancement -> "RBE"
-    EventType.HighSpeedStream -> "HSS"
 }
 
 private fun Path.readToBuffer() = Buffer().apply {
