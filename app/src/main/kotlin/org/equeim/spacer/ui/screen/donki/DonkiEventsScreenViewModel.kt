@@ -3,18 +3,20 @@ package org.equeim.spacer.ui.screen.donki
 import android.app.Application
 import android.util.Log
 import androidx.annotation.StringRes
-import androidx.compose.runtime.Immutable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import androidx.paging.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventSummary
 import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.donki.data.repository.DonkiRepository
-import org.equeim.spacer.donki.domain.DonkiGetEventsSummariesUseCase
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
@@ -33,101 +35,82 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
     }
 
     private val repository = DonkiRepository(application)
-    private val eventsUseCase = DonkiGetEventsSummariesUseCase(repository)
     private val settings = AppSettings(application)
-
-    private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
-    val uiState: StateFlow<UiState> by ::_uiState
 
     private val eventTimeFormatter: DateTimeFormatter =
         DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
     private val eventDateFormatter: DateTimeFormatter =
-        DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
+        DateTimeFormatterBuilder().appendLocalized(FormatStyle.LONG, null).appendLiteral(' ').appendZoneText(TextStyle.SHORT).toFormatter()
     private val timeZoneFormatter =
         DateTimeFormatterBuilder().appendZoneText(TextStyle.SHORT).toFormatter()
 
-    private val eventTitles = ConcurrentHashMap<EventType, String>()
+    private val eventTypesStrings = ConcurrentHashMap<EventType, String>()
+
+    private val pager = Pager(PagingConfig(pageSize = 20, enablePlaceholders = false), null) {
+        repository.getEventsSummariesPagingSource()
+    }
+    val pagingData: Flow<PagingData<ListItem>>
 
     init {
-        viewModelScope.launch {
-            @OptIn(ExperimentalCoroutinesApi::class)
-            settings.displayEventsTimeInUTC.flow()
-                .mapLatest { displayEventsTimeInUTC ->
-                    // Wait until uiState has subscribers before reloading
-                    _uiState.subscriptionCount.first { it > 0 }
-                    displayEventsTimeInUTC
-                }
-                // In case displayEventsTimeInUTC changed back to the same value before uiState acquired subscribers
-                .distinctUntilChanged()
-                .collectLatest { displayEventsTimeInUTC ->
-                    showEventsForLastWeek(displayEventsTimeInUTC)
-                }
-        }
+        val basePagingData = pager.flow.cachedIn(viewModelScope)
+        pagingData = combine(basePagingData, settings.displayEventsTimeInUTC.flow(), ::Pair).map { (pagingData, displayEventsTimeInUTC) ->
+            pagingData.toListItems(displayEventsTimeInUTC)
+        }.flowOn(Dispatchers.Default)
     }
 
-    private suspend fun showEventsForLastWeek(displayEventsTimeInUTC: Boolean) {
-        Log.d(
-            TAG,
-            "showEventsForLastWeek() called with: displayEventsTimeInUTC = $displayEventsTimeInUTC"
-        )
-        _uiState.value = UiState.Loading
-        withContext(Dispatchers.Default) {
-            try {
-                val timeZone = if (displayEventsTimeInUTC) {
-                    ZoneId.ofOffset("UTC", ZoneOffset.UTC)
+    private fun PagingData<EventSummary>.toListItems(displayEventsTimeInUTC: Boolean): PagingData<ListItem> {
+        val timeZone = if (displayEventsTimeInUTC) {
+            ZoneId.ofOffset("UTC", ZoneOffset.UTC)
+        } else {
+            ZoneId.systemDefault()
+        }
+        return map { EventSummaryWithZonedTime(it, it.time.atZone(timeZone)) }
+            .insertSeparators { before, after ->
+                after ?: return@insertSeparators null
+                if (before == null || before.zonedTime.dayOfMonth != after.zonedTime.dayOfMonth) {
+                    DateSeparator(after.eventSummary.time.epochSecond, eventDateFormatter.format(after.zonedTime))
                 } else {
-                    ZoneId.systemDefault()
+                    null
                 }
-                val timeZoneName =
-                    timeZoneFormatter.format(ZonedDateTime.now().withZoneSameInstant(timeZone))
-                val groupedEvents =
-                    eventsUseCase.getEventsSummariesGroupedByDateForLastWeek(timeZone)
-                val presentations = groupedEvents.map { (date, events) ->
-                    EventsGroup(eventDateFormatter.format(date), events.map { it.toPresentation() })
-                }
-                _uiState.value = UiState.Loaded(presentations, timeZoneName)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Log.e(TAG, "getEventsForLastWeek: failed to get events", e)
-                _uiState.value = UiState.Error
             }
-        }
+            .map {
+                when (it) {
+                    is DateSeparator -> it
+                    is EventSummaryWithZonedTime -> it.toPresentation()
+                    else -> throw IllegalStateException()
+                }
+            }
     }
 
-    private fun DonkiGetEventsSummariesUseCase.EventSummaryWithZonedTime.toPresentation(): EventPresentation {
+    private data class EventSummaryWithZonedTime(
+        val eventSummary: EventSummary,
+        val zonedTime: ZonedDateTime
+    )
+
+    private fun EventSummaryWithZonedTime.toPresentation(): EventPresentation {
         return EventPresentation(
-            event.id,
-            title = event.getTitle(),
+            id = eventSummary.id,
+            type = eventSummary.getTypeDisplayString(),
             time = eventTimeFormatter.format(zonedTime)
         )
     }
 
-    private fun EventSummary.getTitle(): String {
-        return eventTitles.computeIfAbsent(type) { getString(type.getTitleResId()) }
+    private fun EventSummary.getTypeDisplayString(): String {
+        return eventTypesStrings.computeIfAbsent(type) { getString(type.displayStringResId) }
     }
 
     private fun getString(@StringRes resId: Int) = getApplication<Application>().getString(resId)
 
+    sealed interface ListItem
+
+    data class DateSeparator(
+        val nextEventEpochSecond: Long,
+        val date: String
+    ) : ListItem
+
     data class EventPresentation(
         val id: EventId,
-        val title: String,
+        val type: String,
         val time: String
-    )
-
-    data class EventsGroup(
-        val date: String,
-        val events: List<EventPresentation>
-    )
-
-    @Immutable
-    sealed interface UiState {
-        object Loading : UiState
-        data class Loaded(
-            val eventGroups: List<EventsGroup>,
-            val timeZoneName: String
-        ) : UiState
-
-        object Error : UiState
-    }
+    ) : ListItem
 }

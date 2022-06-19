@@ -27,8 +27,7 @@ import org.equeim.spacer.ui.components.RadioButtonListItem
 import org.equeim.spacer.ui.screen.Destination
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
-import org.equeim.spacer.ui.utils.collectAsStateWhenStarted
-import org.equeim.spacer.ui.utils.plus
+import org.equeim.spacer.ui.utils.*
 
 @Parcelize
 object SettingsScreen : Destination {
@@ -49,7 +48,7 @@ private fun SettingsScreen() {
 
     Scaffold(topBar = {
         SubScreenTopAppBar(stringResource(R.string.settings))
-    }) {
+    }) { contentPadding ->
         val model = viewModel<SettingsScreenViewModel>()
         if (!model.loaded) {
             return@Scaffold
@@ -59,18 +58,16 @@ private fun SettingsScreen() {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(
-                    it + PaddingValues(
-                        bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
-                    )
+                    contentPadding
+                        .plus(PaddingValues(vertical = Dimens.ScreenContentPadding))
+                        .addBottomInsetUnless(contentPadding.hasBottomPadding)
                 )
         ) {
             Text(
                 stringResource(R.string.appearance),
                 color = MaterialTheme.colors.primary,
-                modifier = Modifier.padding(
-                    horizontal = Dimens.ScreenContentPadding,
-                    vertical = 16.dp
-                )
+                modifier = Modifier.padding(horizontal = Dimens.ScreenContentPadding)
+                    .padding(bottom = 16.dp)
             )
             val darkThemeMode by model.darkThemeMode.collectAsStateWhenStarted()
             ListItem(
@@ -139,11 +136,13 @@ private fun DarkThemeModeChoice(
     val settings = LocalAppSettings.current
     val navController = LocalNavController.current
     RadioButtonListItem(
-        text = stringResource(when (darkThemeMode) {
-            AppSettings.DarkThemeMode.FollowSystem -> R.string.dark_theme_follow_system
-            AppSettings.DarkThemeMode.On -> R.string.preference_on
-            AppSettings.DarkThemeMode.Off -> R.string.preference_off
-        }),
+        text = stringResource(
+            when (darkThemeMode) {
+                AppSettings.DarkThemeMode.FollowSystem -> R.string.dark_theme_follow_system
+                AppSettings.DarkThemeMode.On -> R.string.preference_on
+                AppSettings.DarkThemeMode.Off -> R.string.preference_off
+            }
+        ),
         selected = initialDarkThemeMode == darkThemeMode,
         onClick = {
             settings.darkThemeMode.set(darkThemeMode)

@@ -27,6 +27,7 @@ android {
 
 dependencies {
     implementation(project(":donki"))
+    implementation(libs.appcompanist.swiperefresh)
     implementation(libs.coroutines.android)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core)
@@ -37,8 +38,12 @@ dependencies {
     implementation(libs.androidx.datastore)
     implementation(libs.androidx.lifecycle.runtime)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.paging)
+    implementation(libs.androidx.paging.compose)
     implementation(libs.reimagined)
+
     testImplementation(libs.junit)
+
     debugImplementation(libs.leakcanary)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
