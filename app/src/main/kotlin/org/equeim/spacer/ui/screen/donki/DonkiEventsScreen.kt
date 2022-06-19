@@ -87,11 +87,10 @@ private fun DonkiEventsScreen(paging: LazyPagingItems<DonkiEventsScreenViewModel
         }
     ) { contentPadding ->
         Box(Modifier.fillMaxSize().padding(contentPadding)) {
-            val isInitialLoading = paging.itemCount == 0 && paging.loadState.run {
-                refresh is LoadState.Loading ||
-                        append is LoadState.Loading ||
-                        prepend is LoadState.Loading
-            }
+            val isInitialLoading = paging.loadState.refresh is LoadState.Loading ||
+                    (paging.itemCount == 0 && paging.loadState.run {
+                        append is LoadState.Loading || prepend is LoadState.Loading
+                    })
             val swipeRefreshState = rememberSwipeRefreshState(isInitialLoading)
             SwipeRefresh(
                 swipeRefreshState,
