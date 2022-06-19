@@ -23,6 +23,7 @@ dependencies {
 
     implementation(libs.coroutines.core)
 
+    implementation(libs.androidx.paging)
     implementation(libs.androidx.room)
     ksp(libs.androidx.room.compiler)
 
