@@ -16,16 +16,24 @@ import org.equeim.spacer.donki.data.model.EventSummary
 import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.donki.data.model.HighSpeedStreamSummary
 import org.equeim.spacer.donki.data.network.DonkiDataSourceNetwork
+import org.equeim.spacer.donki.data.repository.EventsSummariesPagingSource.Week
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.time.*
 import java.time.temporal.ChronoUnit
 import kotlin.test.*
 
+private val CURRENT_INSTANT = LocalDate.of(2022, 1, 20).atTime(4, 2).toInstant(ZoneOffset.UTC)
+private val EXPECTED_INITIAL_LOAD_TIMES: List<Pair<Instant, Instant>> = listOf(
+    instantOf(2022, 1, 17) to instantOf(2022, 1, 20),
+    instantOf(2022, 1, 10) to instantOf(2022, 1, 16),
+    instantOf(2022, 1, 3) to instantOf(2022, 1, 9)
+)
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(Parameterized::class)
 class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTest() {
-    private val clock = Clock.fixed(LocalDate.of(2022, 1, 16).atTime(4, 2).toInstant(ZoneOffset.UTC), systemTimeZone)
+    private val clock = Clock.fixed(CURRENT_INSTANT, systemTimeZone)
     private val dataSource = mockk<DonkiDataSourceNetwork>()
     private lateinit var pagingSource: EventsSummariesPagingSource
 
@@ -40,9 +48,9 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
     }
 
     @Test
-    fun `getRefreshKey() returns null if anchorPosition is null`() = runTest {
-        val state = PagingState<EventsSummariesPagingSource.EventsSummariesDateRange, EventSummary>(
-            listOf(PagingSource.LoadResult.Page(listOf(mockk()), null, null)),
+    fun `getRefreshKey() returns null`() = runTest {
+        val state = PagingState<Week, EventSummary>(
+            listOf(PagingSource.LoadResult.Page(emptyList(), null, null)),
             anchorPosition = null,
             config = mockk(),
             leadingPlaceholderCount = 0
@@ -51,161 +59,37 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
     }
 
     @Test
-    fun `getRefreshKey() returns null if pages are empty`() = runTest {
-        val state = PagingState<EventsSummariesPagingSource.EventsSummariesDateRange, EventSummary>(
-            listOf(
-                PagingSource.LoadResult.Page(emptyList(), null, null),
-                PagingSource.LoadResult.Page(emptyList(), null, null)
-            ),
-            anchorPosition = 42,
-            config = mockk(),
-            leadingPlaceholderCount = 0
-        )
-        assertNull(pagingSource.getRefreshKey(state))
-    }
-
-    @Test
-    fun `Validate getRefreshKey() if range surrounding anchorPosition is in the past`() = runTest {
-        val state = PagingState<EventsSummariesPagingSource.EventsSummariesDateRange, EventSummary>(
-            listOf(
-                PagingSource.LoadResult.Page(
-                    listOf(
-                        HighSpeedStreamSummary(
-                            EventId(""),
-                            LocalDate.of(2021, 1, 15).atTime(6, 6).toInstant(ZoneOffset.UTC)
-                        )
-                    ), null, null
-                )
-            ),
-            anchorPosition = 0,
-            config = mockk(),
-            leadingPlaceholderCount = 0
-        )
-        val range = assertNotNull(pagingSource.getRefreshKey(state))
-        range.validate(allowSmallerRange = false)
-        val expectedRange = EventsSummariesPagingSource.EventsSummariesDateRange(
-            LocalDate.of(2021, 1, 12).atStartOfDay().atOffset(ZoneOffset.UTC),
-            LocalDate.of(2021, 1, 18).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = false
-        )
-        assertEquals(expectedRange, range)
-    }
-
-    @Test
-    fun `Validate getRefreshKey() if range surrounding anchorPosition is partially in the future`() = runTest {
-        val state = PagingState<EventsSummariesPagingSource.EventsSummariesDateRange, EventSummary>(
-            listOf(
-                PagingSource.LoadResult.Page(
-                    listOf(
-                        HighSpeedStreamSummary(
-                            EventId(""),
-                            LocalDate.of(2022, 1, 14).atTime(6, 6).toInstant(ZoneOffset.UTC)
-                        )
-                    ), null, null
-                )
-            ),
-            anchorPosition = 0,
-            config = mockk(),
-            leadingPlaceholderCount = 0
-        )
-        val range = assertNotNull(pagingSource.getRefreshKey(state))
-        range.validate(allowSmallerRange = false)
-        val expectedRange = EventsSummariesPagingSource.EventsSummariesDateRange(
-            LocalDate.of(2022, 1, 10).atStartOfDay().atOffset(ZoneOffset.UTC),
-            LocalDate.of(2022, 1, 16).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = true
-        )
-        assertEquals(expectedRange, range)
-    }
-
-    @Test
-    fun `Validate getRefreshKey() if range surrounding anchorPosition is the same as last week range`() = runTest {
-        val state = PagingState<EventsSummariesPagingSource.EventsSummariesDateRange, EventSummary>(
-            listOf(
-                PagingSource.LoadResult.Page(
-                    listOf(
-                        HighSpeedStreamSummary(
-                            EventId(""),
-                            LocalDate.of(2022, 1, 13).atTime(6, 6).toInstant(ZoneOffset.UTC)
-                        )
-                    ), null, null
-                )
-            ),
-            anchorPosition = 0,
-            config = mockk(),
-            leadingPlaceholderCount = 0
-        )
-        val range = assertNotNull(pagingSource.getRefreshKey(state))
-        range.validate(allowSmallerRange = false)
-        val expectedRange = EventsSummariesPagingSource.EventsSummariesDateRange(
-            LocalDate.of(2022, 1, 10).atStartOfDay().atOffset(ZoneOffset.UTC),
-            LocalDate.of(2022, 1, 16).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = true
-        )
-        assertEquals(expectedRange, range)
-    }
-
-    @Test
-    fun `Validate getRefreshKey() if anchor item day is current day`() = runTest {
-        val state = PagingState<EventsSummariesPagingSource.EventsSummariesDateRange, EventSummary>(
-            listOf(
-                PagingSource.LoadResult.Page(
-                    listOf(
-                        HighSpeedStreamSummary(
-                            EventId(""),
-                            LocalDate.now(clock.withZone(ZoneOffset.UTC)).atTime(6, 6).toInstant(ZoneOffset.UTC)
-                        )
-                    ), null, null
-                )
-            ),
-            anchorPosition = 0,
-            config = mockk(),
-            leadingPlaceholderCount = 0
-        )
-        val range = assertNotNull(pagingSource.getRefreshKey(state))
-        range.validate(allowSmallerRange = false)
-        val expectedRange = EventsSummariesPagingSource.EventsSummariesDateRange(
-            LocalDate.of(2022, 1, 10).atStartOfDay().atOffset(ZoneOffset.UTC),
-            LocalDate.of(2022, 1, 16).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = true
-        )
-        assertEquals(expectedRange, range)
-    }
-
-    @Test
-    fun `Validate load() if requested range is null`() = runTest {
+    fun `Validate load() if requested week is null`() = runTest {
         coEvery { dataSource.getEvents(any(), any(), any()) } returns emptyList()
-        val params = PagingSource.LoadParams.Refresh<EventsSummariesPagingSource.EventsSummariesDateRange>(null, 20, false)
+        val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         val result = pagingSource.load(params).assertIsPage()
         assertNull(result.prevKey)
-        assertNotNull(result.nextKey).validate(allowSmallerRange = false)
+        assertNotNull(result.nextKey).validate()
+        assertEquals(weekOf(2021, 12, 27), result.nextKey)
 
-        val startDate = LocalDate.of(2022, 1, 10).atStartOfDay().toInstant(ZoneOffset.UTC)
-        val endDate = LocalDate.of(2022, 1, 16).atStartOfDay().toInstant(ZoneOffset.UTC)
         coVerifyAll {
-            EventType.values.forEach {
-                dataSource.getEvents(it, startDate, endDate)
+            EventType.values.forEach { type ->
+                EXPECTED_INITIAL_LOAD_TIMES.forEach { (startDate, endDate) ->
+                    dataSource.getEvents(type, startDate, endDate)
+                }
             }
         }
     }
 
     @Test
-    fun `Validate load() if requested range's endDate is current day and was at creation time`() = runTest {
+    fun `Validate load() if requested week is current week`() = runTest {
         coEvery { dataSource.getEvents(any(), any(), any()) } returns emptyList()
 
-        val requestedRange = EventsSummariesPagingSource.EventsSummariesDateRange(
-            startDate = LocalDate.of(2022, 1, 14).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDate = LocalDate.of(2022, 1, 16).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = true
-        )
+        val requestedWeeks = weekOf(2022, 1, 17)
 
-        val params = PagingSource.LoadParams.Refresh(requestedRange, 20, false)
+        val params = PagingSource.LoadParams.Refresh(requestedWeeks, 20, false)
         val result = pagingSource.load(params).assertIsPage()
         assertNull(result.prevKey)
-        assertNotNull(result.nextKey).validate(allowSmallerRange = false)
+        assertNotNull(result.nextKey).validate()
+        assertEquals(weekOf(2022, 1, 10), result.nextKey)
 
-        val startDate = requestedRange.startDate.toInstant()
-        val endDate = requestedRange.endDate.toInstant()
+        val startDate = instantOf(2022, 1, 17)
+        val endDate = instantOf(2022, 1, 20)
         coVerifyAll {
             EventType.values.forEach {
                 dataSource.getEvents(it, startDate, endDate)
@@ -214,22 +98,20 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
     }
 
     @Test
-    fun `Validate load() if requested range's endDate is current day but it wasn't at creation time`() = runTest {
+    fun `Validate load() if requested week is in the past`() = runTest {
         coEvery { dataSource.getEvents(any(), any(), any()) } returns emptyList()
 
-        val requestedRange = EventsSummariesPagingSource.EventsSummariesDateRange(
-            startDate = LocalDate.of(2022, 1, 14).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDate = LocalDate.of(2022, 1, 16).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = false
-        )
+        val requestedWeeks = weekOf(2022, 1, 3)
 
-        val params = PagingSource.LoadParams.Refresh(requestedRange, 20, false)
+        val params = PagingSource.LoadParams.Refresh(requestedWeeks, 20, false)
         val result = pagingSource.load(params).assertIsPage()
-        assertNull(result.prevKey)
-        assertNotNull(result.nextKey).validate(allowSmallerRange = false)
+        assertNotNull(result.prevKey).validate()
+        assertEquals(weekOf(2022, 1, 10), result.prevKey)
+        assertNotNull(result.nextKey).validate()
+        assertEquals(weekOf(2021, 12, 27), result.nextKey)
 
-        val startDate = requestedRange.startDate.toInstant()
-        val endDate = requestedRange.endDate.toInstant()
+        val startDate = instantOf(2022, 1, 3)
+        val endDate = instantOf(2022, 1, 9)
         coVerifyAll {
             EventType.values.forEach {
                 dataSource.getEvents(it, startDate, endDate)
@@ -238,93 +120,41 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
     }
 
     @Test
-    fun `Validate load() if requested range is in the past`() = runTest {
-        coEvery { dataSource.getEvents(any(), any(), any()) } returns emptyList()
+    fun `Validate load() if requested week is in the past and previous page (next week) is current week`() =
+        runTest {
+            coEvery { dataSource.getEvents(any(), any(), any()) } returns emptyList()
 
-        val requestedRange = EventsSummariesPagingSource.EventsSummariesDateRange(
-            startDate = LocalDate.of(2021, 1, 9).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDate = LocalDate.of(2021, 1, 15).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = false
-        )
+            val requestedWeeks = weekOf(2022, 1, 10)
 
-        val params = PagingSource.LoadParams.Refresh(requestedRange, 20, false)
-        val result = pagingSource.load(params).assertIsPage()
-        assertNotNull(result.prevKey).validate(allowSmallerRange = true)
-        assertEquals(EventsSummariesPagingSource.EventsSummariesDateRange(
-            LocalDate.of(2021, 1, 16).atStartOfDay().atOffset(ZoneOffset.UTC),
-            LocalDate.of(2021, 1, 22).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = false
-        ), result.prevKey)
-        assertNotNull(result.nextKey).validate(allowSmallerRange = false)
-        assertEquals(EventsSummariesPagingSource.EventsSummariesDateRange(
-            LocalDate.of(2021, 1, 2).atStartOfDay().atOffset(ZoneOffset.UTC),
-            LocalDate.of(2021, 1, 8).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = false
-        ), result.nextKey)
+            val params = PagingSource.LoadParams.Refresh(requestedWeeks, 20, false)
+            val result = pagingSource.load(params).assertIsPage()
+            assertNotNull(result.prevKey).validate()
+            assertEquals(weekOf(2022, 1, 17), result.prevKey)
+            assertNotNull(result.nextKey).validate()
+            assertEquals(
+                weekOf(2022, 1, 3), result.nextKey
+            )
 
-        val startDate = requestedRange.startDate.toInstant()
-        val endDate = requestedRange.endDate.toInstant()
-        coVerifyAll {
-            EventType.values.forEach {
-                dataSource.getEvents(it, startDate, endDate)
+            val startDate = instantOf(2022, 1, 10)
+            val endDate = instantOf(2022, 1, 16)
+            coVerifyAll {
+                EventType.values.forEach {
+                    dataSource.getEvents(it, startDate, endDate)
+                }
             }
         }
-    }
 
     @Test
-    fun `Validate load() if requested range is in the past and previous page contains current day`() = runTest {
-        coEvery { dataSource.getEvents(any(), any(), any()) } returns emptyList()
-
-        val requestedRange = EventsSummariesPagingSource.EventsSummariesDateRange(
-            startDate = LocalDate.of(2022, 1, 9).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDate = LocalDate.of(2022, 1, 15).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = false
-        )
-
-        val params = PagingSource.LoadParams.Refresh(requestedRange, 20, false)
-        val result = pagingSource.load(params).assertIsPage()
-        assertNotNull(result.prevKey).validate(allowSmallerRange = true)
-        assertEquals(EventsSummariesPagingSource.EventsSummariesDateRange(
-            LocalDate.of(2022, 1, 16).atStartOfDay().atOffset(ZoneOffset.UTC),
-            LocalDate.of(2022, 1, 16).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = true
-        ), result.prevKey)
-        assertNotNull(result.nextKey).validate(allowSmallerRange = false)
-        assertEquals(EventsSummariesPagingSource.EventsSummariesDateRange(
-            LocalDate.of(2022, 1, 2).atStartOfDay().atOffset(ZoneOffset.UTC),
-            LocalDate.of(2022, 1, 8).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = false
-        ), result.nextKey)
-
-        val startDate = requestedRange.startDate.toInstant()
-        val endDate = requestedRange.endDate.toInstant()
-        coVerifyAll {
-            EventType.values.forEach {
-                dataSource.getEvents(it, startDate, endDate)
-            }
-        }
-    }
-
-    @Test
-    fun `Validate load() if requested range is in the future`() = runTest {
-        val requestedRange = EventsSummariesPagingSource.EventsSummariesDateRange(
-            startDate = LocalDate.of(2022, 2, 9).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDate = LocalDate.of(2022, 2, 15).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = false
-        )
-        val params = PagingSource.LoadParams.Refresh(requestedRange, 20, false)
+    fun `Validate load() if requested week is in the future`() = runTest {
+        val requestedWeeks = weekOf(2022, 1, 24)
+        val params = PagingSource.LoadParams.Refresh(requestedWeeks, 20, false)
         pagingSource.load(params).assertIsInvalid()
     }
 
     @Test
     fun `Validate that load() handles exceptions`() = runTest {
         coEvery { dataSource.getEvents(any(), any(), any()) } throws Exception("nope")
-        val requestedRange = EventsSummariesPagingSource.EventsSummariesDateRange(
-            startDate = LocalDate.of(2022, 1, 14).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDate = LocalDate.of(2022, 1, 16).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = true
-        )
-        val params = PagingSource.LoadParams.Refresh(requestedRange, 20, false)
+        val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         pagingSource.load(params).assertIsError()
         coVerify { dataSource.getEvents(any(), any(), any()) }
     }
@@ -335,12 +165,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
             delay(1000)
             emptyList()
         }
-        val requestedRange = EventsSummariesPagingSource.EventsSummariesDateRange(
-            startDate = LocalDate.of(2022, 1, 14).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDate = LocalDate.of(2022, 1, 16).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = true
-        )
-        val params = PagingSource.LoadParams.Refresh(requestedRange, 20, false)
+        val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         val job = launch {
             assertFailsWith<CancellationException> {
                 pagingSource.load(params)
@@ -354,12 +179,8 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
     @Test
     fun `Validate that successive loads of empty pages throttle`() = runTest {
         coEvery { dataSource.getEvents(any(), any(), any()) } returns emptyList()
-        val requestedRange = EventsSummariesPagingSource.EventsSummariesDateRange(
-            startDate = LocalDate.of(2022, 1, 14).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDate = LocalDate.of(2022, 1, 16).atStartOfDay().atOffset(ZoneOffset.UTC),
-            endDateWasCurrentDayAtCreationTime = true
-        )
-        val params = PagingSource.LoadParams.Append(requestedRange, 20, false)
+        val requestedWeeks = weekOf(2022, 1, 10)
+        val params = PagingSource.LoadParams.Append(requestedWeeks, 20, false)
         pagingSource.load(params)
         val time = currentTime
         pagingSource.load(params)
@@ -378,28 +199,28 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
         @Parameterized.Parameters(name = "systemTimeZone={0}")
         @JvmStatic
         fun parameters(): Iterable<ZoneId> = timeZones
-
-        private fun EventsSummariesPagingSource.EventsSummariesDateRange.validate(allowSmallerRange: Boolean) {
-            val duration = Duration.between(startDate, endDate)
-            if (!allowSmallerRange) {
-                assertEquals(Duration.ofDays(EventsSummariesPagingSource.PAGE_SIZE_IN_DAYS), duration)
-            } else {
-                assertEquals(duration.truncatedTo(ChronoUnit.DAYS), duration)
-                assertTrue(duration.toDays() in 0..EventsSummariesPagingSource.PAGE_SIZE_IN_DAYS, "Duration of ${duration.toDays()} days is not in valid range")
-            }
-            assertEquals(startDate.truncatedTo(ChronoUnit.DAYS), startDate)
-            assertEquals(endDate.truncatedTo(ChronoUnit.DAYS), endDate)
-            assertEquals(ZoneOffset.UTC, startDate.offset)
-            assertEquals(ZoneOffset.UTC, endDate.offset)
-        }
-
-        private fun PagingSource.LoadResult<EventsSummariesPagingSource.EventsSummariesDateRange, EventSummary>.assertIsPage() =
-            assertIs<PagingSource.LoadResult.Page<EventsSummariesPagingSource.EventsSummariesDateRange, EventSummary>>(this)
-
-        private fun PagingSource.LoadResult<EventsSummariesPagingSource.EventsSummariesDateRange, EventSummary>.assertIsInvalid() =
-            assertIs<PagingSource.LoadResult.Invalid<EventsSummariesPagingSource.EventsSummariesDateRange, EventSummary>>(this)
-
-        private fun PagingSource.LoadResult<EventsSummariesPagingSource.EventsSummariesDateRange, EventSummary>.assertIsError() =
-            assertIs<PagingSource.LoadResult.Error<EventsSummariesPagingSource.EventsSummariesDateRange, EventSummary>>(this)
     }
 }
+
+private fun weekOf(year: Int, month: Int, dayOfMonthAtStartOfWeek: Int): Week {
+    return Week(LocalDate.of(year, month, dayOfMonthAtStartOfWeek))
+}
+
+private fun instantOf(year: Int, month: Int, dayOfMonth: Int): Instant {
+    return LocalDate.of(year, month, dayOfMonth).atStartOfDay().toInstant(ZoneOffset.UTC)
+}
+
+private fun Week.validate() {
+    val firstDayDateTime = getFirstDayInstant().atOffset(ZoneOffset.UTC)
+    assertEquals(firstDayDateTime.truncatedTo(ChronoUnit.DAYS), firstDayDateTime)
+    assertEquals(DayOfWeek.MONDAY, firstDayDateTime.dayOfWeek)
+}
+
+private fun PagingSource.LoadResult<Week, EventSummary>.assertIsPage() =
+    assertIs<PagingSource.LoadResult.Page<Week, EventSummary>>(this)
+
+private fun PagingSource.LoadResult<Week, EventSummary>.assertIsInvalid() =
+    assertIs<PagingSource.LoadResult.Invalid<Week, EventSummary>>(this)
+
+private fun PagingSource.LoadResult<Week, EventSummary>.assertIsError() =
+    assertIs<PagingSource.LoadResult.Error<Week, EventSummary>>(this)
