@@ -3,7 +3,7 @@ package org.equeim.spacer.donki.data.repository
 import android.content.Context
 import android.util.Log
 import androidx.paging.PagingSource
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
 import org.equeim.spacer.donki.data.model.EventDetails
 import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventSummary
