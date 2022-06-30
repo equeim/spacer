@@ -8,10 +8,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.paging.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.*
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventSummary
@@ -41,8 +38,6 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
         DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
     private val eventDateFormatter: DateTimeFormatter =
         DateTimeFormatterBuilder().appendLocalized(FormatStyle.LONG, null).appendLiteral(' ').appendZoneText(TextStyle.SHORT).toFormatter()
-    private val timeZoneFormatter =
-        DateTimeFormatterBuilder().appendZoneText(TextStyle.SHORT).toFormatter()
 
     private val eventTypesStrings = ConcurrentHashMap<EventType, String>()
 
