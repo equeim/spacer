@@ -29,9 +29,9 @@ import kotlinx.coroutines.flow.*
 import org.equeim.spacer.ui.screen.Destination
 import org.equeim.spacer.ui.screen.donki.DonkiEventsScreen
 import org.equeim.spacer.ui.theme.ApplicationTheme
-import org.equeim.spacer.ui.utils.getApplicationOrThrow
 import org.equeim.spacer.ui.utils.isNightModeActive
 import org.equeim.spacer.ui.utils.nightMode
+import org.equeim.spacer.utils.getApplicationOrThrow
 
 private const val TAG = "MainActivity"
 
