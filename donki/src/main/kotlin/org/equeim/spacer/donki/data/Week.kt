@@ -42,14 +42,7 @@ internal value class Week @VisibleForTesting constructor(
     override fun compareTo(other: Week) = firstDay.compareTo(other.firstDay)
 
     companion object {
-        fun getCurrentWeek(clock: Clock): Week {
-            return Week(
-                Instant.now(clock)
-                    .atOffset(ZoneOffset.UTC)
-                    .toLocalDate()
-                    .with(ChronoField.DAY_OF_WEEK, 1)
-            )
-        }
+        fun getCurrentWeek(clock: Clock): Week = fromInstant(Instant.now(clock))
 
         private const val INITIAL_LOAD_WEEKS_COUNT = 3
 
@@ -58,6 +51,13 @@ internal value class Week @VisibleForTesting constructor(
 
         fun getInitialLoadWeeks(clock: Clock): List<Week> =
             getInitialLoadWeeks(getCurrentWeek(clock))
+
+        fun fromInstant(instant: Instant) = Week(
+            instant
+                .atOffset(ZoneOffset.UTC)
+                .toLocalDate()
+                .with(ChronoField.DAY_OF_WEEK, 1)
+        )
     }
 }
 

@@ -27,7 +27,12 @@ private const val TAG = "DonkiRepository"
 
 interface DonkiRepository : Closeable {
     fun getEventSummariesPager(): Pager<*, EventSummary>
-    suspend fun getEventById(id: EventId): Event
+    suspend fun getEventById(id: EventId, forceRefresh: Boolean): EventById
+
+    data class EventById(
+        val event: Event,
+        val needsRefreshing: Boolean
+    )
 }
 
 fun DonkiRepository(context: Context): DonkiRepository = DonkiRepositoryImpl(context)
@@ -42,7 +47,7 @@ internal interface DonkiRepositoryInternal : DonkiRepository {
     suspend fun updateEventsForWeek(
         week: Week,
         eventType: EventType
-    )
+    ): List<Event>
 }
 
 private class DonkiRepositoryImpl(
@@ -61,6 +66,10 @@ private class DonkiRepositoryImpl(
         eventTypes: List<EventType>,
         refreshCacheIfNeeded: Boolean
     ): List<EventSummary> {
+        Log.d(
+            TAG,
+            "getEventSummariesForWeek() called with: week = $week, eventTypes = $eventTypes, refreshCacheIfNeeded = $refreshCacheIfNeeded"
+        )
         val allEvents = mutableListOf<EventSummary>()
         val mutex = Mutex()
         coroutineScope {
@@ -84,10 +93,12 @@ private class DonkiRepositoryImpl(
         return allEvents
     }
 
-    override suspend fun updateEventsForWeek(week: Week, eventType: EventType) {
+    override suspend fun updateEventsForWeek(week: Week, eventType: EventType): List<Event> {
+        Log.d(TAG, "updateEventsForWeek() called with: week = $week, eventType = $eventType")
         val loadTime = Instant.now(clock)
         val events = networkDataSource.getEvents(week, eventType)
         cacheDataSource.cacheWeek(week, eventType, events, loadTime)
+        return events
     }
 
     @OptIn(ExperimentalPagingApi::class)
@@ -105,12 +116,27 @@ private class DonkiRepositoryImpl(
         }
     }
 
-    override suspend fun getEventById(id: EventId): Event = try {
-        networkDataSource.getEventById(id)
-    } catch (e: Exception) {
-        if (e !is CancellationException) {
-            Log.e(TAG, "getEventDetailsById: failed to get event details", e)
+    override suspend fun getEventById(
+        id: EventId,
+        forceRefresh: Boolean
+    ): DonkiRepository.EventById {
+        Log.d(TAG, "getEventById() called with: id = $id, forceRefresh = $forceRefresh")
+        return try {
+            val (eventType, time) = id.parse()
+            val week = Week.fromInstant(time)
+            if (!forceRefresh) {
+                cacheDataSource.getEventById(id, eventType, week)?.let { return it }
+            }
+            val event =
+                updateEventsForWeek(week, eventType).find { it.id == id } ?: throw RuntimeException(
+                    "Did not find event $id in server response"
+                )
+            DonkiRepository.EventById(event, needsRefreshing = false)
+        } catch (e: Exception) {
+            if (e !is CancellationException) {
+                Log.e(TAG, "getEventDetailsById: failed to get event $id", e)
+            }
+            throw e
         }
-        throw e
     }
 }

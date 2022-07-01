@@ -87,7 +87,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         EXPECTED_INITIAL_LOAD_WEEKS.drop(1).forEach {
             coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(it, any(), any()) } returns false
         }
-        coEvery { repository.updateEventsForWeek(anyWeek(), any()) } just runs
+        coEvery { repository.updateEventsForWeek(anyWeek(), any()) } returns emptyList()
     }
 
     @Test
@@ -133,7 +133,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         EXPECTED_INITIAL_LOAD_WEEKS.forEach {
             coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(it, any(), any()) } returns true
         }
-        coEvery { repository.updateEventsForWeek(anyWeek(), any()) } just runs
+        coEvery { repository.updateEventsForWeek(anyWeek(), any()) } returns emptyList()
     }
 
     @Test
