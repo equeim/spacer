@@ -2,16 +2,17 @@
 
 package org.equeim.spacer.donki.data.model
 
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.UseSerializers
+import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import org.equeim.spacer.donki.data.model.units.Coordinates
+import org.equeim.spacer.donki.data.model.units.Latitude
+import org.equeim.spacer.donki.data.model.units.Longitude
 import java.time.Duration
 import java.time.Instant
+import kotlin.math.abs
 
 @Serializable
 data class CoronalMassEjection(
@@ -19,6 +20,7 @@ data class CoronalMassEjection(
     @SerialName("startTime") override val time: Instant,
     @SerialName("link") override val link: String,
     @SerialName("linkedEvents") @Serializable(LinkedEventsSerializer::class) override val linkedEvents: List<EventId> = emptyList(),
+    @SerialName("sourceLocation") @Serializable(SourceLocationSerializer::class) val sourceLocation: Coordinates? = null,
     @SerialName("note") val note: String,
     @SerialName("instruments") @Serializable(InstrumentsSerializer::class) val instruments: List<String> = emptyList(),
     @SerialName("cmeAnalyses") val cmeAnalyses: List<Analysis> = emptyList()
@@ -35,18 +37,22 @@ data class CoronalMassEjection(
     @Serializable
     data class Analysis(
         @SerialName("time21_5") val time215: Instant?,
-        @SerialName("latitude") val latitude: Float?,
-        @SerialName("longitude") val longitude: Float?,
+        @SerialName("latitude") val latitude: Latitude?,
+        @SerialName("longitude") val longitude: Longitude?,
         @SerialName("halfAngle") val halfAngle: Float?,
         @SerialName("speed") val speed: Float?,
+        @SerialName("type") val type: String,
+        @SerialName("isMostAccurate") val isMostAccurate: Boolean,
         @SerialName("note") val note: String,
+        @SerialName("levelOfData") val levelOfData: Int,
         @SerialName("link") val link: String,
         @SerialName("enlilList") val enlilSimulations: List<EnlilSimulation> = emptyList(),
     )
 
     @Serializable
     data class EnlilSimulation(
-        @SerialName("au") val au: Float?,
+        @SerialName("au") val au: Float,
+        @SerialName("modelCompletionTime") val modelCompletionTime: Instant,
         @SerialName("estimatedShockArrivalTime") val estimatedShockArrivalTime: Instant?,
         @SerialName("estimatedDuration") @Serializable(EnlilSimulationEstimatedDurationSerializer::class) val estimatedDuration: Duration?,
         @SerialName("rmin_re") val rminRe: Float?,
@@ -84,8 +90,49 @@ private data class CoronalMassEjectionSummaryFromJson(
     override val id: EventId,
     override val time: Instant,
     override val isEarthShockPredicted: Boolean
-) : CoronalMassEjectionSummary {
+) : CoronalMassEjectionSummary
 
+private object SourceLocationSerializer : KSerializer<Coordinates?> {
+    override val descriptor = PrimitiveSerialDescriptor(
+        SourceLocationSerializer::class.qualifiedName!!,
+        PrimitiveKind.STRING
+    )
+
+    private const val NEGATIVE_LATITUDE_HEMISPHERE = 'S'
+    private const val NEGATIVE_LONGITUDE_HEMISPHERE = 'W'
+    private val longitudeHemispheres = charArrayOf('E', 'W')
+
+    override fun deserialize(decoder: Decoder): Coordinates? {
+        val string = decoder.decodeString()
+        if (string.isEmpty()) return null
+        val latitudeHemisphere = string[0]
+        val longitudeHemisphereIndex = string.indexOfAny(longitudeHemispheres)
+        require(longitudeHemisphereIndex != -1)
+        val longitudeHemisphere = string[longitudeHemisphereIndex]
+        val latitude = string.substring(1, longitudeHemisphereIndex).toFloat().let {
+            if (latitudeHemisphere == NEGATIVE_LATITUDE_HEMISPHERE && it != 0.0f) -it else it
+        }
+        val longitude = string.substring(longitudeHemisphereIndex + 1).toFloat().let {
+            if (longitudeHemisphere == NEGATIVE_LONGITUDE_HEMISPHERE && it != 0.0f) -it else it
+        }
+        return Coordinates(Latitude(latitude), Longitude(longitude))
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    override fun serialize(encoder: Encoder, value: Coordinates?) {
+        if (value == null) {
+            encoder.encodeNull()
+            return
+        }
+        val latitudeHemisphere = if (value.latitude.value >= 0.0f) 'N' else 'S'
+        val longitudeHemisphere = if (value.longitude.value >= 0.0f) 'E' else 'W'
+        encoder.encodeString(buildString {
+            append(latitudeHemisphere)
+            append(abs(value.latitude.value))
+            append(longitudeHemisphere)
+            append(abs(value.longitude.value))
+        })
+    }
 }
 
 private object EnlilSimulationEstimatedDurationSerializer : KSerializer<Duration> {

@@ -1,5 +1,7 @@
 package org.equeim.spacer.ui.screen.donki
 
+import org.equeim.spacer.ui.components.Card
+
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -241,7 +243,6 @@ private fun DonkiEventsScreenContentPaging(
                             elevation = 6.dp,
                             modifier = Modifier.align(Alignment.CenterVertically)
                         ) {
-                            item.date
                             Text(
                                 text = item.date,
                                 style = MaterialTheme.typography.h6,
@@ -251,21 +252,14 @@ private fun DonkiEventsScreenContentPaging(
                     }
                 }
                 is DonkiEventsScreenViewModel.EventPresentation -> {
-                    @OptIn(ExperimentalMaterialApi::class)
+                    val navController = LocalNavController.current
                     Card(
-                        elevation = 2.dp,
-                        shape = RoundedCornerShape(10.dp),
-                        onClick = {},
-                        modifier = Modifier
+                        { navController.navigate(DonkiEventDetailsScreen(item.id)) },
+                        Modifier
                             .run { if (isLast) padding(top = 8.dp) else padding(vertical = 8.dp) }
                             .fillMaxWidth()
                     ) {
-                        Column(
-                            modifier = Modifier.padding(
-                                horizontal = 16.dp,
-                                vertical = 12.dp
-                            )
-                        ) {
+                        Column {
                             Text(text = item.time)
                             Text(
                                 text = item.type,
