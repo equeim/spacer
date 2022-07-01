@@ -12,6 +12,9 @@ import okhttp3.mockwebserver.MockWebServer
 import okio.Buffer
 import org.equeim.spacer.donki.data.model.*
 import org.equeim.spacer.donki.data.Week
+import org.equeim.spacer.donki.data.model.units.Coordinates
+import org.equeim.spacer.donki.data.model.units.Latitude
+import org.equeim.spacer.donki.data.model.units.Longitude
 import org.equeim.spacer.donki.instantOf
 import java.net.URL
 import java.nio.file.Files
@@ -98,6 +101,7 @@ class DonkiDataSourceNetworkTest {
                 EventId("2022-04-10T03:00:00-GST-001") to EventType.GeomagneticStorm
             )
         )
+        assertEquals(Coordinates(Latitude(-35.0f), Longitude(0.0f)), event.sourceLocation)
         assertEquals(
             "Partial halo S in COR2A and SE in C2/C3, associated with the large horizontally-stretched filament eruption with the center at around S35W00 which starts erupting around 2022-04-07T05:00Z as seen in AIA 304, other coronal signatures (dimming, rising post-eruptive arcades) also seen in AIA 193 and EUVI A 195.",
             event.note
@@ -112,15 +116,19 @@ class DonkiDataSourceNetworkTest {
         val expectedAnalyses = listOf(
             CoronalMassEjection.Analysis(
                 time215 = instantOf(2022, 4, 7, 14, 8),
-                latitude = -31.0f,
-                longitude = -40.0f,
+                latitude = Latitude(-31.0f),
+                longitude = Longitude(-40.0f),
                 halfAngle = 43.0f,
                 speed = 457.0f,
+                type = "S",
+                isMostAccurate = true,
                 note = "SOHO LASCO C3 imagery was partially blocked by the pylon (which lined up almost perfectly with the leading edge) and the CME boundary became very faint in later STEREO A COR2 imagery. However, this was mostly navigated by adjusting the image brightness and contrast.",
+                levelOfData = 1,
                 link = "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/CMEAnalysis/19700/-1",
                 enlilSimulations = listOf(
                     CoronalMassEjection.EnlilSimulation(
                         au = 2.0f,
+                        modelCompletionTime = instantOf(2022, 4, 7, 13, 56),
                         estimatedShockArrivalTime = instantOf(2022, 4, 10, 16, 0),
                         estimatedDuration = null,
                         rminRe = null,
@@ -142,11 +150,14 @@ class DonkiDataSourceNetworkTest {
             ),
             CoronalMassEjection.Analysis(
                 time215 = instantOf(2022, 4, 7, 14, 58),
-                latitude = -34.0f,
-                longitude = -41.0f,
+                latitude = Latitude(-34.0f),
+                longitude = Longitude(-41.0f),
                 halfAngle = 41.0f,
                 speed = 418.0f,
+                type = "S",
+                isMostAccurate = false,
                 note = "SOHO LASCO C3 imagery was partially blocked by the pylon (which lined up almost perfectly with the leading edge) and the CME boundary became very faint in later STEREO A COR2 imagery. However, this was mostly navigated by adjusting the image brightness and contrast.",
+                levelOfData = 0,
                 link = "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/CMEAnalysis/19697/-1",
                 enlilSimulations = emptyList()
             )
@@ -349,34 +360,6 @@ class DonkiDataSourceNetworkTest {
             }/${eventType.stringValue}${suffix}.json"
         )
         return checkNotNull(url).readToBuffer()
-    }
-
-    @Test
-    fun `Check that getEventById() throws if response is empty`() = runTest {
-        server.enqueue(MockResponse().setBody(""))
-        assertFails { dataSource.getEventById(EventId("2022-04-07T05:36:00-CME-001")) }
-    }
-
-    @Test
-    fun `Check that getEventById() throws if there is no event with given id`() = runTest {
-        server.enqueue(MockResponse().setBody(readSampleEvent(EventType.CoronalMassEjection)))
-        assertFails { dataSource.getEventById(EventId("2022-04-07T05:36:00-CME-002")) }
-    }
-
-    @Test
-    fun `Check that getEventById() succeeds`() = runTest {
-        server.enqueue(MockResponse().setBody(readSampleEvent(EventType.CoronalMassEjection)))
-        val expectedId = EventId("2022-04-07T05:36:00-CME-001")
-        val event = dataSource.getEventById(expectedId)
-        assertEquals(expectedId, event.id)
-    }
-
-    @Test
-    fun `Check that getEventById() succeeds if there are multiple events`() = runTest {
-        server.enqueue(MockResponse().setBody(readSampleEvent(EventType.CoronalMassEjection, "_multiple")))
-        val expectedId = EventId("2022-04-07T05:36:00-CME-002")
-        val event = dataSource.getEventById(expectedId)
-        assertEquals(expectedId, event.id)
     }
 }
 

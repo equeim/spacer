@@ -9,10 +9,13 @@ import androidx.room.withTransaction
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.equeim.spacer.donki.CoroutineDispatchers
+import org.equeim.spacer.donki.data.DonkiJson
+import org.equeim.spacer.donki.data.DonkiRepository
 import org.equeim.spacer.donki.data.Week
 import org.equeim.spacer.donki.data.cache.entities.CachedWeek
 import org.equeim.spacer.donki.data.cache.entities.toCachedEvent
 import org.equeim.spacer.donki.data.cache.entities.toExtras
+import org.equeim.spacer.donki.data.eventSerializer
 import org.equeim.spacer.donki.data.model.*
 import java.io.Closeable
 import java.nio.file.*
@@ -144,6 +147,35 @@ internal class DonkiDataSourceCache(
                 Log.e(
                     TAG,
                     "getEventSummariesForWeek: failed to get events summaries for week = $week, eventType = $eventType",
+                    e
+                )
+            }
+            throw e
+        }
+    }
+
+    suspend fun getEventById(id: EventId, eventType: EventType, week: Week): DonkiRepository.EventById? {
+        Log.d(TAG, "getEventById() called with: id = $id, eventType = $eventType, week = $week")
+        return try {
+            val weekLoadTime = db.cachedWeeks().getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear, eventType)
+            if (weekLoadTime == null) {
+                Log.d(TAG, "getEventById: no cache for week = $week, eventType = $eventType, returning null")
+                return null
+            }
+            val json = db.events().getEventJsonById(id)
+            if (json == null) {
+                Log.e(TAG, "getEventById: did not find event $id, returning null")
+                return null
+            }
+            val event = DonkiJson.decodeFromString(eventType.eventSerializer(), json)
+            DonkiRepository.EventById(event, week.needsRefresh(weekLoadTime)).also {
+                Log.d(TAG, "getEventById: returning event $id")
+            }
+        } catch (e: Exception) {
+            if (e !is CancellationException) {
+                Log.e(
+                    TAG,
+                    "getEventById: failed to get events for id = $id, week = $week, eventType = $eventType",
                     e
                 )
             }

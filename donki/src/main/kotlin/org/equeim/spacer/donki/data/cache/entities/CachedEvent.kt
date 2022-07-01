@@ -3,9 +3,12 @@
 package org.equeim.spacer.donki.data.cache.entities
 
 import androidx.room.*
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import org.equeim.spacer.donki.data.model.*
+import org.equeim.spacer.donki.data.DonkiJson
+import org.equeim.spacer.donki.data.eventSerializer
+import org.equeim.spacer.donki.data.model.Event
+import org.equeim.spacer.donki.data.model.EventId
+import org.equeim.spacer.donki.data.model.EventSummary
+import org.equeim.spacer.donki.data.model.EventType
 import java.time.Instant
 
 @Entity(tableName = "events")
@@ -24,16 +27,7 @@ internal fun Event.toCachedEvent() = CachedEvent(
     id = id.stringValue,
     type = type,
     time = time,
-    json = when (this) {
-        is CoronalMassEjection -> Json.encodeToString(this)
-        is GeomagneticStorm -> Json.encodeToString(this)
-        is HighSpeedStream -> Json.encodeToString(this)
-        is InterplanetaryShock -> Json.encodeToString(this)
-        is MagnetopauseCrossing -> Json.encodeToString(this)
-        is RadiationBeltEnhancement -> Json.encodeToString(this)
-        is SolarEnergeticParticle -> Json.encodeToString(this)
-        is SolarFlare -> Json.encodeToString(this)
-    }
+    json = DonkiJson.encodeToString(type.eventSerializer(), this)
 )
 
 internal data class CachedEventSummary(
@@ -72,11 +66,11 @@ internal abstract class CachedEventsDao {
             WHERE id = :id
         """
     )
-    protected abstract suspend fun _getEventJsonById(id: String): String
+    protected abstract suspend fun _getEventJsonById(id: String): String?
 
     /*
      * TODO: remove when Room supports value classes
      */
-    suspend fun getEventJsonById(id: EventId): String =
+    suspend fun getEventJsonById(id: EventId): String? =
         _getEventJsonById(id.stringValue)
 }
