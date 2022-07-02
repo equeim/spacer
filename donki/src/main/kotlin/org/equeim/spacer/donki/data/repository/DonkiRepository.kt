@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.paging.PagingSource
 import kotlinx.coroutines.CancellationException
-import org.equeim.spacer.donki.data.model.EventDetails
+import org.equeim.spacer.donki.data.model.Event
 import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventSummary
 import org.equeim.spacer.donki.data.model.EventType
@@ -16,7 +16,7 @@ private const val TAG = "DonkiRepository"
 interface DonkiRepository {
     suspend fun getEventsSummaries(eventType: EventType, startDate: Instant, endDate: Instant): List<EventSummary>
     fun getEventsSummariesPagingSource(): PagingSource<*, EventSummary>
-    suspend fun getEventDetailsById(id: EventId): EventDetails
+    suspend fun getEventById(id: EventId): Event
 }
 
 fun DonkiRepository(context: Context): DonkiRepository = DonkiRepositoryImpl(context)
@@ -42,8 +42,8 @@ private class DonkiRepositoryImpl(context: Context) : DonkiRepository {
         return EventsSummariesPagingSource(networkDataSource)
     }
 
-    override suspend fun getEventDetailsById(id: EventId): EventDetails = try {
-        networkDataSource.getEventById(id).toEventDetails()
+    override suspend fun getEventById(id: EventId): Event = try {
+        networkDataSource.getEventById(id)
     } catch (e: Exception) {
         if (e !is CancellationException) {
             Log.e(TAG, "getEventDetailsById: failed to get event details", e)
