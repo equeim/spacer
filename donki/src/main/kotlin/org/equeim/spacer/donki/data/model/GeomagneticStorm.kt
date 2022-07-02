@@ -1,27 +1,46 @@
+@file:UseSerializers(InstantSerializer::class)
+
 package org.equeim.spacer.donki.data.model
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import java.time.Instant
 
-data class GeomagneticStormSummary(
-    override val id: EventId,
-    override val time: Instant,
-    val kpIndex: Int?
-) : EventSummary {
-    override val type = EventType.GeomagneticStorm
-}
+@Serializable
+data class GeomagneticStorm(
+    @SerialName("gstID") override val id: EventId,
+    @SerialName("startTime") override val time: Instant,
+    @SerialName("link") override val link: String,
+    @SerialName("linkedEvents") @Serializable(LinkedEventsSerializer::class) override val linkedEvents: List<EventId> = emptyList(),
+    @SerialName("allKpIndex") val kpIndexes: List<KpIndex>
+) : Event {
+    override val type: EventType
+        get() = EventType.GeomagneticStorm
 
-data class GeomagneticStormDetails(
-    override val id: EventId,
-    override val time: Instant,
-    override val link: String,
-    override val linkedEvents: List<EventId>,
-    val kpIndexes: List<KpIndex>
-) : EventDetails {
-    override val type = EventType.GeomagneticStorm
-
+    @Serializable
     data class KpIndex(
-        val kpIndex: Int,
-        val observedTime: Instant,
-        val source: String
+        @SerialName("kpIndex") val kpIndex: Int,
+        @SerialName("observedTime") val observedTime: Instant,
+        @SerialName("source") val source: String
     )
+
+    override fun toEventSummary(): GeomagneticStormSummary =
+        GeomagneticStormSummaryFromJson(
+            id = id,
+            time = time,
+            kpIndex = kpIndexes.firstOrNull()?.kpIndex
+        )
 }
+
+interface GeomagneticStormSummary : EventSummary {
+    override val type: EventType
+        get() = EventType.GeomagneticStorm
+    val kpIndex: Int?
+}
+
+private data class GeomagneticStormSummaryFromJson(
+    override val id: EventId,
+    override val time: Instant,
+    override val kpIndex: Int?
+) : GeomagneticStormSummary

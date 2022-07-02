@@ -2,6 +2,7 @@ package org.equeim.spacer.donki.data.model
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -24,6 +25,7 @@ enum class EventType(internal val stringValue: String) {
 
 @JvmInline
 @Parcelize
+@Serializable
 value class EventId(internal val id: String) : Parcelable {
     data class Parsed(
         val type: EventType,
@@ -43,16 +45,18 @@ value class EventId(internal val id: String) : Parcelable {
     }
 }
 
-sealed interface EventSummary {
-    val id: EventId
-    val type: EventType
-    val time: Instant
-}
-
-sealed interface EventDetails {
+sealed interface Event {
     val id: EventId
     val type: EventType
     val time: Instant
     val link: String
     val linkedEvents: List<EventId>
+
+    fun toEventSummary(): EventSummary
+}
+
+sealed interface EventSummary {
+    val id: EventId
+    val type: EventType
+    val time: Instant
 }
