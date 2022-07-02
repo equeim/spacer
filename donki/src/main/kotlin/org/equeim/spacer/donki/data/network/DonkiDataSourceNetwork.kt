@@ -7,9 +7,9 @@ import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.ResponseBody
 import org.equeim.spacer.donki.NASA_API_KEY
+import org.equeim.spacer.donki.data.model.Event
 import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventType
-import org.equeim.spacer.donki.data.network.model.EventJson
 import org.equeim.spacer.retrofit.JsonConverterFactory
 import org.equeim.spacer.retrofit.createRetrofit
 import retrofit2.Converter
@@ -18,9 +18,7 @@ import retrofit2.create
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneOffset
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 private const val TAG = "DonkiDataSourceNetwork"
@@ -28,6 +26,7 @@ private const val TAG = "DonkiDataSourceNetwork"
 internal class DonkiDataSourceNetwork(baseUrl: HttpUrl = baseUrl()) {
     private val json = Json {
         ignoreUnknownKeys = true
+        coerceInputValues = true
         prettyPrint = true
     }
 
@@ -40,7 +39,7 @@ internal class DonkiDataSourceNetwork(baseUrl: HttpUrl = baseUrl()) {
         eventType: EventType,
         startDate: Instant,
         endDate: Instant
-    ): List<EventJson> = try {
+    ): List<Event> = try {
         when (eventType) {
             EventType.CoronalMassEjection -> api.getCoronalMassEjections(
                 startDate,
@@ -66,7 +65,7 @@ internal class DonkiDataSourceNetwork(baseUrl: HttpUrl = baseUrl()) {
         throw e
     }
 
-    suspend fun getEventById(id: EventId): EventJson = try {
+    suspend fun getEventById(id: EventId): Event = try {
         val (type, time) = id.parse()
         getEvents(type, time, time).first { it.id == id }
     } catch (e: Exception) {

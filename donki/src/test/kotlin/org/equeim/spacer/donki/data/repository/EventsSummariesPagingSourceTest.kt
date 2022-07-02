@@ -11,10 +11,8 @@ import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.equeim.spacer.donki.BaseCoroutineTest
-import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventSummary
 import org.equeim.spacer.donki.data.model.EventType
-import org.equeim.spacer.donki.data.model.HighSpeedStreamSummary
 import org.equeim.spacer.donki.data.network.DonkiDataSourceNetwork
 import org.equeim.spacer.donki.data.repository.EventsSummariesPagingSource.Week
 import org.junit.runner.RunWith
