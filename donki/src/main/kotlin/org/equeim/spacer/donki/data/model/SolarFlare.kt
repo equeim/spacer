@@ -22,14 +22,14 @@ data class SolarFlare(
     override val type: EventType
         get() = EventType.SolarFlare
 
-    override fun toEventSummary(): SolarFlareSummary =
-        SolarFlareSummary(
+    override fun toEventSummary(): EventSummary =
+        SolarFlareSummaryFromJson(
             id = id,
             time = time
         )
 }
 
-data class SolarFlareSummary(
+private data class SolarFlareSummaryFromJson(
     override val id: EventId,
     override val time: Instant
 ) : EventSummary {

@@ -18,14 +18,14 @@ data class SolarEnergeticParticle(
     override val type: EventType
         get() = EventType.SolarEnergeticParticle
 
-    override fun toEventSummary(): SolarEnergeticParticleSummary =
-        SolarEnergeticParticleSummary(
+    override fun toEventSummary(): EventSummary =
+        SolarEnergeticParticleSummaryFromJson(
             id = id,
             time = time
         )
 }
 
-data class SolarEnergeticParticleSummary(
+private data class SolarEnergeticParticleSummaryFromJson(
     override val id: EventId,
     override val time: Instant
 ) : EventSummary {

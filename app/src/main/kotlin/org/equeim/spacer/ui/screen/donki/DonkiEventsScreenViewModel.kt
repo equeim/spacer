@@ -6,7 +6,6 @@ import androidx.annotation.GuardedBy
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.paging.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -16,7 +15,7 @@ import org.equeim.spacer.AppSettings
 import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventSummary
 import org.equeim.spacer.donki.data.model.EventType
-import org.equeim.spacer.donki.data.repository.DonkiRepository
+import org.equeim.spacer.donki.data.DonkiRepository
 import org.equeim.spacer.ui.utils.defaultLocaleFlow
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -32,7 +31,6 @@ private const val TAG = "DonkiEventsScreenViewModel"
 class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(application) {
     init {
         Log.d(TAG, "DonkiEventsScreenViewModel() called")
-        LocalViewModelStoreOwner
     }
 
     private val repository = DonkiRepository(application)
@@ -46,12 +44,10 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
     @GuardedBy("localeDependentStateMutex")
     private val eventTypesStrings = mutableMapOf<EventType, String>()
 
-    private val pager = Pager(PagingConfig(pageSize = 20, enablePlaceholders = false), null) {
-        repository.getEventsSummariesPagingSource()
-    }
     val pagingData: Flow<PagingData<ListItem>>
 
     init {
+        val pager = repository.getEventSummariesPager()
         val basePagingData = pager.flow.cachedIn(viewModelScope)
 
         val defaultLocaleFlow = application.defaultLocaleFlow().onEach(::defaultLocaleChanged)
@@ -65,6 +61,11 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
         }.flowOn(Dispatchers.Default)
     }
 
+    override fun onCleared() {
+        super.onCleared()
+        repository.close()
+    }
+
     private fun PagingData<EventSummary>.toListItems(displayEventsTimeInUTC: Boolean): PagingData<ListItem> {
         val timeZone = if (displayEventsTimeInUTC) {
             ZoneId.ofOffset("UTC", ZoneOffset.UTC)
@@ -72,7 +73,7 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
             ZoneId.systemDefault()
         }
         return map { EventSummaryWithZonedTime(it, it.time.atZone(timeZone)) }
-            .insertSeparators { before, after ->
+            .insertSeparators(TerminalSeparatorType.SOURCE_COMPLETE) { before, after ->
                 when {
                     after == null -> null
                     before == null || before.zonedTime.dayOfMonth != after.zonedTime.dayOfMonth -> {
