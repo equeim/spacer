@@ -11,6 +11,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okio.Buffer
 import org.equeim.spacer.donki.data.model.*
+import org.equeim.spacer.donki.data.Week
 import org.equeim.spacer.donki.instantOf
 import java.net.URL
 import java.nio.file.Files
@@ -47,21 +48,23 @@ class DonkiDataSourceNetworkTest {
 
     @Test
     fun `Validate urls`() = runTest {
-        val startDate = LocalDate.of(2016, 9, 1).atStartOfDay().toInstant(ZoneOffset.UTC)
-        val endDate = LocalDate.of(2016, 9, 30).atStartOfDay().toInstant(ZoneOffset.UTC)
-        EventType.values().forEach { eventType ->
+        println(LocalDate.of(2016, 8, 29).dayOfWeek)
+        val week = Week(LocalDate.of(2016, 8, 29))
+        for (eventType in EventType.All) {
             server.enqueue(MockResponse().setBody(""))
-            dataSource.getEvents(eventType, startDate, endDate)
+
+            dataSource.getEvents(week, eventType)
 
             val request = server.takeRequest()
             val url = checkNotNull(request.requestUrl)
 
-            assertEquals(eventType.stringValue, url.pathSegments.single())
+            val path = url.pathSegments.single()
+            assertNotNull(EventType.All.find { it.stringValue == path })
 
             val startDateQuery = checkNotNull(url.queryParameter("startDate"))
-            assertEquals("2016-09-01", startDateQuery)
+            assertEquals("2016-08-29", startDateQuery)
             val endDateQuery = checkNotNull(url.queryParameter("endDate"))
-            assertEquals("2016-09-30", endDateQuery)
+            assertEquals("2016-09-04", endDateQuery)
         }
     }
 
@@ -74,7 +77,7 @@ class DonkiDataSourceNetworkTest {
             val urlPath = datasetPath.fileName.toString().split('_').first()
             val eventType = EventType.values().first { it.stringValue == urlPath }
             server.enqueue(MockResponse().setBody(datasetPath.readToBuffer()))
-            dataSource.getEvents(eventType, Instant.EPOCH, Instant.EPOCH)
+            dataSource.getEvents(Week(LocalDate.MIN), eventType)
         }
     }
 
@@ -82,7 +85,7 @@ class DonkiDataSourceNetworkTest {
     fun `Validate coronal mass ejection event parsing`() = runBlocking {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.CoronalMassEjection)))
         val events =
-            dataSource.getEvents(EventType.CoronalMassEjection, Instant.EPOCH, Instant.EPOCH)
+            dataSource.getEvents(Week(LocalDate.MIN), EventType.CoronalMassEjection)
         val event = events.single() as CoronalMassEjection
         validateCommonProperties(
             event,
@@ -155,7 +158,7 @@ class DonkiDataSourceNetworkTest {
     fun `Validate geomagnetic storm event parsing`() = runBlocking {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.GeomagneticStorm)))
         val events =
-            dataSource.getEvents(EventType.GeomagneticStorm, Instant.EPOCH, Instant.EPOCH)
+            dataSource.getEvents(Week(LocalDate.MIN), EventType.GeomagneticStorm)
         val event = events.single() as GeomagneticStorm
         validateCommonProperties(
             event,
@@ -188,7 +191,7 @@ class DonkiDataSourceNetworkTest {
     fun `Validate interplanetary shock event parsing`() = runBlocking {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.InterplanetaryShock)))
         val events =
-            dataSource.getEvents(EventType.InterplanetaryShock, Instant.EPOCH, Instant.EPOCH)
+            dataSource.getEvents(Week(LocalDate.MIN), EventType.InterplanetaryShock)
         val event = events.single() as InterplanetaryShock
         validateCommonProperties(
             event,
@@ -211,7 +214,7 @@ class DonkiDataSourceNetworkTest {
     fun `Validate solar flare event parsing`() = runBlocking {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.SolarFlare)))
         val events =
-            dataSource.getEvents(EventType.SolarFlare, Instant.EPOCH, Instant.EPOCH)
+            dataSource.getEvents(Week(LocalDate.MIN), EventType.SolarFlare)
         val event = events.single() as SolarFlare
         validateCommonProperties(
             event,
@@ -232,7 +235,7 @@ class DonkiDataSourceNetworkTest {
     fun `Validate solar energetic particle event parsing`() = runBlocking {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.SolarEnergeticParticle)))
         val events =
-            dataSource.getEvents(EventType.SolarEnergeticParticle, Instant.EPOCH, Instant.EPOCH)
+            dataSource.getEvents(Week(LocalDate.MIN), EventType.SolarEnergeticParticle)
         val event = events.single() as SolarEnergeticParticle
         validateCommonProperties(
             event,
@@ -252,7 +255,7 @@ class DonkiDataSourceNetworkTest {
     fun `Validate magnetopause crossing event parsing`() = runBlocking {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.MagnetopauseCrossing)))
         val events =
-            dataSource.getEvents(EventType.MagnetopauseCrossing, Instant.EPOCH, Instant.EPOCH)
+            dataSource.getEvents(Week(LocalDate.MIN), EventType.MagnetopauseCrossing)
         val event = events.single() as MagnetopauseCrossing
         validateCommonProperties(
             event,
@@ -273,7 +276,7 @@ class DonkiDataSourceNetworkTest {
     fun `Validate radiation belt enhancement event parsing`() = runBlocking {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.RadiationBeltEnhancement)))
         val events =
-            dataSource.getEvents(EventType.RadiationBeltEnhancement, Instant.EPOCH, Instant.EPOCH)
+            dataSource.getEvents(Week(LocalDate.MIN), EventType.RadiationBeltEnhancement)
         val event = events.single() as RadiationBeltEnhancement
         validateCommonProperties(
             event,
@@ -294,7 +297,7 @@ class DonkiDataSourceNetworkTest {
     fun `Validate high speed stream event parsing`() = runBlocking {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.HighSpeedStream)))
         val events =
-            dataSource.getEvents(EventType.HighSpeedStream, Instant.EPOCH, Instant.EPOCH)
+            dataSource.getEvents(Week(LocalDate.MIN), EventType.HighSpeedStream)
         val event = events.single() as HighSpeedStream
         validateCommonProperties(
             event,

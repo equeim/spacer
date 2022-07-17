@@ -19,14 +19,14 @@ data class InterplanetaryShock(
     override val type: EventType
         get() = EventType.InterplanetaryShock
 
-    override fun toEventSummary(): InterplanetaryShockSummary =
-        InterplanetaryShockSummary(
+    override fun toEventSummary(): EventSummary =
+        InterplanetaryShockSummaryFromJson(
             id = id,
             time = time
         )
 }
 
-data class InterplanetaryShockSummary(
+private data class InterplanetaryShockSummaryFromJson(
     override val id: EventId,
     override val time: Instant
 ) : EventSummary {

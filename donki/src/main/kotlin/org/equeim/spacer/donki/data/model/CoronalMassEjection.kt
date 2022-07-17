@@ -26,6 +26,12 @@ data class CoronalMassEjection(
     override val type: EventType
         get() = EventType.CoronalMassEjection
 
+    fun isEarthShockPredicted(): Boolean {
+        return cmeAnalyses.any { analysis ->
+            analysis.enlilSimulations.any { it.estimatedShockArrivalTime != null }
+        }
+    }
+
     @Serializable
     data class Analysis(
         @SerialName("time21_5") val time215: Instant?,
@@ -64,9 +70,7 @@ data class CoronalMassEjection(
         CoronalMassEjectionSummaryFromJson(
             id = id,
             time = time,
-            isEarthShockPredicted = cmeAnalyses.any { analysis ->
-                analysis.enlilSimulations.any { it.estimatedShockArrivalTime != null }
-            }
+            isEarthShockPredicted = isEarthShockPredicted()
         )
 }
 
@@ -80,7 +84,9 @@ private data class CoronalMassEjectionSummaryFromJson(
     override val id: EventId,
     override val time: Instant,
     override val isEarthShockPredicted: Boolean
-) : CoronalMassEjectionSummary
+) : CoronalMassEjectionSummary {
+
+}
 
 private object EnlilSimulationEstimatedDurationSerializer : KSerializer<Duration> {
     private val SECONDS_IN_HOUR = Duration.ofHours(1).seconds.toFloat()
