@@ -27,8 +27,8 @@ internal class EventsSummariesRemoteMediator(
     private val cacheDataSource: DonkiDataSourceCache,
     private val clock: Clock = Clock.systemDefaultZone()
 ) : RemoteMediator<Week, EventSummary>() {
-    private val _invalidationEvents = MutableSharedFlow<Unit>()
-    val invalidationEvents: Flow<Unit> by ::_invalidationEvents
+    private val _refreshed = MutableSharedFlow<Unit>()
+    val refreshed: Flow<Unit> by ::_refreshed
 
     override suspend fun initialize(): InitializeAction {
         Log.d(TAG, "initialize() called")
@@ -80,7 +80,7 @@ internal class EventsSummariesRemoteMediator(
                     launch { repository.updateEventsForWeek(week, type) }
                 }
             }
-            _invalidationEvents.emit(Unit)
+            _refreshed.emit(Unit)
             MediatorResult.Success(endOfPaginationReached = false)
         } catch (e: Exception) {
             if (e is CancellationException) throw e
