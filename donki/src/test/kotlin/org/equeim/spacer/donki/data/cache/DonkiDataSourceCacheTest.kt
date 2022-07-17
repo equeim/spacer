@@ -19,7 +19,12 @@ import kotlin.test.assertTrue
 @RunWith(RobolectricTestRunner::class)
 class DonkiDataSourceCacheTest : BaseCoroutineTest() {
     private val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), DonkiDatabase::class.java).build()
-    private val dataSource = DonkiDataSourceCache(db)
+    private lateinit var dataSource: DonkiDataSourceCache
+
+    override fun before() {
+        super.before()
+        dataSource = DonkiDataSourceCache(ApplicationProvider.getApplicationContext(), db, coroutineDispatchers)
+    }
 
     override fun after() {
         dataSource.close()
