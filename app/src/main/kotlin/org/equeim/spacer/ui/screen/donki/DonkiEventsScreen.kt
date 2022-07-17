@@ -1,5 +1,6 @@
 package org.equeim.spacer.ui.screen.donki
 
+import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -10,8 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -25,6 +25,10 @@ import androidx.paging.compose.itemsIndexed
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import dev.olshevski.navigation.reimagined.navigate
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.merge
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.LocalNavController
 import org.equeim.spacer.R
@@ -35,6 +39,7 @@ import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.utils.addBottomInsetUnless
 import org.equeim.spacer.ui.utils.hasBottomPadding
 import org.equeim.spacer.ui.utils.toAppBarElevation
+import kotlin.time.Duration.Companion.milliseconds
 
 @Parcelize
 object DonkiEventsScreen : Destination {
@@ -45,8 +50,8 @@ object DonkiEventsScreen : Destination {
 @Composable
 private fun DonkiEventsScreen() {
     val model = viewModel<DonkiEventsScreenViewModel>()
-    val items = model.pagingData.collectAsLazyPagingItems()
-    DonkiEventsScreen(items)
+    val paging = model.pagingData.collectAsLazyPagingItems()
+    DonkiEventsScreen(paging)
 }
 
 @Composable
@@ -56,21 +61,9 @@ private fun DonkiEventsScreen(paging: LazyPagingItems<DonkiEventsScreenViewModel
     val lazyListState = if (paging.itemCount == 0) initialLazyListState else actualLazyListState
 
     val scaffoldState = rememberScaffoldState()
-    val snackbarError =
-        paging.loadState.run { prepend as? LoadState.Error ?: append as? LoadState.Error }
-    if (snackbarError != null) {
-        val context = LocalContext.current
-        LaunchedEffect(scaffoldState.snackbarHostState) {
-            val result = scaffoldState.snackbarHostState.showSnackbar(
-                message = context.getString(R.string.error),
-                actionLabel = context.getString(R.string.retry),
-                duration = SnackbarDuration.Indefinite
-            )
-            if (result == SnackbarResult.ActionPerformed) {
-                paging.retry()
-            }
-        }
-    }
+
+    SnackbarError(paging, scaffoldState)
+    ScrollToTopAfterSourceRefresh(lazyListState, paging)
 
     Scaffold(
         scaffoldState = scaffoldState,
@@ -86,19 +79,21 @@ private fun DonkiEventsScreen(paging: LazyPagingItems<DonkiEventsScreenViewModel
             }
         }
     ) { contentPadding ->
-        Box(Modifier.fillMaxSize().padding(contentPadding)) {
-            val isInitialLoading = paging.loadState.refresh is LoadState.Loading ||
-                    (paging.itemCount == 0 && paging.loadState.run {
-                        append is LoadState.Loading || prepend is LoadState.Loading
-                    })
-            val swipeRefreshState = rememberSwipeRefreshState(isInitialLoading)
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(contentPadding)
+        ) {
+            val showRefreshIndicator by derivedStateOf { showRefreshIndicator(paging) }
+            val swipeRefreshState = rememberSwipeRefreshState(showRefreshIndicator)
             SwipeRefresh(
                 swipeRefreshState,
-                onRefresh = { paging.refresh() },
+                onRefresh = paging::refresh,
                 modifier = Modifier.fillMaxSize()
             ) {
+                val fullscreenError by derivedStateOf { getFullscreenError(paging) }
                 when {
-                    paging.loadState.refresh is LoadState.Error -> DonkiEventsScreenContentErrorPlaceholder()
+                    fullscreenError != null -> DonkiEventsScreenContentErrorPlaceholder()
                     paging.itemCount == 0 -> DonkiEventsScreenContentLoadingPlaceholder()
                     else -> DonkiEventsScreenContentPaging(
                         lazyListState,
@@ -108,14 +103,100 @@ private fun DonkiEventsScreen(paging: LazyPagingItems<DonkiEventsScreenViewModel
                 }
             }
             if (paging.itemCount != 0) {
-                if (paging.loadState.prepend is LoadState.Loading) {
-                    LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.TopStart))
+                if (paging.loadState.source.prepend is LoadState.Loading) {
+                    LinearProgressIndicator(
+                        Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.TopStart))
                 }
-                if (paging.loadState.append is LoadState.Loading) {
-                    LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.BottomStart))
+                if (paging.loadState.source.append is LoadState.Loading) {
+                    LinearProgressIndicator(
+                        Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomStart))
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SnackbarError(paging: LazyPagingItems<*>, scaffoldState: ScaffoldState) {
+    val snackbarError by derivedStateOf { getSnackbarError(paging) }
+    if (snackbarError != null) {
+        val context = LocalContext.current
+        LaunchedEffect(scaffoldState.snackbarHostState) {
+            val result = scaffoldState.snackbarHostState.showSnackbar(
+                message = context.getString(R.string.error),
+                actionLabel = context.getString(R.string.retry),
+                duration = SnackbarDuration.Indefinite
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                paging.retry()
+            }
+        }
+    }
+}
+
+private val SCROLL_TO_TOP_DELAY = 200.milliseconds
+@Composable
+private fun ScrollToTopAfterSourceRefresh(lazyListState: LazyListState, paging: LazyPagingItems<DonkiEventsScreenViewModel.ListItem>) {
+    val isAtTheTop by derivedStateOf { lazyListState.firstVisibleItemIndex == 0 && lazyListState.firstVisibleItemScrollOffset == 0 }
+    val sourceIsRefreshing by derivedStateOf { paging.loadState.source.refresh is LoadState.Loading }
+    LaunchedEffect(lazyListState, paging) {
+        val sourceFinishedRefreshing = snapshotFlow { sourceIsRefreshing }.filter { !it }
+        merge(sourceFinishedRefreshing, lazyListState.interactionSource.interactions).collectLatest {
+            if (it !is Interaction && isAtTheTop) {
+                delay(SCROLL_TO_TOP_DELAY)
+                lazyListState.animateScrollToItem(0)
+            }
+        }
+    }
+}
+
+private fun showRefreshIndicator(paging: LazyPagingItems<*>): Boolean {
+    return with (paging.loadState) {
+        isLoading(source.refresh, mediator?.refresh) ||
+                (paging.itemCount == 0 && isLoading(source.append, source.prepend))
+    }
+}
+
+private fun getFullscreenError(paging: LazyPagingItems<*>): LoadState.Error? {
+    return if (paging.itemCount == 0) {
+        with(paging.loadState) {
+            anyError(source.refresh, mediator?.refresh, source.append, source.prepend)
+        }
+    } else {
+        null
+    }
+}
+
+private fun getSnackbarError(paging: LazyPagingItems<*>): LoadState.Error? {
+    return with (paging.loadState) {
+        anyError(source.refresh, mediator?.refresh, source.append, source.prepend)
+    }
+}
+
+private fun isLoading(vararg states: LoadState?): Boolean =
+    states.asSequence().filterIsInstance<LoadState.Loading>().any()
+
+private fun anyError(vararg states: LoadState?): LoadState.Error? =
+    states.asSequence().filterIsInstance<LoadState.Error>().firstOrNull()
+
+@Composable
+private fun BoxScope.DonkiEventsScreenContentErrorPlaceholder() {
+    /**
+     * We need [verticalScroll] for [SwipeRefresh] to work
+     */
+    Box(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())) {
+        Text(
+            text = stringResource(R.string.error),
+            modifier = Modifier.align(Alignment.Center),
+            style = MaterialTheme.typography.h6
+        )
     }
 }
 
@@ -126,17 +207,6 @@ private fun BoxScope.DonkiEventsScreenContentLoadingPlaceholder() {
         style = MaterialTheme.typography.h6,
         modifier = Modifier.align(Alignment.Center)
     )
-}
-
-@Composable
-private fun DonkiEventsScreenContentErrorPlaceholder() {
-    Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        Text(
-            text = stringResource(R.string.error),
-            modifier = Modifier.align(Alignment.Center),
-            style = MaterialTheme.typography.h6
-        )
-    }
 }
 
 @Composable
@@ -153,12 +223,7 @@ private fun DonkiEventsScreenContentPaging(
     ) {
         itemsIndexed(
             paging,
-            key = { _, item ->
-                when (item) {
-                    is DonkiEventsScreenViewModel.EventPresentation -> item.id
-                    is DonkiEventsScreenViewModel.DateSeparator -> item.nextEventEpochSecond
-                }
-            }
+            key = { _, item -> item.lazyListKey }
         ) { index, item ->
             val isFirst = index == 0
             val isLast = index == paging.itemCount - 1
@@ -213,3 +278,9 @@ private fun DonkiEventsScreenContentPaging(
         }
     }
 }
+
+private val DonkiEventsScreenViewModel.ListItem.lazyListKey: Any
+    get() = when (this) {
+        is DonkiEventsScreenViewModel.EventPresentation -> id
+        is DonkiEventsScreenViewModel.DateSeparator -> nextEventEpochSecond
+    }

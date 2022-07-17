@@ -9,6 +9,8 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.serializer
 import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 internal object InstantSerializer : KSerializer<Instant> {
@@ -21,7 +23,7 @@ internal object InstantSerializer : KSerializer<Instant> {
         formatter.parse(decoder.decodeString(), Instant::from)
 
     override fun serialize(encoder: Encoder, value: Instant) =
-        encoder.encodeString(formatter.format(value))
+        encoder.encodeString(formatter.format(value.atOffset(ZoneOffset.UTC)))
 }
 
 internal object LinkedEventsSerializer : KSerializer<List<EventId>> {

@@ -19,26 +19,26 @@ enum class EventType(internal val stringValue: String) {
     HighSpeedStream("HSS");
 
     internal companion object {
-        val values = values()
+        val All = values().asList()
     }
 }
 
 @JvmInline
 @Parcelize
 @Serializable
-value class EventId(internal val id: String) : Parcelable {
+value class EventId(internal val stringValue: String) : Parcelable {
     data class Parsed(
         val type: EventType,
         val time: Instant
     )
 
     fun parse(): Parsed = runCatching {
-        val typeEnd = id.lastIndexOf('-')
-        val typeStart = id.lastIndexOf('-', typeEnd - 1) + 1
-        val typeString = id.substring(typeStart, typeEnd)
-        val type = EventType.values.find { it.stringValue == typeString }
+        val typeEnd = stringValue.lastIndexOf('-')
+        val typeStart = stringValue.lastIndexOf('-', typeEnd - 1) + 1
+        val typeString = stringValue.substring(typeStart, typeEnd)
+        val type = EventType.All.find { it.stringValue == typeString }
             ?: throw RuntimeException("Unknown event type string $typeString")
-        val time = DateTimeFormatter.ISO_DATE_TIME.parse(id.substring(0, typeStart - 1), LocalDateTime::from).toInstant(ZoneOffset.UTC)
+        val time = DateTimeFormatter.ISO_DATE_TIME.parse(stringValue.substring(0, typeStart - 1), LocalDateTime::from).toInstant(ZoneOffset.UTC)
         Parsed(type, time)
     }.getOrElse {
         throw RuntimeException("Failed to parse event id $this", it)
@@ -55,7 +55,7 @@ sealed interface Event {
     fun toEventSummary(): EventSummary
 }
 
-sealed interface EventSummary {
+interface EventSummary {
     val id: EventId
     val type: EventType
     val time: Instant

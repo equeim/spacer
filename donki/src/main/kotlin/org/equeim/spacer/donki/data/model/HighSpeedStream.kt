@@ -18,14 +18,14 @@ data class HighSpeedStream(
     override val type: EventType
         get() = EventType.HighSpeedStream
 
-    override fun toEventSummary(): HighSpeedStreamSummary =
-        HighSpeedStreamSummary(
+    override fun toEventSummary(): EventSummary =
+        HighSpeedStreamSummaryFromJson(
             id = id,
             time = time
         )
 }
 
-data class HighSpeedStreamSummary(
+private data class HighSpeedStreamSummaryFromJson(
     override val id: EventId,
     override val time: Instant
 ) : EventSummary {
