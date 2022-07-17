@@ -18,14 +18,14 @@ data class RadiationBeltEnhancement(
     override val type: EventType
         get() = EventType.RadiationBeltEnhancement
 
-    override fun toEventSummary(): RadiationBeltEnhancementSummary =
-        RadiationBeltEnhancementSummary(
+    override fun toEventSummary(): EventSummary =
+        RadiationBeltEnhancementSummaryFromJson(
             id = id,
             time = time
         )
 }
 
-data class RadiationBeltEnhancementSummary(
+private data class RadiationBeltEnhancementSummaryFromJson(
     override val id: EventId,
     override val time: Instant
 ) : EventSummary {

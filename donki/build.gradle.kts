@@ -23,13 +23,17 @@ dependencies {
 
     implementation(libs.coroutines.core)
 
+    implementation(libs.androidx.core)
     implementation(libs.androidx.paging)
+
     implementation(libs.androidx.room)
     ksp(libs.androidx.room.compiler)
 
+    testImplementation(libs.androidx.test.core)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.mockwebserver)
+    testImplementation(libs.robolectric)
 }

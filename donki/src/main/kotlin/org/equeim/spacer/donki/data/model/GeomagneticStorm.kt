@@ -18,6 +18,8 @@ data class GeomagneticStorm(
     override val type: EventType
         get() = EventType.GeomagneticStorm
 
+    fun kpIndex(): Int? = kpIndexes.firstOrNull()?.kpIndex
+
     @Serializable
     data class KpIndex(
         @SerialName("kpIndex") val kpIndex: Int,
@@ -29,7 +31,7 @@ data class GeomagneticStorm(
         GeomagneticStormSummaryFromJson(
             id = id,
             time = time,
-            kpIndex = kpIndexes.firstOrNull()?.kpIndex
+            kpIndex = kpIndex()
         )
 }
 
