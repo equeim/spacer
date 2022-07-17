@@ -7,6 +7,7 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -99,7 +100,7 @@ private class DonkiRepositoryImpl(
         ) {
             EventsSummariesPagingSource(
                 this,
-                mediator.invalidationEvents
+                merge(mediator.refreshed, cacheDataSource.databaseRecreated)
             )
         }
     }

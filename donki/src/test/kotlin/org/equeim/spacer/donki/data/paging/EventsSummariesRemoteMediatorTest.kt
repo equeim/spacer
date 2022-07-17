@@ -29,7 +29,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
     private val repository = mockk<DonkiRepositoryInternal>()
     private val cacheDataSource = mockk<DonkiDataSourceCache>()
     private val mediator = EventsSummariesRemoteMediator(repository, cacheDataSource, clock)
-    private val invalidationEvents = mutableListOf<Unit>()
+    private val refreshedEvents = mutableListOf<Unit>()
 
     override fun after() {
         super.after()
@@ -83,7 +83,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         val result = mediator.load(LoadType.PREPEND, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Success>(result)
         assertTrue(result.endOfPaginationReached)
-        assertEquals(emptyList(), invalidationEvents)
+        assertEquals(emptyList(), refreshedEvents)
     }
 
     @Test
@@ -91,7 +91,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         val result = mediator.load(LoadType.APPEND, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Success>(result)
         assertFalse(result.endOfPaginationReached)
-        assertEquals(emptyList(), invalidationEvents)
+        assertEquals(emptyList(), refreshedEvents)
     }
 
     @Test
@@ -100,7 +100,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Success>(result)
         assertFalse(result.endOfPaginationReached)
-        assertEquals(emptyList(), invalidationEvents)
+        assertEquals(emptyList(), refreshedEvents)
         coVerify { cacheDataSource.isWeekCachedAndOutOfDate(anyWeek(), any()) }
     }
 
@@ -114,7 +114,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Success>(result)
         assertFalse(result.endOfPaginationReached)
-        assertEquals(listOf(Unit), invalidationEvents)
+        assertEquals(listOf(Unit), refreshedEvents)
         coVerify { cacheDataSource.isWeekCachedAndOutOfDate(anyWeek(), any()) }
         coVerify { repository.updateEventsForWeek(EXPECTED_INITIAL_LOAD_WEEKS.first(), any()) }
     }
@@ -128,7 +128,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Success>(result)
         assertFalse(result.endOfPaginationReached)
-        assertEquals(listOf(Unit), invalidationEvents)
+        assertEquals(listOf(Unit), refreshedEvents)
         coVerify { cacheDataSource.isWeekCachedAndOutOfDate(anyWeek(), any()) }
         EXPECTED_INITIAL_LOAD_WEEKS.forEach {
             coVerify { repository.updateEventsForWeek(it, any()) }
@@ -136,10 +136,10 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
     }
 
     private fun validateLoad(block: suspend () -> Unit) = runTest {
-        val invalidationEventsJob = launch { mediator.invalidationEvents.toCollection(invalidationEvents) }
+        val refreshedEventsJob = launch { mediator.refreshed.toCollection(refreshedEvents) }
         runCurrent()
         block()
-        invalidationEventsJob.cancel()
+        refreshedEventsJob.cancel()
     }
 
     companion object {
