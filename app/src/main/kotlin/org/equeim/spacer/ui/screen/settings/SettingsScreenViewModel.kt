@@ -4,40 +4,45 @@ import android.app.Application
 import androidx.compose.runtime.*
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import org.equeim.spacer.AppSettings
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 
 class SettingsScreenViewModel(application: Application) : AndroidViewModel(application) {
     val settings = AppSettings(application)
 
-    private var _loaded by mutableStateOf(false)
-    val loaded by ::_loaded
+    var loaded by mutableStateOf(false)
+        private set
 
-    lateinit var darkThemeMode: StateFlow<AppSettings.DarkThemeMode>
-    lateinit var displayEventsTimeInUTC: StateFlow<Boolean>
+    private val stateInJobs = mutableListOf<Job>()
+    val darkThemeMode: StateFlow<AppSettings.DarkThemeMode> by PreferenceStateFlow(settings.darkThemeMode)
+    val displayEventsTimeInUTC: StateFlow<Boolean> by PreferenceStateFlow(settings.displayEventsTimeInUTC)
 
     init {
         viewModelScope.launch {
-            @Suppress("UNCHECKED_CAST")
-            loadPreferencesToStates(
-                settings.darkThemeMode to { darkThemeMode = it as StateFlow<AppSettings.DarkThemeMode> },
-                settings.displayEventsTimeInUTC to { displayEventsTimeInUTC = it as StateFlow<Boolean> }
-            )
-            _loaded = true
+            stateInJobs.apply {
+                joinAll()
+                clear()
+            }
+            loaded = true
         }
     }
 
-    private suspend fun loadPreferencesToStates(vararg pairs: Pair<AppSettings.Preference<*>, (StateFlow<*>) -> Unit>) {
-        coroutineScope {
-            for ((preference, stateSetter) in pairs) {
-                launch {
-                    val stateFlow = preference.flow().stateIn(viewModelScope)
-                    stateSetter(stateFlow)
-                }
-            }
+    private inner class PreferenceStateFlow<T : Any>(preference: AppSettings.Preference<T>) :
+        ReadOnlyProperty<Any, StateFlow<T>> {
+        private lateinit var stateFlow: StateFlow<T>
+
+        init {
+            stateInJobs.add(viewModelScope.launch {
+                stateFlow = preference.flow().stateIn(viewModelScope)
+            })
         }
+
+        override fun getValue(thisRef: Any, property: KProperty<*>): StateFlow<T> = stateFlow
     }
 }
