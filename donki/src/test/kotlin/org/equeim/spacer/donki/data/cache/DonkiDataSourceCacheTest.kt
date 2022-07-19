@@ -35,52 +35,61 @@ class DonkiDataSourceCacheTest(systemTimeZone: ZoneId) : BaseCoroutineTest() {
 
     @Test
     fun `isWeekCachedAndNeedsRefresh() returns false when week is not cached`() = runTest {
-        assertFalse(dataSource.isWeekCachedAndNeedsRefresh(Week.getCurrentWeek(clock), EventType.GeomagneticStorm))
+        val week = Week.getCurrentWeek(clock)
+        for (type in EventType.All) {
+            assertFalse(dataSource.isWeekCachedAndNeedsRefresh(week, EventType.GeomagneticStorm, refreshIfRecentlyLoaded = false))
+            assertFalse(dataSource.isWeekCachedAndNeedsRefresh(week, EventType.GeomagneticStorm, refreshIfRecentlyLoaded = true))
+        }
     }
 
     @Test
-    fun `isWeekCachedAndNeedsRefresh() returns false when week was loaded week after last day`() = runTest {
+    fun `Validate isWeekCachedAndNeedsRefresh() when week was loaded a week after its last day`() = runTest {
         val week = Week(LocalDate.MIN)
         val eventType = EventType.GeomagneticStorm
         val loadTime = week.getInstantAfterLastDay().plus(Duration.ofDays(7))
         dataSource.cacheWeek(week, eventType, emptyList(), loadTime)
-        assertFalse(dataSource.isWeekCachedAndNeedsRefresh(week, eventType))
+        assertFalse(dataSource.isWeekCachedAndNeedsRefresh(week, eventType, refreshIfRecentlyLoaded = false))
+        assertFalse(dataSource.isWeekCachedAndNeedsRefresh(week, eventType, refreshIfRecentlyLoaded = true))
     }
 
     @Test
-    fun `isWeekCachedAndNeedsRefresh() returns true when week was loaded less than a week after last day and more than hour ago`() = runTest {
+    fun `Validate isWeekCachedAndNeedsRefresh() when week was loaded less than a week after its last day and more than hour ago`() = runTest {
         val week = Week.getCurrentWeek(clock).next()
         val eventType = EventType.GeomagneticStorm
         val loadTime = week.getInstantAfterLastDay().plus(Duration.ofDays(3))
         dataSource.cacheWeek(week, eventType, emptyList(), loadTime)
-        assertTrue(dataSource.isWeekCachedAndNeedsRefresh(week, eventType))
+        assertTrue(dataSource.isWeekCachedAndNeedsRefresh(week, eventType, refreshIfRecentlyLoaded = false))
+        assertTrue(dataSource.isWeekCachedAndNeedsRefresh(week, eventType, refreshIfRecentlyLoaded = true))
     }
 
     @Test
-    fun `isWeekCachedAndNeedsRefresh() returns false when week was loaded less than a week after last day and less than hour ago`() = runTest {
+    fun `Validate isWeekCachedAndNeedsRefresh() when week was loaded less than a week after its last day and less than hour ago`() = runTest {
         val week = Week.getCurrentWeek(clock).next()
         val eventType = EventType.GeomagneticStorm
         val loadTime = Instant.now(clock).minus(Duration.ofMinutes(42))
         dataSource.cacheWeek(week, eventType, emptyList(), loadTime)
-        assertFalse(dataSource.isWeekCachedAndNeedsRefresh(week, eventType))
+        assertFalse(dataSource.isWeekCachedAndNeedsRefresh(week, eventType, refreshIfRecentlyLoaded = false))
+        assertTrue(dataSource.isWeekCachedAndNeedsRefresh(week, eventType, refreshIfRecentlyLoaded = true))
     }
 
     @Test
-    fun `isWeekCachedAndNeedsRefresh() returns true when week was loaded before last day and more than hour ago`() = runTest {
+    fun `Validate isWeekCachedAndNeedsRefresh() when week was loaded before its last day and more than hour ago`() = runTest {
         val week = Week.getCurrentWeek(clock)
         val eventType = EventType.GeomagneticStorm
         val loadTime = Instant.now(clock).minus(Duration.ofHours(2))
         dataSource.cacheWeek(week, eventType, emptyList(), loadTime)
-        assertTrue(dataSource.isWeekCachedAndNeedsRefresh(week, eventType))
+        assertTrue(dataSource.isWeekCachedAndNeedsRefresh(week, eventType, refreshIfRecentlyLoaded = false))
+        assertTrue(dataSource.isWeekCachedAndNeedsRefresh(week, eventType, refreshIfRecentlyLoaded = true))
     }
 
     @Test
-    fun `isWeekCachedAndNeedsRefresh() returns false when week was loaded before last day and less than hour ago`() = runTest {
+    fun `Validate isWeekCachedAndNeedsRefresh() when week was loaded before its last day and less than hour ago`() = runTest {
         val week = Week.getCurrentWeek(clock)
         val eventType = EventType.GeomagneticStorm
         val loadTime = Instant.now(clock).minus(Duration.ofMinutes(42))
         dataSource.cacheWeek(week, eventType, emptyList(), loadTime)
-        assertFalse(dataSource.isWeekCachedAndNeedsRefresh(week, eventType))
+        assertFalse(dataSource.isWeekCachedAndNeedsRefresh(week, eventType, refreshIfRecentlyLoaded = false))
+        assertTrue(dataSource.isWeekCachedAndNeedsRefresh(week, eventType, refreshIfRecentlyLoaded = true))
     }
 
     companion object {
