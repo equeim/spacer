@@ -12,9 +12,9 @@ fun instantOf(year: Int, month: Int, dayOfMonth: Int, hour: Int, minute: Int, zo
 
 internal fun MockKMatcherScope.anyWeek(): Week = Week(any())
 
-fun timeZoneParameters(): Set<ZoneId> = setOf(
+fun timeZoneParameters(): List<ZoneId> = setOf(
     ZoneId.ofOffset("UTC", ZoneOffset.UTC),
     ZoneId.systemDefault(),
     ZoneId.of("Asia/Yakutsk"),
     ZoneId.of("America/Los_Angeles")
-)
+).toList()

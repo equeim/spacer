@@ -145,6 +145,6 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
     companion object {
         @Parameterized.Parameters(name = "systemTimeZone={0}")
         @JvmStatic
-        fun parameters(): Iterable<ZoneId> = timeZoneParameters()
+        fun parameters(): List<ZoneId> = timeZoneParameters()
     }
 }
