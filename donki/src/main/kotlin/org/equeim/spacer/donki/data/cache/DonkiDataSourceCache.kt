@@ -16,16 +16,21 @@ import org.equeim.spacer.donki.data.cache.entities.toExtras
 import org.equeim.spacer.donki.data.model.*
 import java.io.Closeable
 import java.nio.file.*
+import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
 private const val TAG = "DonkiDataSourceCache"
-private val WEEK_UP_TO_DATE_THRESHOLD: Duration = Duration.ofDays(7)
+private val WINDOW_BETWEEN_LAST_DAY_AND_LOAD_TIME_WHEN_REFRESH_IS_NEEDED: Duration =
+    Duration.ofDays(7)
+private val WINDOW_BETWEEN_LOAD_TIME_AND_CURRENT_TIME_WHEN_REFRESH_IS_NOT_NEEDED: Duration =
+    Duration.ofHours(1)
 
 internal class DonkiDataSourceCache(
     private val context: Context,
     db: DonkiDatabase? = null,
-    private val coroutineDispatchers: CoroutineDispatchers = CoroutineDispatchers()
+    private val coroutineDispatchers: CoroutineDispatchers = CoroutineDispatchers(),
+    private val clock: Clock = Clock.systemDefaultZone()
 ) : Closeable {
     private val coroutineScope = CoroutineScope(coroutineDispatchers.Default + SupervisorJob())
     private var dbWatchKey: WatchKey? = null
@@ -62,7 +67,8 @@ internal class DonkiDataSourceCache(
     @Suppress("BlockingMethodInNonBlockingContext")
     private suspend fun recreateDatabaseWhenDeleted(databaseDirectory: Path) {
         val watchService = FileSystems.getDefault().newWatchService()
-        val watchKey = databaseDirectory.register(watchService, StandardWatchEventKinds.ENTRY_DELETE)
+        val watchKey =
+            databaseDirectory.register(watchService, StandardWatchEventKinds.ENTRY_DELETE)
         watchService.events(coroutineDispatchers).onEach {
             if ((it.context() as? Path)?.toString() == DonkiDatabase.NAME) {
                 recreateDatabase(databaseDirectory)
@@ -149,7 +155,11 @@ internal class DonkiDataSourceCache(
         return Duration.between(
             getInstantAfterLastDay(),
             cacheLoadTime
-        ) < WEEK_UP_TO_DATE_THRESHOLD
+        ) < WINDOW_BETWEEN_LAST_DAY_AND_LOAD_TIME_WHEN_REFRESH_IS_NEEDED &&
+                Duration.between(
+                    cacheLoadTime,
+                    Instant.now(clock)
+                ) > WINDOW_BETWEEN_LOAD_TIME_AND_CURRENT_TIME_WHEN_REFRESH_IS_NOT_NEEDED
     }
 
     suspend fun cacheWeek(
@@ -197,13 +207,14 @@ internal class DonkiDataSourceCache(
     }
 }
 
-private fun WatchService.events(coroutineDispatchers: CoroutineDispatchers): Flow<WatchEvent<*>> = flow {
-    try {
-        while (currentCoroutineContext().isActive) {
-            val key = runInterruptible { take() }
-            key.pollEvents().forEach { emit(it) }
-            key.reset()
+private fun WatchService.events(coroutineDispatchers: CoroutineDispatchers): Flow<WatchEvent<*>> =
+    flow {
+        try {
+            while (currentCoroutineContext().isActive) {
+                val key = runInterruptible { take() }
+                key.pollEvents().forEach { emit(it) }
+                key.reset()
+            }
+        } catch (ignore: ClosedWatchServiceException) {
         }
-    } catch (ignore: ClosedWatchServiceException) {
-    }
-}.flowOn(coroutineDispatchers.IO)
+    }.flowOn(coroutineDispatchers.IO)
