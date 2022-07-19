@@ -87,19 +87,19 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
     }
 
     @Test
-    fun `Validate that load() allows outdated cache when refreshing`() = runTest {
+    fun `Validate that load() does not refresh cache when refreshing`() = runTest {
         coEvery {
             repository.getEventSummariesForWeek(
                 anyWeek(),
                 any(),
-                allowOutOfDateCache = true
+                refreshCacheIfNeeded = false
             )
         } returns emptyList()
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         pagingSource.load(params)
         coVerifyAll {
             EXPECTED_INITIAL_LOAD_WEEKS.forEach { week ->
-                repository.getEventSummariesForWeek(week, EventType.All, allowOutOfDateCache = true)
+                repository.getEventSummariesForWeek(week, EventType.All, refreshCacheIfNeeded = false)
             }
         }
     }
@@ -159,12 +159,12 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
     }
 
     @Test
-    fun `Validate that load() disallows outdated cache when appending`() = runTest {
+    fun `Validate that load() refreshes cache when appending`() = runTest {
         coEvery {
             repository.getEventSummariesForWeek(
                 anyWeek(),
                 any(),
-                allowOutOfDateCache = false
+                refreshCacheIfNeeded = true
             )
         } returns emptyList()
         val params = PagingSource.LoadParams.Append(weekOf(2022, 1, 3), 20, false)
@@ -173,18 +173,18 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
             repository.getEventSummariesForWeek(
                 Week(LocalDate.of(2022, 1, 3)),
                 EventType.All,
-                allowOutOfDateCache = false
+                refreshCacheIfNeeded = true
             )
         }
     }
 
     @Test
-    fun `Validate that load() disallows outdated cache when prepending`() = runTest {
+    fun `Validate that load() refreshes cache cache when prepending`() = runTest {
         coEvery {
             repository.getEventSummariesForWeek(
                 anyWeek(),
                 any(),
-                allowOutOfDateCache = false
+                refreshCacheIfNeeded = true
             )
         } returns emptyList()
         val params = PagingSource.LoadParams.Prepend(weekOf(2022, 1, 3), 20, false)
@@ -193,7 +193,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
             repository.getEventSummariesForWeek(
                 Week(LocalDate.of(2022, 1, 3)),
                 EventType.All,
-                allowOutOfDateCache = false
+                refreshCacheIfNeeded = true
             )
         }
     }

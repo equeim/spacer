@@ -32,25 +32,25 @@ class DonkiDataSourceCacheTest : BaseCoroutineTest() {
     }
 
     @Test
-    fun `isWeekCachedAndOutOfDate() returns false when week is not cached`() = runTest {
-        assertFalse(dataSource.isWeekCachedAndOutOfDate(Week(LocalDate.MIN), EventType.GeomagneticStorm))
+    fun `isWeekCachedAndNeedsRefresh() returns false when week is not cached`() = runTest {
+        assertFalse(dataSource.isWeekCachedAndNeedsRefresh(Week(LocalDate.MIN), EventType.GeomagneticStorm))
     }
 
     @Test
-    fun `isWeekCachedAndOutOfDate() returns false when week was loaded week after last day`() = runTest {
+    fun `isWeekCachedAndNeedsRefresh() returns false when week was loaded week after last day`() = runTest {
         val week = Week(LocalDate.MIN)
         val eventType = EventType.GeomagneticStorm
         val loadTime = week.getInstantAfterLastDay().plus(Duration.ofDays(7))
         dataSource.cacheWeek(week, eventType, emptyList(), loadTime)
-        assertFalse(dataSource.isWeekCachedAndOutOfDate(week, eventType))
+        assertFalse(dataSource.isWeekCachedAndNeedsRefresh(week, eventType))
     }
 
     @Test
-    fun `isWeekCachedAndOutOfDate() returns false when week was loaded less than a week after last day`() = runTest {
+    fun `isWeekCachedAndNeedsRefresh() returns false when week was loaded less than a week after last day`() = runTest {
         val week = Week(LocalDate.MIN)
         val eventType = EventType.GeomagneticStorm
         val loadTime = week.getInstantAfterLastDay().plus(Duration.ofDays(3))
         dataSource.cacheWeek(week, eventType, emptyList(), loadTime)
-        assertTrue(dataSource.isWeekCachedAndOutOfDate(week, eventType))
+        assertTrue(dataSource.isWeekCachedAndNeedsRefresh(week, eventType))
     }
 }

@@ -37,45 +37,45 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
     }
 
     @Test
-    fun `initialize() returns SKIP_INITIAL_REFRESH when none of initial load weeks require update`() =
+    fun `initialize() returns SKIP_INITIAL_REFRESH when none of initial load weeks require refresh`() =
         runTest {
             EXPECTED_INITIAL_LOAD_WEEKS.forEach {
-                coEvery { cacheDataSource.isWeekCachedAndOutOfDate(it, any()) } returns false
+                coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(it, any()) } returns false
             }
             assertEquals(
                 RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH,
                 mediator.initialize()
             )
             EXPECTED_INITIAL_LOAD_WEEKS.forEach {
-                coVerify { cacheDataSource.isWeekCachedAndOutOfDate(it, any()) }
+                coVerify { cacheDataSource.isWeekCachedAndNeedsRefresh(it, any()) }
             }
         }
 
     @Test
-    fun `initialize() returns LAUNCH_INITIAL_REFRESH when some of initial load weeks require update`() =
+    fun `initialize() returns LAUNCH_INITIAL_REFRESH when some of initial load weeks require refresh`() =
         runTest {
-            coEvery { cacheDataSource.isWeekCachedAndOutOfDate(EXPECTED_INITIAL_LOAD_WEEKS.first(), any()) } returns true
+            coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(EXPECTED_INITIAL_LOAD_WEEKS.first(), any()) } returns true
             EXPECTED_INITIAL_LOAD_WEEKS.drop(1).forEach {
-                coEvery { cacheDataSource.isWeekCachedAndOutOfDate(it, any()) } returns false
+                coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(it, any()) } returns false
             }
             assertEquals(
                 RemoteMediator.InitializeAction.LAUNCH_INITIAL_REFRESH,
                 mediator.initialize()
             )
-            coVerify { cacheDataSource.isWeekCachedAndOutOfDate(anyWeek(), any()) }
+            coVerify { cacheDataSource.isWeekCachedAndNeedsRefresh(anyWeek(), any()) }
         }
 
     @Test
-    fun `initialize() returns LAUNCH_INITIAL_REFRESH when all of initial load weeks require update`() =
+    fun `initialize() returns LAUNCH_INITIAL_REFRESH when all of initial load weeks require refresh`() =
         runTest {
             EXPECTED_INITIAL_LOAD_WEEKS.forEach {
-                coEvery { cacheDataSource.isWeekCachedAndOutOfDate(it, any()) } returns true
+                coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(it, any()) } returns true
             }
             assertEquals(
                 RemoteMediator.InitializeAction.LAUNCH_INITIAL_REFRESH,
                 mediator.initialize()
             )
-            coVerify { cacheDataSource.isWeekCachedAndOutOfDate(anyWeek(), any()) }
+            coVerify { cacheDataSource.isWeekCachedAndNeedsRefresh(anyWeek(), any()) }
         }
 
     @Test
@@ -95,41 +95,41 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
     }
 
     @Test
-    fun `Validate load() when none of initial load weeks require update`() = validateLoad {
-        coEvery { cacheDataSource.isWeekCachedAndOutOfDate(anyWeek(), any()) } returns false
+    fun `Validate load() when none of initial load weeks require refresh`() = validateLoad {
+        coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(anyWeek(), any()) } returns false
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Success>(result)
         assertFalse(result.endOfPaginationReached)
         assertEquals(emptyList(), refreshedEvents)
-        coVerify { cacheDataSource.isWeekCachedAndOutOfDate(anyWeek(), any()) }
+        coVerify { cacheDataSource.isWeekCachedAndNeedsRefresh(anyWeek(), any()) }
     }
 
     @Test
-    fun `Validate load() when some of initial load weeks require update`() = validateLoad {
-        coEvery { cacheDataSource.isWeekCachedAndOutOfDate(EXPECTED_INITIAL_LOAD_WEEKS.first(), any()) } returns true
+    fun `Validate load() when some of initial load weeks require refresh`() = validateLoad {
+        coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(EXPECTED_INITIAL_LOAD_WEEKS.first(), any()) } returns true
         EXPECTED_INITIAL_LOAD_WEEKS.drop(1).forEach {
-            coEvery { cacheDataSource.isWeekCachedAndOutOfDate(it, any()) } returns false
+            coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(it, any()) } returns false
         }
         coEvery { repository.updateEventsForWeek(EXPECTED_INITIAL_LOAD_WEEKS.first(), any()) } just runs
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Success>(result)
         assertFalse(result.endOfPaginationReached)
         assertEquals(listOf(Unit), refreshedEvents)
-        coVerify { cacheDataSource.isWeekCachedAndOutOfDate(anyWeek(), any()) }
+        coVerify { cacheDataSource.isWeekCachedAndNeedsRefresh(anyWeek(), any()) }
         coVerify { repository.updateEventsForWeek(EXPECTED_INITIAL_LOAD_WEEKS.first(), any()) }
     }
 
     @Test
-    fun `Validate load() when all of initial load weeks require update`() = validateLoad {
+    fun `Validate load() when all of initial load weeks require refresh`() = validateLoad {
         EXPECTED_INITIAL_LOAD_WEEKS.forEach {
-            coEvery { cacheDataSource.isWeekCachedAndOutOfDate(it, any()) } returns true
+            coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(it, any()) } returns true
             coEvery { repository.updateEventsForWeek(it, any()) } just runs
         }
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Success>(result)
         assertFalse(result.endOfPaginationReached)
         assertEquals(listOf(Unit), refreshedEvents)
-        coVerify { cacheDataSource.isWeekCachedAndOutOfDate(anyWeek(), any()) }
+        coVerify { cacheDataSource.isWeekCachedAndNeedsRefresh(anyWeek(), any()) }
         EXPECTED_INITIAL_LOAD_WEEKS.forEach {
             coVerify { repository.updateEventsForWeek(it, any()) }
         }
