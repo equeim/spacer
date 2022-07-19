@@ -1,6 +1,7 @@
 package org.equeim.spacer.donki.data
 
 import androidx.annotation.VisibleForTesting
+import org.equeim.spacer.donki.data.model.EventType
 import java.time.*
 import java.time.temporal.ChronoField
 import java.time.temporal.WeekFields
@@ -59,3 +60,9 @@ internal value class Week @VisibleForTesting constructor(
             getInitialLoadWeeks(getCurrentWeek(clock))
     }
 }
+
+internal fun List<Week>.forTypes(eventTypes: List<EventType>): Sequence<Pair<Week, EventType>> =
+    asSequence().flatMap { it.forTypes(eventTypes) }
+
+internal fun Week.forTypes(eventTypes: List<EventType>): Sequence<Pair<Week, EventType>> =
+    eventTypes.asSequence().map { type -> this to type }

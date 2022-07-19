@@ -11,11 +11,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import org.equeim.spacer.donki.data.DonkiRepositoryInternal
+import org.equeim.spacer.donki.data.Week
 import org.equeim.spacer.donki.data.cache.DonkiDataSourceCache
+import org.equeim.spacer.donki.data.forTypes
 import org.equeim.spacer.donki.data.model.EventSummary
 import org.equeim.spacer.donki.data.model.EventType
-import org.equeim.spacer.donki.data.Week
 import java.time.Clock
+import java.util.concurrent.atomic.AtomicReference
 
 private const val TAG = "EventsSummariesRemoteMediator"
 
@@ -30,27 +32,20 @@ internal class EventsSummariesRemoteMediator(
     private val _refreshed = MutableSharedFlow<Unit>()
     val refreshed: Flow<Unit> by ::_refreshed
 
+    private val pendingInitialRefreshWeeks = AtomicReference<List<Pair<Week, EventType>>>(null)
+
     override suspend fun initialize(): InitializeAction {
         Log.d(TAG, "initialize() called")
         val initialLoadWeeks = Week.getInitialLoadWeeks(clock)
         Log.d(TAG, "initialize: initial load weeks are $initialLoadWeeks")
-        val refresh =
-            initialLoadWeeks
-                .forTypes(EVENT_TYPES)
-                .any { (week, type) ->
-                    cacheDataSource.isWeekCachedAndNeedsRefresh(week, type).also {
-                        if (it) {
-                            Log.d(
-                                TAG,
-                                "initialize: week $week with event type $type is cached but needs to be refreshed"
-                            )
-                        }
-                    }
-                }
-        return if (refresh) {
+        /**
+         * Can't use [Sequence.filter] because it isn't inline and we can't suspend
+         */
+        val weeks = getRefreshWeeks(initialRefresh = true)
+        pendingInitialRefreshWeeks.set(weeks)
+        return if (weeks.isNotEmpty()) {
             InitializeAction.LAUNCH_INITIAL_REFRESH
         } else {
-            Log.d(TAG, "initialize: don't need to refresh cache for initial load weeks")
             InitializeAction.SKIP_INITIAL_REFRESH
         }.also {
             Log.d(TAG, "initialize: returning $it")
@@ -66,11 +61,8 @@ internal class EventsSummariesRemoteMediator(
             Log.d(TAG, "load: not refreshing, ignore")
             return MediatorResult.Success(endOfPaginationReached = loadType == LoadType.PREPEND)
         }
-        val weeks = mutableListOf<Pair<Week, EventType>>()
-        Week.getInitialLoadWeeks(clock).forTypes(EVENT_TYPES)
-                .filterTo(weeks) { (week, type) -> cacheDataSource.isWeekCachedAndNeedsRefresh(week, type) }
+        val weeks = pendingInitialRefreshWeeks.getAndSet(null) ?: getRefreshWeeks(initialRefresh = false)
         if (weeks.isEmpty()) {
-            Log.d(TAG, "load: don't need to refresh cache for initial load weeks")
             return MediatorResult.Success(endOfPaginationReached = false)
         }
         Log.d(TAG, "load: loading weeks $weeks")
@@ -88,8 +80,30 @@ internal class EventsSummariesRemoteMediator(
             MediatorResult.Error(e)
         }.also { Log.d(TAG, "load: returning $it") }
     }
-}
 
-private fun List<Week>.forTypes(eventTypes: List<EventType>): Sequence<Pair<Week, EventType>> =
-    asSequence()
-        .flatMap { week -> eventTypes.asSequence().map { type -> week to type } }
+    private suspend fun getRefreshWeeks(initialRefresh: Boolean): List<Pair<Week, EventType>> {
+        Log.d(TAG, "getRefreshWeeks() called with: initialRefresh = $initialRefresh")
+        val initialLoadWeeks = Week.getInitialLoadWeeks(clock)
+        Log.d(TAG, "getRefreshWeeks: initial load weeks are $initialLoadWeeks")
+        /**
+         * Can't use [Sequence.filter] because it isn't inline and we can't suspend
+         */
+        val weeks = mutableListOf<Pair<Week, EventType>>()
+        initialLoadWeeks
+            .forTypes(EVENT_TYPES)
+            .filterTo(weeks) { (week, type) ->
+                cacheDataSource.isWeekCachedAndNeedsRefresh(week, type, refreshIfRecentlyLoaded = !initialRefresh).also {
+                    if (it) {
+                        Log.d(
+                            TAG,
+                            "getRefreshWeeks: week $week with event type $type is cached but needs to be refreshed"
+                        )
+                    }
+                }
+            }
+        if (weeks.isEmpty()) {
+            Log.d(TAG, "getRefreshWeeks: don't need to refresh cache for initial load weeks")
+        }
+        return weeks
+    }
+}
