@@ -38,11 +38,11 @@ internal class EventsSummariesRemoteMediator(
             initialLoadWeeks
                 .forTypes(EVENT_TYPES)
                 .any { (week, type) ->
-                    cacheDataSource.isWeekCachedAndOutOfDate(week, type).also {
+                    cacheDataSource.isWeekCachedAndNeedsRefresh(week, type).also {
                         if (it) {
                             Log.d(
                                 TAG,
-                                "initialize: week $week with event type $type is cached but out of date"
+                                "initialize: week $week with event type $type is cached but needs to be refreshed"
                             )
                         }
                     }
@@ -50,7 +50,7 @@ internal class EventsSummariesRemoteMediator(
         return if (refresh) {
             InitializeAction.LAUNCH_INITIAL_REFRESH
         } else {
-            Log.d(TAG, "initialize: don't need to update cache for initial load weeks")
+            Log.d(TAG, "initialize: don't need to refresh cache for initial load weeks")
             InitializeAction.SKIP_INITIAL_REFRESH
         }.also {
             Log.d(TAG, "initialize: returning $it")
@@ -68,9 +68,9 @@ internal class EventsSummariesRemoteMediator(
         }
         val weeks = mutableListOf<Pair<Week, EventType>>()
         Week.getInitialLoadWeeks(clock).forTypes(EVENT_TYPES)
-                .filterTo(weeks) { (week, type) -> cacheDataSource.isWeekCachedAndOutOfDate(week, type) }
+                .filterTo(weeks) { (week, type) -> cacheDataSource.isWeekCachedAndNeedsRefresh(week, type) }
         if (weeks.isEmpty()) {
-            Log.d(TAG, "load: don't need to update cache for initial load weeks")
+            Log.d(TAG, "load: don't need to refresh cache for initial load weeks")
             return MediatorResult.Success(endOfPaginationReached = false)
         }
         Log.d(TAG, "load: loading weeks $weeks")

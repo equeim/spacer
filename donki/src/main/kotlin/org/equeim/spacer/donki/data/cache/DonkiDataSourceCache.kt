@@ -5,7 +5,6 @@ import android.os.storage.StorageManager
 import android.util.Log
 import androidx.core.content.getSystemService
 import androidx.room.Room
-import androidx.room.RoomDatabase
 import androidx.room.withTransaction
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -88,20 +87,20 @@ internal class DonkiDataSourceCache(
         db.close()
     }
 
-    suspend fun isWeekCachedAndOutOfDate(week: Week, eventType: EventType): Boolean {
+    suspend fun isWeekCachedAndNeedsRefresh(week: Week, eventType: EventType): Boolean {
         val cacheLoadTime = db.cachedWeeks()
             .getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear, eventType)
-        return cacheLoadTime != null && !week.isUpToDate(cacheLoadTime)
+        return cacheLoadTime != null && week.needsRefresh(cacheLoadTime)
     }
 
     suspend fun getEventSummariesForWeek(
         week: Week,
         eventType: EventType,
-        allowOutOfDateCache: Boolean
+        returnCacheThatNeedsRefreshing: Boolean
     ): List<EventSummary>? {
         Log.d(
             TAG,
-            "getEventSummariesForWeek() called with: week = $week, eventType = $eventType, allowOutOfDateCache = $allowOutOfDateCache"
+            "getEventSummariesForWeek() called with: week = $week, eventType = $eventType, returnCacheThatNeedsRefreshing = $returnCacheThatNeedsRefreshing"
         )
         return try {
             val weekCacheTime = db.cachedWeeks()
@@ -113,10 +112,10 @@ internal class DonkiDataSourceCache(
                 )
                 return null
             }
-            if (!allowOutOfDateCache && !week.isUpToDate(weekCacheTime)) {
+            if (!returnCacheThatNeedsRefreshing && week.needsRefresh(weekCacheTime)) {
                 Log.d(
                     TAG,
-                    "getEventSummariesForWeek: out of date, cache for week = $week, eventType = $eventType, returning null"
+                    "getEventSummariesForWeek: cache needs refreshing for week = $week, eventType = $eventType, returning null"
                 )
                 return null
             }
@@ -146,11 +145,11 @@ internal class DonkiDataSourceCache(
         }
     }
 
-    private fun Week.isUpToDate(cacheLoadTime: Instant): Boolean {
+    private fun Week.needsRefresh(cacheLoadTime: Instant): Boolean {
         return Duration.between(
             getInstantAfterLastDay(),
             cacheLoadTime
-        ) >= WEEK_UP_TO_DATE_THRESHOLD
+        ) < WEEK_UP_TO_DATE_THRESHOLD
     }
 
     suspend fun cacheWeek(

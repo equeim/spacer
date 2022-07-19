@@ -64,7 +64,7 @@ internal class EventsSummariesPagingSource(
                             repository.getEventSummariesForWeek(
                                 week = week,
                                 eventTypes = EVENT_TYPES,
-                                allowOutOfDateCache = params is LoadParams.Refresh
+                                refreshCacheIfNeeded = params !is LoadParams.Refresh
                             )
                         }
                     }.awaitAll().flatten()

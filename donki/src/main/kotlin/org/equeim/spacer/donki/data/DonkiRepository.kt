@@ -36,7 +36,7 @@ internal interface DonkiRepositoryInternal : DonkiRepository {
     suspend fun getEventSummariesForWeek(
         week: Week,
         eventTypes: List<EventType>,
-        allowOutOfDateCache: Boolean
+        refreshCacheIfNeeded: Boolean
     ): List<EventSummary>
 
     suspend fun updateEventsForWeek(
@@ -59,7 +59,7 @@ private class DonkiRepositoryImpl(
     override suspend fun getEventSummariesForWeek(
         week: Week,
         eventTypes: List<EventType>,
-        allowOutOfDateCache: Boolean
+        refreshCacheIfNeeded: Boolean
     ): List<EventSummary> {
         val allEvents = mutableListOf<EventSummary>()
         val mutex = Mutex()
@@ -67,7 +67,7 @@ private class DonkiRepositoryImpl(
             for (eventType in eventTypes) {
                 launch {
                     val cachedEvents =
-                        cacheDataSource.getEventSummariesForWeek(week, eventType, allowOutOfDateCache)
+                        cacheDataSource.getEventSummariesForWeek(week, eventType, returnCacheThatNeedsRefreshing = !refreshCacheIfNeeded)
                     if (cachedEvents != null) {
                         mutex.withLock { allEvents.addAll(cachedEvents) }
                     } else {
