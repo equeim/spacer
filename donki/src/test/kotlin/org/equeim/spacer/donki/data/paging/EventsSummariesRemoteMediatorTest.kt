@@ -203,6 +203,44 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         assertEquals(emptyList(), actualRefreshedEvents)
     }
 
+    @Test
+    fun `Verify that initialize() handles isWeekCachedAndNeedsRefresh() errors`() =
+        base {
+            coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(anyWeek(), any(), any()) } throws RuntimeException("NOPE")
+            val action = mediator.initialize()
+            assertEquals(RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH, action)
+            coVerify(exactly = 1) {
+                cacheDataSource.isWeekCachedAndNeedsRefresh(anyWeek(), any(), refreshIfRecentlyLoaded = false)
+            }
+            assertEquals(emptyList(), actualRefreshedEvents)
+        }
+
+    @Test
+    fun `Verify that load() handles isWeekCachedAndNeedsRefresh() errors`() =
+        base {
+            coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(anyWeek(), any(), any()) } throws RuntimeException("NOPE")
+            val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
+            assertIs<RemoteMediator.MediatorResult.Error>(result)
+            coVerify(exactly = 1) {
+                cacheDataSource.isWeekCachedAndNeedsRefresh(anyWeek(), any(), refreshIfRecentlyLoaded = true)
+            }
+            assertEquals(emptyList(), actualRefreshedEvents)
+        }
+
+    @Test
+    fun `Verify that load() handles updateEventsForWeek() errors`() =
+        base {
+            `All of initial load weeks require refresh`()
+            coEvery { repository.updateEventsForWeek(anyWeek(), any()) } throws RuntimeException("NOPE")
+            val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
+            assertIs<RemoteMediator.MediatorResult.Error>(result)
+            `Verify calls to isWeekCachedAndNeedsRefresh()`(expectedRefreshIfRecentlyLoaded = true)
+            coVerify(exactly = 1) {
+                repository.updateEventsForWeek(anyWeek(), any())
+            }
+            assertEquals(emptyList(), actualRefreshedEvents)
+        }
+
     private fun base(block: suspend () -> Unit) =
         runTest {
             val refreshedEventsJob = launch { mediator.refreshed.toCollection(actualRefreshedEvents) }
