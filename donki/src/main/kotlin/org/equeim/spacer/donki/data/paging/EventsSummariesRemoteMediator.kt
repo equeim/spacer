@@ -38,10 +38,13 @@ internal class EventsSummariesRemoteMediator(
         Log.d(TAG, "initialize() called")
         val initialLoadWeeks = Week.getInitialLoadWeeks(clock)
         Log.d(TAG, "initialize: initial load weeks are $initialLoadWeeks")
-        /**
-         * Can't use [Sequence.filter] because it isn't inline and we can't suspend
-         */
-        val weeks = getRefreshWeeks(initialRefresh = true)
+        val weeks = try {
+            getRefreshWeeks(initialRefresh = true)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Log.e(TAG, "initialize: failed to check what weeks need to be refreshed", e)
+            emptyList()
+        }
         pendingInitialRefreshWeeks.set(weeks)
         return if (weeks.isNotEmpty()) {
             InitializeAction.LAUNCH_INITIAL_REFRESH
@@ -61,7 +64,13 @@ internal class EventsSummariesRemoteMediator(
             Log.d(TAG, "load: not refreshing, ignore")
             return MediatorResult.Success(endOfPaginationReached = loadType == LoadType.PREPEND)
         }
-        val weeks = pendingInitialRefreshWeeks.getAndSet(null) ?: getRefreshWeeks(initialRefresh = false)
+        val weeks = pendingInitialRefreshWeeks.getAndSet(null) ?: try {
+            getRefreshWeeks(initialRefresh = false)
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Log.e(TAG, "load: failed to check what weeks need to be refreshed", e)
+            return MediatorResult.Error(e)
+        }
         if (weeks.isEmpty()) {
             return MediatorResult.Success(endOfPaginationReached = false)
         }
