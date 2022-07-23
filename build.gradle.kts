@@ -15,20 +15,36 @@ tasks.register<Delete>("clean") {
 }
 
 tasks.named<DependencyUpdatesTask>("dependencyUpdates") {
-    val checker = DependencyVersionChecker()
+    val channels = VersionChannelProvider()
+    val blacklist = listOf("org.jacoco" to "org.jacoco.ant")
     rejectVersionIf {
-        checker.isNonStable(candidate.version)
+        if (blacklist.any { (group, module) -> candidate.group == group && candidate.module == module }) {
+            return@rejectVersionIf true
+        }
+        val currentChannel = channels.getChannel(currentVersion)
+        val candidateChannel = channels.getChannel(candidate.version)
+        candidateChannel < currentChannel
     }
 }
 
-class DependencyVersionChecker {
-    private val stableKeywords = listOf("RELEASE", "FINAL", "GA")
-    private val regex = "^[0-9,.v-]+(-r)?$".toRegex()
+class VersionChannelProvider {
+    enum class Channel(val keywords: List<String>) {
+        Alpha(listOf("ALPHA")),
+        Beta(listOf("BETA")),
+        RC(listOf("RC")),
+        Stable(listOf("RELEASE", "FINAL", "GA"))
+    }
+    private val channels = Channel.values()
+    private val stableRegex = "^[0-9,.v-]+(-r)?$".toRegex()
 
-    fun isNonStable(version: String): Boolean {
+    fun getChannel(version: String): Channel {
         val versionUppercase = version.toUpperCase(Locale.ROOT)
-        val hasStableKeyword = stableKeywords.any(versionUppercase::contains)
-        val isStable = hasStableKeyword || regex.matches(version)
-        return isStable.not()
+        return channels.find {
+            it.keywords.any(versionUppercase::contains)
+        } ?: if (stableRegex.matches(version)) {
+            Channel.Stable
+        } else {
+            Channel.Alpha
+        }
     }
 }
