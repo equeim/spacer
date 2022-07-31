@@ -7,7 +7,11 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.withContext
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.donki.data.DonkiRepository
 import org.equeim.spacer.donki.data.model.EventId
@@ -21,7 +25,6 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 private const val TAG = "DonkiEventsScreenViewModel"
@@ -35,11 +38,14 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
     private val settings = AppSettings(application)
 
     private class LocaleDependentState {
-        val eventTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-        val eventDateFormatter: DateTimeFormatter = DateTimeFormatterBuilder().appendLocalized(FormatStyle.LONG, null).appendLiteral(' ')
-            .appendZoneText(TextStyle.SHORT).toFormatter()
+        val eventTimeFormatter: DateTimeFormatter =
+            DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+        val eventDateFormatter: DateTimeFormatter =
+            DateTimeFormatterBuilder().appendLocalized(FormatStyle.LONG, null).appendLiteral(' ')
+                .appendZoneText(TextStyle.SHORT).toFormatter()
         val eventTypesStrings = ConcurrentHashMap<EventType, String>()
     }
+
     @Volatile
     private lateinit var localeDependentState: LocaleDependentState
 
@@ -47,19 +53,17 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
 
     init {
         val pager = repository.getEventSummariesPager()
-        val basePagingData = pager.flow.cachedIn(viewModelScope)
-
         val defaultLocaleFlow = application.defaultLocaleFlow().onEach {
             localeDependentState = LocaleDependentState()
         }
         pagingData = combine(
-            basePagingData,
+            pager.flow,
             settings.displayEventsTimeInUTC.flow(),
             defaultLocaleFlow,
             ::Triple
         ).map { (pagingData, displayEventsTimeInUTC, _) ->
             pagingData.toListItems(displayEventsTimeInUTC)
-        }.flowOn(Dispatchers.Default)
+        }.cachedIn(viewModelScope)
     }
 
     override fun onCleared() {
@@ -73,22 +77,29 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
         } else {
             ZoneId.systemDefault()
         }
-        return map { EventSummaryWithZonedTime(it, it.time.atZone(timeZone)) }
+        return map {
+            withContext(Dispatchers.Default) {
+                EventSummaryWithZonedTime(it, it.time.atZone(timeZone))
+            }
+        }
             .insertSeparators(TerminalSeparatorType.SOURCE_COMPLETE) { before, after ->
                 when {
                     after == null -> null
                     before == null || before.zonedTime.dayOfMonth != after.zonedTime.dayOfMonth -> {
-                        DateSeparator(
-                            after.eventSummary.time.epochSecond,
-                            localeDependentState.eventDateFormatter.format(after.zonedTime)
-                        )
+                        withContext(Dispatchers.Default) {
+                            DateSeparator(
+                                after.eventSummary.time.epochSecond,
+                                localeDependentState.eventDateFormatter.format(after.zonedTime)
+                            )
+                        }
                     }
                     else -> null
                 }
             }
             .map {
                 when (it) {
-                    is EventSummaryWithZonedTime -> it.toPresentation()
+                    is EventSummaryWithZonedTime ->
+                        withContext(Dispatchers.Default) { it.toPresentation() }
                     else -> it
                 } as ListItem
             }
