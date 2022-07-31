@@ -2,7 +2,10 @@
 
 package org.equeim.spacer.donki.data.model
 
-import kotlinx.serialization.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -12,7 +15,6 @@ import org.equeim.spacer.donki.data.model.units.Latitude
 import org.equeim.spacer.donki.data.model.units.Longitude
 import java.time.Duration
 import java.time.Instant
-import kotlin.math.abs
 
 @Serializable
 data class CoronalMassEjection(
@@ -118,21 +120,7 @@ private object SourceLocationSerializer : KSerializer<Coordinates?> {
         return Coordinates(Latitude(latitude), Longitude(longitude))
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
-    override fun serialize(encoder: Encoder, value: Coordinates?) {
-        if (value == null) {
-            encoder.encodeNull()
-            return
-        }
-        val latitudeHemisphere = if (value.latitude.value >= 0.0f) 'N' else 'S'
-        val longitudeHemisphere = if (value.longitude.value >= 0.0f) 'E' else 'W'
-        encoder.encodeString(buildString {
-            append(latitudeHemisphere)
-            append(abs(value.latitude.value))
-            append(longitudeHemisphere)
-            append(abs(value.longitude.value))
-        })
-    }
+    override fun serialize(encoder: Encoder, value: Coordinates?) = throw NotImplementedError()
 }
 
 private object EnlilSimulationEstimatedDurationSerializer : KSerializer<Duration> {
@@ -148,7 +136,5 @@ private object EnlilSimulationEstimatedDurationSerializer : KSerializer<Duration
         return Duration.ofSeconds((hours * SECONDS_IN_HOUR).toLong())
     }
 
-    override fun serialize(encoder: Encoder, value: Duration) {
-        encoder.encodeFloat(value.seconds.toFloat() / SECONDS_IN_HOUR)
-    }
+    override fun serialize(encoder: Encoder, value: Duration) = throw NotImplementedError()
 }

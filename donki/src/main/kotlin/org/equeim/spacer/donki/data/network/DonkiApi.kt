@@ -1,5 +1,6 @@
 package org.equeim.spacer.donki.data.network
 
+import kotlinx.serialization.json.JsonObject
 import org.equeim.spacer.donki.data.model.*
 import retrofit2.http.GET
 import retrofit2.http.Query
@@ -11,56 +12,56 @@ internal interface DonkiApi {
         @Query("startDate") startDate: LocalDate,
         @Query("endDate") endDate: LocalDate,
         @Query("api_key") apiKey: String?
-    ): List<GeomagneticStorm>
+    ): List<JsonObject>
 
     @GET("CME")
     suspend fun getCoronalMassEjections(
         @Query("startDate") startDate: LocalDate,
         @Query("endDate") endDate: LocalDate,
         @Query("api_key") apiKey: String?
-    ): List<CoronalMassEjection>
+    ): List<JsonObject>
 
     @GET("IPS")
     suspend fun getInterplanetaryShocks(
         @Query("startDate") startDate: LocalDate,
         @Query("endDate") endDate: LocalDate,
         @Query("api_key") apiKey: String?
-    ): List<InterplanetaryShock>
+    ): List<JsonObject>
 
     @GET("FLR")
     suspend fun getSolarFlares(
         @Query("startDate") startDate: LocalDate,
         @Query("endDate") endDate: LocalDate,
         @Query("api_key") apiKey: String?
-    ): List<SolarFlare>
+    ): List<JsonObject>
 
     @GET("SEP")
     suspend fun getSolarEnergeticParticles(
         @Query("startDate") startDate: LocalDate,
         @Query("endDate") endDate: LocalDate,
         @Query("api_key") apiKey: String?
-    ): List<SolarEnergeticParticle>
+    ): List<JsonObject>
 
     @GET("MPC")
     suspend fun getMagnetopauseCrossings(
         @Query("startDate") startDate: LocalDate,
         @Query("endDate") endDate: LocalDate,
         @Query("api_key") apiKey: String?
-    ): List<MagnetopauseCrossing>
+    ): List<JsonObject>
 
     @GET("RBE")
     suspend fun getRadiationBeltEnhancements(
         @Query("startDate") startDate: LocalDate,
         @Query("endDate") endDate: LocalDate,
         @Query("api_key") apiKey: String?
-    ): List<RadiationBeltEnhancement>
+    ): List<JsonObject>
 
     @GET("HSS")
     suspend fun getHighSpeedStreams(
         @Query("startDate") startDate: LocalDate,
         @Query("endDate") endDate: LocalDate,
         @Query("api_key") apiKey: String?
-    ): List<HighSpeedStream>
+    ): List<JsonObject>
 
     companion object {
         const val BASE_URL = "https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/"

@@ -89,7 +89,7 @@ class DonkiDataSourceNetworkTest {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.CoronalMassEjection)))
         val events =
             dataSource.getEvents(Week(LocalDate.MIN), EventType.CoronalMassEjection)
-        val event = events.single() as CoronalMassEjection
+        val event = events.single().first as CoronalMassEjection
         validateCommonProperties(
             event,
             expectedId = EventId("2022-04-07T05:36:00-CME-001"),
@@ -170,7 +170,7 @@ class DonkiDataSourceNetworkTest {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.GeomagneticStorm)))
         val events =
             dataSource.getEvents(Week(LocalDate.MIN), EventType.GeomagneticStorm)
-        val event = events.single() as GeomagneticStorm
+        val event = events.single().first as GeomagneticStorm
         validateCommonProperties(
             event,
             expectedId = EventId("2022-04-14T15:00:00-GST-001"),
@@ -203,7 +203,7 @@ class DonkiDataSourceNetworkTest {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.InterplanetaryShock)))
         val events =
             dataSource.getEvents(Week(LocalDate.MIN), EventType.InterplanetaryShock)
-        val event = events.single() as InterplanetaryShock
+        val event = events.single().first as InterplanetaryShock
         validateCommonProperties(
             event,
             expectedId = EventId("2022-04-06T22:45:00-IPS-001"),
@@ -226,7 +226,7 @@ class DonkiDataSourceNetworkTest {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.SolarFlare)))
         val events =
             dataSource.getEvents(Week(LocalDate.MIN), EventType.SolarFlare)
-        val event = events.single() as SolarFlare
+        val event = events.single().first as SolarFlare
         validateCommonProperties(
             event,
             expectedId = EventId("2022-04-28T02:24:00-FLR-001"),
@@ -247,7 +247,7 @@ class DonkiDataSourceNetworkTest {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.SolarEnergeticParticle)))
         val events =
             dataSource.getEvents(Week(LocalDate.MIN), EventType.SolarEnergeticParticle)
-        val event = events.single() as SolarEnergeticParticle
+        val event = events.single().first as SolarEnergeticParticle
         validateCommonProperties(
             event,
             expectedId = EventId("2022-04-02T14:39:00-SEP-001"),
@@ -267,7 +267,7 @@ class DonkiDataSourceNetworkTest {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.MagnetopauseCrossing)))
         val events =
             dataSource.getEvents(Week(LocalDate.MIN), EventType.MagnetopauseCrossing)
-        val event = events.single() as MagnetopauseCrossing
+        val event = events.single().first as MagnetopauseCrossing
         validateCommonProperties(
             event,
             expectedId = EventId("2022-03-31T04:10:00-MPC-001"),
@@ -288,7 +288,7 @@ class DonkiDataSourceNetworkTest {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.RadiationBeltEnhancement)))
         val events =
             dataSource.getEvents(Week(LocalDate.MIN), EventType.RadiationBeltEnhancement)
-        val event = events.single() as RadiationBeltEnhancement
+        val event = events.single().first as RadiationBeltEnhancement
         validateCommonProperties(
             event,
             expectedId = EventId("2022-04-02T20:05:00-RBE-001"),
@@ -309,7 +309,7 @@ class DonkiDataSourceNetworkTest {
         server.enqueue(MockResponse().setBody(readSampleEvent(EventType.HighSpeedStream)))
         val events =
             dataSource.getEvents(Week(LocalDate.MIN), EventType.HighSpeedStream)
-        val event = events.single() as HighSpeedStream
+        val event = events.single().first as HighSpeedStream
         validateCommonProperties(
             event,
             expectedId = EventId("2022-04-02T00:33:00-HSS-001"),
