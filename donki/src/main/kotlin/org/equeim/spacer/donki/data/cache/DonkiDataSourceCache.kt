@@ -8,6 +8,7 @@ import androidx.room.Room
 import androidx.room.withTransaction
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.serialization.json.JsonObject
 import org.equeim.spacer.donki.CoroutineDispatchers
 import org.equeim.spacer.donki.data.DonkiJson
 import org.equeim.spacer.donki.data.DonkiRepository
@@ -200,7 +201,7 @@ internal class DonkiDataSourceCache(
     suspend fun cacheWeek(
         week: Week,
         eventType: EventType,
-        events: List<Event>,
+        events: List<Pair<Event, JsonObject>>,
         loadTime: Instant
     ) {
         Log.d(TAG, "cacheWeek() called with: week = $week, events = $events, loadTime = $loadTime")
@@ -220,10 +221,10 @@ internal class DonkiDataSourceCache(
                 when (eventType) {
                     EventType.CoronalMassEjection ->
                         db.coronalMassEjection()
-                            .updateExtras((event as CoronalMassEjection).toExtras())
+                            .updateExtras((event.first as CoronalMassEjection).toExtras())
                     EventType.GeomagneticStorm ->
                         db.geomagneticStorm()
-                            .updateExtras((event as GeomagneticStorm).toExtras())
+                            .updateExtras((event.first as GeomagneticStorm).toExtras())
                     else -> Unit
                 }
             }
@@ -234,7 +235,7 @@ internal class DonkiDataSourceCache(
     fun cacheWeekAsync(
         week: Week,
         eventType: EventType,
-        events: List<Event>,
+        events: List<Pair<Event, JsonObject>>,
         loadTime: Instant
     ) {
         @OptIn(DelicateCoroutinesApi::class)

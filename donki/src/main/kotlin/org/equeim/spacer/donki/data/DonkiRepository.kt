@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.json.JsonObject
 import org.equeim.spacer.donki.data.cache.DonkiDataSourceCache
 import org.equeim.spacer.donki.data.model.Event
 import org.equeim.spacer.donki.data.model.EventId
@@ -47,7 +48,7 @@ internal interface DonkiRepositoryInternal : DonkiRepository {
     suspend fun updateEventsForWeek(
         week: Week,
         eventType: EventType
-    ): List<Event>
+    ): List<Pair<Event, JsonObject>>
 }
 
 private class DonkiRepositoryImpl(
@@ -83,7 +84,7 @@ private class DonkiRepositoryImpl(
                         val weekLoadTime = Instant.now(clock)
                         val events = networkDataSource.getEvents(week, eventType)
                         cacheDataSource.cacheWeekAsync(week, eventType, events, weekLoadTime)
-                        val summaries = events.map { it.toEventSummary() }
+                        val summaries = events.map { it.first.toEventSummary() }
                         mutex.withLock { allEvents.addAll(summaries) }
                     }
                 }
@@ -93,7 +94,7 @@ private class DonkiRepositoryImpl(
         return allEvents
     }
 
-    override suspend fun updateEventsForWeek(week: Week, eventType: EventType): List<Event> {
+    override suspend fun updateEventsForWeek(week: Week, eventType: EventType): List<Pair<Event, JsonObject>> {
         Log.d(TAG, "updateEventsForWeek() called with: week = $week, eventType = $eventType")
         val loadTime = Instant.now(clock)
         val events = networkDataSource.getEvents(week, eventType)
@@ -128,10 +129,10 @@ private class DonkiRepositoryImpl(
                 cacheDataSource.getEventById(id, eventType, week)?.let { return it }
             }
             val event =
-                updateEventsForWeek(week, eventType).find { it.id == id } ?: throw RuntimeException(
+                updateEventsForWeek(week, eventType).find { it.first.id == id } ?: throw RuntimeException(
                     "Did not find event $id in server response"
                 )
-            DonkiRepository.EventById(event, needsRefreshing = false)
+            DonkiRepository.EventById(event.first, needsRefreshing = false)
         } catch (e: Exception) {
             if (e !is CancellationException) {
                 Log.e(TAG, "getEventDetailsById: failed to get event $id", e)

@@ -3,12 +3,14 @@ package org.equeim.spacer.donki.data.network
 import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.ResponseBody
 import org.equeim.spacer.donki.data.DonkiJson
 import org.equeim.spacer.donki.data.NASA_API_KEY
 import org.equeim.spacer.donki.data.Week
+import org.equeim.spacer.donki.data.eventSerializer
 import org.equeim.spacer.donki.data.model.Event
 import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.retrofit.JsonConverterFactory
@@ -18,7 +20,6 @@ import retrofit2.Retrofit
 import retrofit2.create
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
-import java.time.LocalDate
 
 private const val TAG = "DonkiDataSourceNetwork"
 
@@ -30,55 +31,65 @@ internal class DonkiDataSourceNetwork(baseUrl: HttpUrl = baseUrl()) {
     suspend fun getEvents(
         week: Week,
         eventType: EventType
-    ): List<Event> = try {
+    ): List<Pair<Event, JsonObject>> = try {
         Log.d(TAG, "getEvents() called with: week = $week, eventType = $eventType")
-        getEvents(eventType, week.firstDay, week.lastDay).sortedBy { it.time }.also {
-            Log.d(TAG, "getEvents: returning ${it.size} events for week = $week, eventType = $eventType")
+        val startDate = week.firstDay
+        val endDate = week.lastDay
+        val serializer = eventType.eventSerializer()
+        when (eventType) {
+            EventType.CoronalMassEjection -> api.getCoronalMassEjections(
+                startDate,
+                endDate,
+                nasaApiKeyOrNull()
+            )
+            EventType.GeomagneticStorm -> api.getGeomagneticStorms(
+                startDate,
+                endDate,
+                nasaApiKeyOrNull()
+            )
+            EventType.InterplanetaryShock -> api.getInterplanetaryShocks(
+                startDate,
+                endDate,
+                nasaApiKeyOrNull()
+            )
+            EventType.SolarFlare -> api.getSolarFlares(startDate, endDate, nasaApiKeyOrNull())
+            EventType.SolarEnergeticParticle -> api.getSolarEnergeticParticles(
+                startDate,
+                endDate,
+                nasaApiKeyOrNull()
+            )
+            EventType.MagnetopauseCrossing -> api.getMagnetopauseCrossings(
+                startDate,
+                endDate,
+                nasaApiKeyOrNull()
+            )
+            EventType.RadiationBeltEnhancement -> api.getRadiationBeltEnhancements(
+                startDate,
+                endDate,
+                nasaApiKeyOrNull()
+            )
+            EventType.HighSpeedStream -> api.getHighSpeedStreams(
+                startDate,
+                endDate,
+                nasaApiKeyOrNull()
+            )
         }
+            .map { DonkiJson.decodeFromJsonElement(serializer, it) to it }
+            .sortedBy { it.first.time }.also {
+                Log.d(
+                    TAG,
+                    "getEvents: returning ${it.size} events for week = $week, eventType = $eventType"
+                )
+            }
     } catch (e: Exception) {
         if (e !is CancellationException) {
-            Log.e(TAG, "getEvents: failed to get events summaries for week = $week, eventType = $eventType", e)
+            Log.e(
+                TAG,
+                "getEvents: failed to get events summaries for week = $week, eventType = $eventType",
+                e
+            )
         }
         throw e
-    }
-
-    private suspend fun getEvents(
-        eventType: EventType,
-        startDate: LocalDate,
-        endDate: LocalDate
-    ): List<Event> = when (eventType) {
-        EventType.CoronalMassEjection -> api.getCoronalMassEjections(
-            startDate,
-            endDate,
-            nasaApiKeyOrNull()
-        )
-        EventType.GeomagneticStorm -> api.getGeomagneticStorms(
-            startDate,
-            endDate,
-            nasaApiKeyOrNull()
-        )
-        EventType.InterplanetaryShock -> api.getInterplanetaryShocks(
-            startDate,
-            endDate,
-            nasaApiKeyOrNull()
-        )
-        EventType.SolarFlare -> api.getSolarFlares(startDate, endDate, nasaApiKeyOrNull())
-        EventType.SolarEnergeticParticle -> api.getSolarEnergeticParticles(
-            startDate,
-            endDate,
-            nasaApiKeyOrNull()
-        )
-        EventType.MagnetopauseCrossing -> api.getMagnetopauseCrossings(
-            startDate,
-            endDate,
-            nasaApiKeyOrNull()
-        )
-        EventType.RadiationBeltEnhancement -> api.getRadiationBeltEnhancements(
-            startDate,
-            endDate,
-            nasaApiKeyOrNull()
-        )
-        EventType.HighSpeedStream -> api.getHighSpeedStreams(startDate, endDate, nasaApiKeyOrNull())
     }
 
     private companion object {
