@@ -3,6 +3,9 @@
 package org.equeim.spacer.donki.data.cache.entities
 
 import androidx.room.*
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import org.equeim.spacer.donki.data.DonkiJson
 import org.equeim.spacer.donki.data.eventSerializer
 import org.equeim.spacer.donki.data.model.Event
@@ -23,12 +26,15 @@ internal data class CachedEvent(
     val json: String
 )
 
-internal fun Event.toCachedEvent() = CachedEvent(
-    id = id.stringValue,
-    type = type,
-    time = time,
-    json = DonkiJson.encodeToString(type.eventSerializer(), this)
-)
+internal fun Pair<Event, JsonObject>.toCachedEvent(): CachedEvent {
+    val (event, json) = this
+    return CachedEvent(
+        id = event.id.stringValue,
+        type = event.type,
+        time = event.time,
+        json = DonkiJson.encodeToString(json)
+    )
+}
 
 internal data class CachedEventSummary(
     @ColumnInfo(name = "id")

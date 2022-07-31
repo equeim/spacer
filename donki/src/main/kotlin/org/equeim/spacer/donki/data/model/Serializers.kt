@@ -22,8 +22,7 @@ internal object InstantSerializer : KSerializer<Instant> {
     override fun deserialize(decoder: Decoder): Instant =
         formatter.parse(decoder.decodeString(), Instant::from)
 
-    override fun serialize(encoder: Encoder, value: Instant) =
-        encoder.encodeString(formatter.format(value.atOffset(ZoneOffset.UTC)))
+    override fun serialize(encoder: Encoder, value: Instant) = throw NotImplementedError()
 }
 
 internal object LinkedEventsSerializer : KSerializer<List<EventId>> {
@@ -37,9 +36,7 @@ internal object LinkedEventsSerializer : KSerializer<List<EventId>> {
         return decoder.decodeSerializableValue(actualSerializer).map(LinkedEventJson::id)
     }
 
-    override fun serialize(encoder: Encoder, value: List<EventId>) {
-        encoder.encodeSerializableValue(actualSerializer, value.map(::LinkedEventJson))
-    }
+    override fun serialize(encoder: Encoder, value: List<EventId>) = throw NotImplementedError()
 }
 
 internal object InstrumentsSerializer : KSerializer<List<String>> {
@@ -53,7 +50,5 @@ internal object InstrumentsSerializer : KSerializer<List<String>> {
         return decoder.decodeSerializableValue(actualSerializer).map(InstrumentJson::displayName)
     }
 
-    override fun serialize(encoder: Encoder, value: List<String>) {
-        encoder.encodeSerializableValue(actualSerializer, value.map(::InstrumentJson))
-    }
+    override fun serialize(encoder: Encoder, value: List<String>) = throw NotImplementedError()
 }
