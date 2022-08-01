@@ -115,10 +115,6 @@ private class DonkiJsonConverterFactory(json: Json) : JsonConverterFactory(json)
         val delegate = super.responseBodyConverter(type, annotations, retrofit) ?: return null
         return Converter<ResponseBody, Any> { body ->
             if (body.contentLength() == 0L && rawClass == List::class.java) {
-                Log.d(
-                    TAG,
-                    "responseBodyConverter: handling empty response as empty list for type $type"
-                )
                 emptyList<Any>()
             } else {
                 delegate.convert(body)
