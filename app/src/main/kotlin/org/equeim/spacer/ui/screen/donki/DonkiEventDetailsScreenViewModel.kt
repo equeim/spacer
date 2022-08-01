@@ -34,7 +34,9 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
 
     private val repository = DonkiRepository(application)
 
-    var state: UiState by mutableStateOf(UiState.Loading)
+    var contentUiState: ContentUiState by mutableStateOf(ContentUiState.Loading)
+        private set
+    var refreshing: Boolean by mutableStateOf(false)
         private set
 
     private class LocaleDependentState {
@@ -65,31 +67,36 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
     }
 
     private suspend fun load(forceRefresh: Boolean) {
-        state = when (val state = state) {
-            is UiState.Loaded -> state.copy(refreshing = true)
-            else -> UiState.Loading
+        if (contentUiState is ContentUiState.Error) {
+            contentUiState = ContentUiState.Loading
         }
         val eventById = repository.getEventById(eventId, forceRefresh = forceRefresh)
         if (!forceRefresh && eventById.needsRefreshing) {
             refresh()
         }
-        state = withContext(Dispatchers.Default) { eventById.toState(setRefreshing = true) }
+        contentUiState = withContext(Dispatchers.Default) { eventById.toContentUiState() }
     }
 
     fun refresh() {
-        viewModelScope.launch { load(forceRefresh = true) }
+        viewModelScope.launch {
+            refreshing = true
+            try {
+                load(forceRefresh = true)
+            } finally {
+                refreshing = false
+            }
+        }
     }
 
     fun formatTime(instant: Instant): String {
         return localeDependentState.eventTimeFormatter.format(instant.atZone(timeZone))
     }
 
-    private fun DonkiRepository.EventById.toState(setRefreshing: Boolean) = UiState.Loaded(
+    private fun DonkiRepository.EventById.toContentUiState() = ContentUiState.Loaded(
         type = event.type.getDisplayString(),
         dateTime = localeDependentState.eventTimeFormatter.format(event.time.atZone(timeZone)),
         event = event,
         linkedEvents = event.linkedEvents.mapNotNull { it.toPresentation(timeZone) },
-        refreshing = if (setRefreshing) needsRefreshing else false
     )
 
     private fun EventId.toPresentation(timeZone: ZoneId): LinkedEventPresentation? {
@@ -111,17 +118,15 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
     private fun getString(@StringRes resId: Int) = getApplication<Application>().getString(resId)
 
     @Immutable
-    sealed interface UiState {
-        object Loading : UiState
+    sealed interface ContentUiState {
+        object Loading : ContentUiState
         data class Loaded(
             val type: String,
             val dateTime: String,
             val event: Event,
-            val linkedEvents: List<LinkedEventPresentation>,
-            val refreshing: Boolean
-        ) : UiState
-
-        object Error : UiState
+            val linkedEvents: List<LinkedEventPresentation>
+        ) : ContentUiState
+        object Error : ContentUiState
     }
 
     data class LinkedEventPresentation(
