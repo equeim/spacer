@@ -239,7 +239,7 @@ class DonkiDataSourceNetworkTest {
         assertEquals(instantOf(2022, 4, 28, 3, 6), event.peakTime)
         assertEquals(instantOf(2022, 4, 28, 3, 27), event.endTime)
         assertEquals("C6.7", event.classType)
-        assertEquals("N27W24", event.sourceLocation)
+        assertEquals(Coordinates(Angle.ofDegrees(27.0f), Angle.ofDegrees(-24.0f)), event.sourceLocation)
     }
 
     @Test
