@@ -1,42 +1,29 @@
 package org.equeim.spacer.ui.screen.donki
 
-import android.text.format.DateUtils
-import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import dev.olshevski.navigation.reimagined.navigate
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.model.CoronalMassEjection
-import org.equeim.spacer.ui.components.Card
-import org.equeim.spacer.ui.theme.Dimens
+import org.equeim.spacer.donki.data.model.units.Angle
+import org.equeim.spacer.ui.components.ExpandableCard
 import org.equeim.spacer.ui.theme.SatelliteAlt
 import java.text.DecimalFormat
 import java.text.NumberFormat
+import java.time.Duration
 import java.time.Instant
 import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
-import androidx.compose.runtime.*
-import kotlinx.coroutines.flow.flow
-import org.equeim.spacer.donki.data.model.units.Latitude
-import org.equeim.spacer.donki.data.model.units.Longitude
-import org.equeim.spacer.ui.components.ExpandableCard
-import java.time.Duration
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: (Instant) -> String) =
@@ -79,7 +66,7 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: (Instant)
             }
             LabelFieldPair(R.string.cme_data_level, formatInteger(analysis.levelOfData))
             analysis.speed?.let {
-                LabelFieldPair(R.string.cme_speed, stringResource(R.string.cme_speed_value, it))
+                LabelFieldPair(R.string.cme_speed, stringResource(R.string.cme_speed_value, it.toKilometersPerSecond()))
             }
             LabelFieldPair(R.string.cme_type, analysis.type)
             if (analysis.latitude != null && analysis.longitude != null) {
@@ -91,7 +78,7 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: (Instant)
             analysis.halfAngle?.let {
                 LabelFieldPair(
                     R.string.cme_half_angular_width,
-                    stringResource(R.string.cme_half_angular_width_value, it)
+                    stringResource(R.string.cme_half_angular_width_value, it.degrees)
                 )
             }
             analysis.time215?.let {
@@ -204,20 +191,19 @@ private fun LabelFieldPair(label: String, field: String) {
 }
 
 @Composable
-private fun formatCoordinates(latitude: Latitude, longitude: Longitude): String {
-    val latHemisphere = if (latitude.value >= 0.0f) "N" else "S"
-    val longHemisphere = if (longitude.value >= 0.0f) "E" else "W"
+private fun formatCoordinates(latitude: Angle, longitude: Angle): String {
     return buildString {
-        append(formatCoordinate(abs(latitude.value), latHemisphere))
+        append(formatCoordinate(latitude, if (latitude.degrees >= 0.0f) "N" else "S"))
         append(' ')
-        append(formatCoordinate(abs(longitude.value), longHemisphere))
+        append(formatCoordinate(longitude, if (longitude.degrees >= 0.0f) "E" else "W"))
     }
 }
 
 @Composable
-private fun formatCoordinate(coordinate: Float, hemisphere: String): String {
-    val degrees = coordinate.toInt()
-    val minutesFloat = (coordinate - degrees) * 60.0f
+private fun formatCoordinate(coordinate: Angle, hemisphere: String): String {
+    val absDegrees = abs(coordinate.degrees)
+    val degrees = absDegrees.toInt()
+    val minutesFloat = (absDegrees - degrees) * 60.0f
     val minutes = minutesFloat.toInt()
     val seconds = (minutesFloat - minutes) * 60.0f
     val secondsFormat = remember(Locale.getDefault()) { DecimalFormat("00.###") }
