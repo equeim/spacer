@@ -1,7 +1,9 @@
 package org.equeim.spacer.ui.screen.donki
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -22,19 +24,23 @@ import dev.olshevski.navigation.reimagined.navigate
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.LocalNavController
 import org.equeim.spacer.R
-import org.equeim.spacer.donki.data.model.CoronalMassEjection
-import org.equeim.spacer.donki.data.model.Event
-import org.equeim.spacer.donki.data.model.EventId
+import org.equeim.spacer.donki.data.model.*
+import org.equeim.spacer.donki.data.model.units.Angle
 import org.equeim.spacer.ui.components.Card
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screen.Destination
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
+import org.equeim.spacer.ui.theme.SatelliteAlt
 import org.equeim.spacer.ui.utils.addBottomInsetUnless
+import org.equeim.spacer.ui.utils.formatInteger
 import org.equeim.spacer.ui.utils.hasBottomPadding
 import org.equeim.spacer.ui.utils.plus
 import org.equeim.spacer.utils.getApplicationOrThrow
+import java.text.DecimalFormat
 import java.time.Instant
+import java.util.*
+import kotlin.math.abs
 
 @Parcelize
 data class DonkiEventDetailsScreen(val eventId: EventId) : Destination {
@@ -183,7 +189,13 @@ private fun ScreenContentLoaded(
 private fun SpecificEventDetails(event: Event, formatTime: (Instant) -> String) {
     when (event) {
         is CoronalMassEjection -> CoronalMassEjectionDetails(event, formatTime)
-        else -> Unit
+        is GeomagneticStorm -> GeomagneticStormDetails(event, formatTime)
+        is HighSpeedStream -> HighSpeedStreamDetails(event)
+        is InterplanetaryShock -> InterplanetaryShockDetails(event)
+        is MagnetopauseCrossing -> MagnetopauseCrossingDetails(event)
+        is RadiationBeltEnhancement -> RadiationBeltEnhancementDetails(event)
+        is SolarEnergeticParticle -> SolarEnergeticParticleDetails(event)
+        is SolarFlare -> SolarFlareDetails(event, formatTime)
     }
 }
 
@@ -195,4 +207,75 @@ fun SectionHeader(title: String, style: TextStyle = MaterialTheme.typography.h6)
         style = style,
         modifier = Modifier.padding(top = 8.dp)
     )
+}
+
+@Composable
+fun InstrumentsSection(instruments: List<String>) {
+    if (instruments.isNotEmpty()) {
+        SectionHeader(stringResource(R.string.instruments))
+        SelectionContainer {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                instruments.forEach { instrument ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Filled.SatelliteAlt,
+                            contentDescription = stringResource(R.string.instruments)
+                        )
+                        Text(instrument, modifier = Modifier.padding(start = 16.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LabelFieldPair(@StringRes labelResId: Int, field: String) {
+    LabelFieldPair(stringResource(labelResId), field)
+}
+
+@Composable
+fun LabelFieldPair(label: String, field: String) {
+    Row(Modifier.fillMaxWidth()) {
+        Text(
+            label,
+            Modifier.requiredWidth(150.dp),
+            color = MaterialTheme.colors.secondary,
+        )
+        SelectionContainer(
+            Modifier
+                .padding(start = 8.dp)
+                .weight(1.0f)
+        ) {
+            Text(field)
+        }
+    }
+}
+
+@Composable
+fun formatCoordinates(latitude: Angle, longitude: Angle): String {
+    return buildString {
+        append(formatCoordinate(latitude, if (latitude.degrees >= 0.0f) "N" else "S"))
+        append(' ')
+        append(formatCoordinate(longitude, if (longitude.degrees >= 0.0f) "E" else "W"))
+    }
+}
+
+@Composable
+private fun formatCoordinate(coordinate: Angle, hemisphere: String): String {
+    val absDegrees = abs(coordinate.degrees)
+    val degrees = absDegrees.toInt()
+    val minutesFloat = (absDegrees - degrees) * 60.0f
+    val minutes = minutesFloat.toInt()
+    val seconds = (minutesFloat - minutes) * 60.0f
+    val secondsFormat = remember(Locale.getDefault()) { DecimalFormat("00.###") }
+    return buildString {
+        append(formatInteger(degrees))
+        append("°")
+        append(formatInteger(minutes))
+        append("′")
+        append(secondsFormat.format(seconds))
+        append("″")
+        append(hemisphere)
+    }
 }

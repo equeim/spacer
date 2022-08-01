@@ -52,4 +52,11 @@
     <string name="enlil_kp_90">Predicted Kₚ 90°</string>
     <string name="enlil_kp_135">Predicted Kₚ 135°</string>
     <string name="enlil_kp_180">Predicted Kₚ 180°</string>
+    <string name="gst_kp_indexes">Kₚ-indexes</string>
+    <string name="gst_no_kp_indexes">No Kₚ-indexes</string>
+    <string name="ips_location">Location</string>
+    <string name="flr_peak_time">Peak time</string>
+    <string name="flr_end_time">End time</string>
+    <string name="flr_class">Class</string>
+    <string name="flr_source_location">Source location</string>
 </resources>

@@ -5,6 +5,7 @@ package org.equeim.spacer.donki.data.model
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
+import org.equeim.spacer.donki.data.model.units.Coordinates
 import java.time.Instant
 
 @Serializable
@@ -17,7 +18,7 @@ data class SolarFlare(
     @SerialName("peakTime") val peakTime: Instant,
     @SerialName("endTime") val endTime: Instant?,
     @SerialName("classType") val classType: String,
-    @SerialName("sourceLocation") val sourceLocation: String
+    @SerialName("sourceLocation") @Serializable(SourceLocationSerializer::class) val sourceLocation: Coordinates?
 ) : Event {
     override val type: EventType
         get() = EventType.SolarFlare
