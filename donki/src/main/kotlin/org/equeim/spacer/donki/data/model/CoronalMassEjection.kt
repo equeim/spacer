@@ -10,9 +10,9 @@ import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import org.equeim.spacer.donki.data.model.units.Angle
 import org.equeim.spacer.donki.data.model.units.Coordinates
-import org.equeim.spacer.donki.data.model.units.Latitude
-import org.equeim.spacer.donki.data.model.units.Longitude
+import org.equeim.spacer.donki.data.model.units.Speed
 import java.time.Duration
 import java.time.Instant
 
@@ -39,10 +39,10 @@ data class CoronalMassEjection(
     @Serializable
     data class Analysis(
         @SerialName("time21_5") val time215: Instant?,
-        @SerialName("latitude") val latitude: Latitude?,
-        @SerialName("longitude") val longitude: Longitude?,
-        @SerialName("halfAngle") val halfAngle: Float?,
-        @SerialName("speed") val speed: Float?,
+        @SerialName("latitude") val latitude: Angle?,
+        @SerialName("longitude") val longitude: Angle?,
+        @SerialName("halfAngle") val halfAngle: Angle?,
+        @SerialName("speed") val speed: Speed?,
         @SerialName("type") val type: String,
         @SerialName("isMostAccurate") val isMostAccurate: Boolean,
         @SerialName("note") val note: String,
@@ -57,7 +57,7 @@ data class CoronalMassEjection(
         @SerialName("modelCompletionTime") val modelCompletionTime: Instant,
         @SerialName("estimatedShockArrivalTime") val estimatedShockArrivalTime: Instant?,
         @SerialName("estimatedDuration") @Serializable(EnlilSimulationEstimatedDurationSerializer::class) val estimatedDuration: Duration?,
-        @SerialName("rmin_re") val rminRe: Float?,
+        @SerialName("rmin_re") val rminRe: Angle?,
         @SerialName("kp_18") val kp18: Int?,
         @SerialName("kp_90") val kp90: Int?,
         @SerialName("kp_135") val kp135: Int?,
@@ -117,7 +117,7 @@ private object SourceLocationSerializer : KSerializer<Coordinates?> {
         val longitude = string.substring(longitudeHemisphereIndex + 1).toFloat().let {
             if (longitudeHemisphere == NEGATIVE_LONGITUDE_HEMISPHERE && it != 0.0f) -it else it
         }
-        return Coordinates(Latitude(latitude), Longitude(longitude))
+        return Coordinates(Angle.ofDegrees(latitude), Angle.ofDegrees(longitude))
     }
 
     override fun serialize(encoder: Encoder, value: Coordinates?) = throw NotImplementedError()
