@@ -18,6 +18,7 @@ import org.equeim.spacer.donki.data.model.CoronalMassEjection
 import org.equeim.spacer.donki.data.model.units.Angle
 import org.equeim.spacer.ui.components.ExpandableCard
 import org.equeim.spacer.ui.theme.SatelliteAlt
+import org.equeim.spacer.ui.utils.formatInteger
 import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.time.Duration
@@ -39,22 +40,7 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: (Instant)
                 formatCoordinates(it.latitude, it.longitude)
             )
         }
-        if (event.instruments.isNotEmpty()) {
-            SectionHeader(stringResource(R.string.instruments))
-            SelectionContainer {
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    event.instruments.forEach { instrument ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Filled.SatelliteAlt,
-                                contentDescription = stringResource(R.string.instruments)
-                            )
-                            Text(instrument, modifier = Modifier.padding(start = 16.dp))
-                        }
-                    }
-                }
-            }
-        }
+        InstrumentsSection(event.instruments)
 
         val analysis = remember(event) { event.cmeAnalyses.find { it.isMostAccurate } }
         if (analysis != null) {
@@ -165,61 +151,4 @@ private fun EnlilModelCard(simulation: CoronalMassEjection.EnlilSimulation, form
             }
         }
     )
-}
-
-@Composable
-private fun LabelFieldPair(@StringRes labelResId: Int, field: String) {
-    LabelFieldPair(stringResource(labelResId), field)
-}
-
-@Composable
-private fun LabelFieldPair(label: String, field: String) {
-    Row(Modifier.fillMaxWidth()) {
-        Text(
-            label,
-            Modifier.requiredWidth(150.dp),
-            color = MaterialTheme.colors.secondary,
-        )
-        SelectionContainer(
-            Modifier
-                .padding(start = 8.dp)
-                .weight(1.0f)
-        ) {
-            Text(field)
-        }
-    }
-}
-
-@Composable
-private fun formatCoordinates(latitude: Angle, longitude: Angle): String {
-    return buildString {
-        append(formatCoordinate(latitude, if (latitude.degrees >= 0.0f) "N" else "S"))
-        append(' ')
-        append(formatCoordinate(longitude, if (longitude.degrees >= 0.0f) "E" else "W"))
-    }
-}
-
-@Composable
-private fun formatCoordinate(coordinate: Angle, hemisphere: String): String {
-    val absDegrees = abs(coordinate.degrees)
-    val degrees = absDegrees.toInt()
-    val minutesFloat = (absDegrees - degrees) * 60.0f
-    val minutes = minutesFloat.toInt()
-    val seconds = (minutesFloat - minutes) * 60.0f
-    val secondsFormat = remember(Locale.getDefault()) { DecimalFormat("00.###") }
-    return buildString {
-        append(formatInteger(degrees))
-        append("°")
-        append(formatInteger(minutes))
-        append("′")
-        append(secondsFormat.format(seconds))
-        append("″")
-        append(hemisphere)
-    }
-}
-
-@Composable
-private fun formatInteger(integer: Int): String {
-    val numberFormat = remember(Locale.getDefault()) { NumberFormat.getIntegerInstance() }
-    return numberFormat.format(integer)
 }
