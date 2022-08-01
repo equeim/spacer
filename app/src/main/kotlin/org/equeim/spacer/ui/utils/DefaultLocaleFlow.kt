@@ -13,6 +13,5 @@ private const val TAG = "DefaultLocaleFlow"
 fun Context.defaultLocaleFlow(): Flow<Locale> = systemBroadcastFlow(Intent.ACTION_LOCALE_CHANGED)
     .map { Locale.getDefault() }
     .onStart { emit(Locale.getDefault()) }
-    .buffer(Channel.CONFLATED)
+    .conflate()
     .distinctUntilChanged()
-    .onEach { Log.d(TAG, "Default locale = $it") }
