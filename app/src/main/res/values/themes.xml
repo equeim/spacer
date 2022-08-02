@@ -1,14 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Theme.Spacer.Base" parent="android:Theme.Material" />
 
     <style name="Theme.Spacer" parent="Theme.Spacer.Base">
         <item name="android:windowActionBar">false</item>
         <item name="android:windowNoTitle">true</item>
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">@bool/light_system_bars</item>
-        <item name="android:navigationBarColor">@color/navigation_bar_color</item>
-        <item name="android:windowLightNavigationBar">@bool/light_system_bars</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+
+<!--        This attributes change between night mode on all SDK versions and are updated at runtime -->
+        <item name="android:windowLightStatusBar">@bool/light_system_bars</item>
+        <item name="android:windowLightNavigationBar">@bool/light_system_bars</item>
+
+<!--        This attribute changes between night mode on SDK < 29 and is updated at runtime -->
+        <item name="android:navigationBarColor">@color/navigation_bar_color</item>
+
+<!--        This attribute changes between night mode on all SDK versions but we don't need to update in on runtime -->
+<!--        because it's visible only when activity is created and uses system-wide night mode -->
+<!--        We also set it on SDK >= 31 since some devices still use it instead of windowSplashScreenBackground -->
+        <item name="android:windowBackground">@color/splash_screen_background</item>
+
+        <!--        This attribute changes between night mode on SDK >= 31 but we don't need to update in on runtime -->
+        <!--        because it's used only when activity is created and uses system-wide night mode -->
+        <item name="android:windowSplashScreenBackground" tools:targetApi="31">@color/splash_screen_background</item>
     </style>
 </resources>
