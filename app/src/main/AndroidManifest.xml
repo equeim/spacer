@@ -13,7 +13,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:configChanges="uiMode">
+            android:configChanges="density|layoutDirection|locale|orientation|screenLayout|screenSize|smallestScreenSize|uiMode|keyboard">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
