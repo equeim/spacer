@@ -1,7 +1,5 @@
 package org.equeim.spacer.ui.screens.donki
 
-import org.equeim.spacer.ui.components.Card
-
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,7 +21,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.itemsIndexed
+import androidx.paging.compose.items
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import dev.olshevski.navigation.reimagined.navigate
@@ -32,8 +30,9 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.merge
 import kotlinx.parcelize.Parcelize
-import org.equeim.spacer.ui.LocalNavController
 import org.equeim.spacer.R
+import org.equeim.spacer.ui.LocalNavController
+import org.equeim.spacer.ui.components.Card
 import org.equeim.spacer.ui.components.RootScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreen
@@ -188,7 +187,7 @@ private fun anyError(vararg states: LoadState?): LoadState.Error? =
     states.asSequence().filterIsInstance<LoadState.Error>().firstOrNull()
 
 @Composable
-private fun BoxScope.DonkiEventsScreenContentErrorPlaceholder() {
+private fun DonkiEventsScreenContentErrorPlaceholder() {
     /**
      * We need [verticalScroll] for [SwipeRefresh] to work
      */
@@ -221,23 +220,19 @@ private fun DonkiEventsScreenContentPaging(
 ) {
     val listPadding = PaddingValues(Dimens.ScreenContentPadding).addBottomInsetUnless(screenHasBottomPadding)
     LazyColumn(
+        Modifier.fillMaxSize(),
         state = lazyListState,
         contentPadding = listPadding,
-        modifier = Modifier.fillMaxSize()
+        verticalArrangement = Arrangement.spacedBy(Dimens.SpacingBetweenCards)
     ) {
-        itemsIndexed(
+        items(
             paging,
-            key = { _, item -> item.lazyListKey }
-        ) { index, item ->
-            val isFirst = index == 0
-            val isLast = index == paging.itemCount - 1
+            key = DonkiEventsScreenViewModel.ListItem::lazyListKey
+        ) { item ->
             checkNotNull(item)
             when (item) {
                 is DonkiEventsScreenViewModel.DateSeparator -> {
-                    Row(modifier = Modifier
-                        .run { if (isFirst) padding(bottom = 8.dp) else padding(vertical = 8.dp) }
-                        .fillMaxWidth()
-                    ) {
+                    Row(Modifier.fillMaxWidth()) {
                         Surface(
                             shape = RoundedCornerShape(percent = 50),
                             color = MaterialTheme.colors.secondary,
@@ -247,7 +242,7 @@ private fun DonkiEventsScreenContentPaging(
                             Text(
                                 text = item.date,
                                 style = MaterialTheme.typography.h6,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = Dimens.SpacingLarge, vertical = 4.dp)
                             )
                         }
                     }
@@ -256,16 +251,14 @@ private fun DonkiEventsScreenContentPaging(
                     val navController = LocalNavController.current
                     Card(
                         { navController.navigate(DonkiEventDetailsScreen(item.id)) },
-                        Modifier
-                            .run { if (isLast) padding(top = 8.dp) else padding(vertical = 8.dp) }
-                            .fillMaxWidth()
+                        Modifier.fillMaxWidth()
                     ) {
                         Column {
                             Text(text = item.time)
                             Text(
                                 text = item.type,
                                 style = MaterialTheme.typography.h6,
-                                modifier = Modifier.padding(top = 8.dp)
+                                modifier = Modifier.padding(top = Dimens.SpacingSmall)
                             )
                         }
                     }

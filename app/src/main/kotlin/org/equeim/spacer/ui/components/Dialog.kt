@@ -32,7 +32,7 @@ fun Dialog(
                         text = title,
                         style = MaterialTheme.typography.h5,
                         modifier = Modifier.padding(
-                            bottom = 16.dp,
+                            bottom = Dimens.SpacingLarge,
                             start = Dimens.DialogContentPadding,
                             end = Dimens.DialogContentPadding
                         )
