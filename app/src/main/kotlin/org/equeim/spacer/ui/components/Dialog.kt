@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import dev.olshevski.navigation.reimagined.pop
-import org.equeim.spacer.LocalNavController
+import org.equeim.spacer.ui.LocalNavController
 import org.equeim.spacer.ui.theme.Dimens
 
 @Composable

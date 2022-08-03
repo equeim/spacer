@@ -1,4 +1,4 @@
-package org.equeim.spacer.ui.screen.settings
+package org.equeim.spacer.ui.screens.settings
 
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.clickable
@@ -19,12 +19,12 @@ import dev.olshevski.navigation.reimagined.pop
 import dev.olshevski.navigation.reimagined.rememberNavController
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.AppSettings
-import org.equeim.spacer.LocalAppSettings
-import org.equeim.spacer.LocalNavController
+import org.equeim.spacer.ui.LocalAppSettings
+import org.equeim.spacer.ui.LocalNavController
 import org.equeim.spacer.R
 import org.equeim.spacer.ui.components.Dialog
 import org.equeim.spacer.ui.components.RadioButtonListItem
-import org.equeim.spacer.ui.screen.Destination
+import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.utils.*

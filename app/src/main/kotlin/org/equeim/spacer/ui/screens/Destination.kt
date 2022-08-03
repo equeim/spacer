@@ -1,4 +1,4 @@
-package org.equeim.spacer.ui.screen
+package org.equeim.spacer.ui.screens
 
 import android.os.Parcelable
 import androidx.compose.runtime.Composable

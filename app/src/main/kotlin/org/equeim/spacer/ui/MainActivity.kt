@@ -1,4 +1,4 @@
-package org.equeim.spacer
+package org.equeim.spacer.ui
 
 import android.app.Application
 import android.content.res.Configuration
@@ -29,8 +29,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.runBlocking
-import org.equeim.spacer.ui.screen.Destination
-import org.equeim.spacer.ui.screen.donki.DonkiEventsScreen
+import org.equeim.spacer.AppSettings
+import org.equeim.spacer.R
+import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.donki.DonkiEventsScreen
 import org.equeim.spacer.ui.theme.ApplicationTheme
 import org.equeim.spacer.ui.utils.defaultLocale
 import org.equeim.spacer.ui.utils.defaultLocaleFlow
@@ -118,7 +120,7 @@ private object DarkThemeModeProvider {
     private var darkThemeModeModeFlow: StateFlow<AppSettings.DarkThemeMode>? = null
 
     fun darkThemeMode(application: Application): StateFlow<AppSettings.DarkThemeMode> {
-        return this.darkThemeModeModeFlow ?: runBlocking {
+        return darkThemeModeModeFlow ?: runBlocking {
             val settings = AppSettings(application)
             settings.darkThemeMode.flow().stateIn(collectingScope).also {
                 darkThemeModeModeFlow = it

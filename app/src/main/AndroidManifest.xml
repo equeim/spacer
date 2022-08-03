@@ -11,7 +11,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Spacer">
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.MainActivity"
             android:exported="true"
             android:configChanges="density|layoutDirection|locale|orientation|screenLayout|screenSize|smallestScreenSize|uiMode|keyboard">
             <intent-filter>

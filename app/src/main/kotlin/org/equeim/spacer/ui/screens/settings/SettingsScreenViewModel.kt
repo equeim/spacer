@@ -1,4 +1,4 @@
-package org.equeim.spacer.ui.screen.settings
+package org.equeim.spacer.ui.screens.settings
 
 import android.app.Application
 import androidx.compose.runtime.*

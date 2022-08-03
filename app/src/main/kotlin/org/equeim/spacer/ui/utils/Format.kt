@@ -2,9 +2,8 @@ package org.equeim.spacer.ui.utils
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import org.equeim.spacer.LocalDefaultLocale
+import org.equeim.spacer.ui.LocalDefaultLocale
 import java.text.NumberFormat
-import java.util.*
 
 @Composable
 fun formatInteger(integer: Int): String {
