@@ -22,6 +22,7 @@ import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import dev.olshevski.navigation.reimagined.navigate
 import kotlinx.parcelize.Parcelize
+import org.equeim.spacer.LocalDefaultLocale
 import org.equeim.spacer.LocalNavController
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.model.*
@@ -39,7 +40,6 @@ import org.equeim.spacer.ui.utils.plus
 import org.equeim.spacer.utils.getApplicationOrThrow
 import java.text.DecimalFormat
 import java.time.Instant
-import java.util.*
 import kotlin.math.abs
 
 @Parcelize
@@ -105,7 +105,7 @@ private fun ScreenContent(
                     is DonkiEventDetailsScreenViewModel.ContentUiState.Loading -> ScreenContentLoadingPlaceholder()
                     is DonkiEventDetailsScreenViewModel.ContentUiState.Error -> ScreenContentErrorPlaceholder()
                     is DonkiEventDetailsScreenViewModel.ContentUiState.Loaded -> {
-                        ScreenContentLoaded(contentUiState, contentPadding.hasBottomPadding, model::formatTime)
+                        ScreenContentLoaded(contentUiState, contentPadding.hasBottomPadding) { model.formatTime(it) }
                     }
                 }
             }
@@ -135,7 +135,7 @@ private fun BoxScope.ScreenContentErrorPlaceholder() {
 private fun ScreenContentLoaded(
     state: DonkiEventDetailsScreenViewModel.ContentUiState.Loaded,
     screenHasBottomPadding: Boolean,
-    formatTime: (Instant) -> String
+    formatTime: @Composable (Instant) -> String
 ) {
     Column(
         Modifier
@@ -186,7 +186,7 @@ private fun ScreenContentLoaded(
 }
 
 @Composable
-private fun SpecificEventDetails(event: Event, formatTime: (Instant) -> String) {
+private fun SpecificEventDetails(event: Event, formatTime: @Composable (Instant) -> String) {
     when (event) {
         is CoronalMassEjection -> CoronalMassEjectionDetails(event, formatTime)
         is GeomagneticStorm -> GeomagneticStormDetails(event, formatTime)
@@ -268,7 +268,7 @@ private fun formatCoordinate(coordinate: Angle, hemisphere: String): String {
     val minutesFloat = (absDegrees - degrees) * 60.0f
     val minutes = minutesFloat.toInt()
     val seconds = (minutesFloat - minutes) * 60.0f
-    val secondsFormat = remember(Locale.getDefault()) { DecimalFormat("00.###") }
+    val secondsFormat = remember(LocalDefaultLocale.current) { DecimalFormat("00.###") }
     return buildString {
         append(formatInteger(degrees))
         append("°")
