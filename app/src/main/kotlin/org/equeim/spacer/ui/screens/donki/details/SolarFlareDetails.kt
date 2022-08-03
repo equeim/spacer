@@ -5,14 +5,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.model.SolarFlare
+import org.equeim.spacer.ui.theme.Dimens
 import java.time.Instant
 
 @Composable
 fun SolarFlareDetails(event: SolarFlare, formatTime: @Composable (Instant) -> String) =
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
         LabelFieldPair(
             R.string.flr_peak_time,
             formatTime(event.peakTime)
