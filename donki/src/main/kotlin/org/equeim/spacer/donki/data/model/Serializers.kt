@@ -11,8 +11,6 @@ import kotlinx.serialization.serializer
 import org.equeim.spacer.donki.data.model.units.Angle
 import org.equeim.spacer.donki.data.model.units.Coordinates
 import java.time.Instant
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 internal object InstantSerializer : KSerializer<Instant> {
