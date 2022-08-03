@@ -4,10 +4,8 @@ package org.equeim.spacer.donki.data.cache.entities
 
 import androidx.room.*
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import org.equeim.spacer.donki.data.DonkiJson
-import org.equeim.spacer.donki.data.eventSerializer
 import org.equeim.spacer.donki.data.model.Event
 import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventSummary
