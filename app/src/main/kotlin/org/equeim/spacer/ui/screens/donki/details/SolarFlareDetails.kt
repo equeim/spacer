@@ -1,4 +1,4 @@
-package org.equeim.spacer.ui.screen.donki
+package org.equeim.spacer.ui.screens.donki.details
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.equeim.spacer.R
-import org.equeim.spacer.donki.data.model.InterplanetaryShock
 import org.equeim.spacer.donki.data.model.SolarFlare
 import java.time.Instant
 

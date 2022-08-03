@@ -1,4 +1,4 @@
-package org.equeim.spacer.ui.screen.donki
+package org.equeim.spacer.ui.screens.donki
 
 import androidx.annotation.StringRes
 import org.equeim.spacer.R
