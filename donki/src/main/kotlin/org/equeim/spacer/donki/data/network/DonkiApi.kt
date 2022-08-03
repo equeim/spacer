@@ -1,7 +1,6 @@
 package org.equeim.spacer.donki.data.network
 
 import kotlinx.serialization.json.JsonObject
-import org.equeim.spacer.donki.data.model.*
 import retrofit2.http.GET
 import retrofit2.http.Query
 import java.time.LocalDate

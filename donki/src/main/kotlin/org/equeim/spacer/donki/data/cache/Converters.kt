@@ -3,8 +3,6 @@ package org.equeim.spacer.donki.data.cache
 import androidx.room.TypeConverter
 import org.equeim.spacer.donki.data.model.EventType
 import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneOffset
 
 internal object Converters {
     @TypeConverter
