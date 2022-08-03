@@ -12,7 +12,7 @@ import org.equeim.spacer.donki.data.model.SolarFlare
 import java.time.Instant
 
 @Composable
-fun SolarFlareDetails(event: SolarFlare, formatTime: (Instant) -> String) =
+fun SolarFlareDetails(event: SolarFlare, formatTime: @Composable (Instant) -> String) =
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         LabelFieldPair(
             R.string.flr_peak_time,

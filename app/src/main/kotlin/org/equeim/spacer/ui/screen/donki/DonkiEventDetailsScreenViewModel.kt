@@ -3,10 +3,7 @@ package org.equeim.spacer.ui.screen.donki
 import android.app.Application
 import android.util.Log
 import androidx.annotation.StringRes
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -15,6 +12,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.equeim.spacer.AppSettings
+import org.equeim.spacer.LocalDefaultLocale
 import org.equeim.spacer.donki.data.DonkiRepository
 import org.equeim.spacer.donki.data.model.Event
 import org.equeim.spacer.donki.data.model.EventId
@@ -88,7 +86,9 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
         }
     }
 
+    @Composable
     fun formatTime(instant: Instant): String {
+        LocalDefaultLocale.current
         return localeDependentState.eventTimeFormatter.format(instant.atZone(timeZone))
     }
 

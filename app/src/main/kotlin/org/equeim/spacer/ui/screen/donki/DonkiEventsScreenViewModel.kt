@@ -52,12 +52,12 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
     val pagingData: Flow<PagingData<ListItem>>
 
     init {
-        val pager = repository.getEventSummariesPager()
+        val basePagingData = repository.getEventSummariesPager().flow.cachedIn(viewModelScope)
         val defaultLocaleFlow = application.defaultLocaleFlow().onEach {
             localeDependentState = LocaleDependentState()
         }
         pagingData = combine(
-            pager.flow,
+            basePagingData,
             settings.displayEventsTimeInUTC.flow(),
             defaultLocaleFlow,
             ::Triple
