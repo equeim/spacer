@@ -13,9 +13,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
-import kotlin.math.exp
+import org.equeim.spacer.ui.theme.Dimens
 
-val CARD_CONTENT_PADDING = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+val CARD_CONTENT_PADDING = PaddingValues(horizontal = Dimens.SpacingLarge, vertical = Dimens.SpacingMedium)
 private val CARD_SHAPE = RoundedCornerShape(10.dp)
 private val CARD_ELEVATION = 2.dp
 
@@ -63,7 +63,7 @@ fun ExpandableCard(
                 top = contentPadding.calculateTopPadding(),
                 bottom = contentPadding.calculateBottomPadding()
             ),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
         ) {
             val layoutDirection = LocalLayoutDirection.current
             Box(

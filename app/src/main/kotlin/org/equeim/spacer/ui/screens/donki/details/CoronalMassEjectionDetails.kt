@@ -1,28 +1,28 @@
 package org.equeim.spacer.ui.screens.donki.details
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.*
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.OutlinedButton
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.model.CoronalMassEjection
 import org.equeim.spacer.ui.components.ExpandableCard
+import org.equeim.spacer.ui.components.SectionHeader
+import org.equeim.spacer.ui.components.SectionPlaceholder
+import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.utils.formatInteger
 import java.time.Duration
 import java.time.Instant
 
 @Composable
 fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: @Composable (Instant) -> String) =
-    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
         if (event.note.isNotEmpty()) {
             SelectionContainer {
                 Text(event.note)
@@ -44,6 +44,7 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: @Composab
                     Text(analysis.note)
                 }
             }
+            Spacer(Modifier.height(Dimens.SpacingMedium - Dimens.SpacingSmall))
             LabelFieldPair(R.string.cme_data_level, formatInteger(analysis.levelOfData))
             analysis.speed?.let {
                 LabelFieldPair(R.string.cme_speed, stringResource(R.string.cme_speed_value, it.toKilometersPerSecond()))
@@ -64,6 +65,7 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: @Composab
             analysis.time215?.let {
                 LabelFieldPair(R.string.cme_time215, formatTime(it))
             }
+            Spacer(Modifier.height(Dimens.SpacingMedium - Dimens.SpacingSmall))
             val uriHandler = LocalUriHandler.current
             OutlinedButton(
                 { uriHandler.openUri(analysis.link) }
@@ -76,22 +78,10 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: @Composab
                     EnlilModelCard(simulation, formatTime)
                 }
             } else {
-                CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
-                    Text(
-                        stringResource(R.string.enlil_no_models),
-                        Modifier.padding(top = 8.dp),
-                        style = MaterialTheme.typography.h6
-                    )
-                }
+                SectionPlaceholder(stringResource(R.string.enlil_no_models))
             }
         } else {
-            CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
-                Text(
-                    stringResource(R.string.cme_no_analysis),
-                    Modifier.padding(top = 8.dp),
-                    style = MaterialTheme.typography.h6
-                )
-            }
+            SectionPlaceholder(stringResource(R.string.cme_no_analysis))
         }
     }
 
@@ -100,18 +90,16 @@ private fun EnlilModelCard(simulation: CoronalMassEjection.EnlilSimulation, form
     ExpandableCard(
         Modifier.fillMaxWidth(),
         content = {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
                 Text(stringResource(R.string.enlil_description, formatTime(simulation.modelCompletionTime), simulation.au))
             }
         },
         expandedContent = {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
                 if (simulation.estimatedShockArrivalTime == null && simulation.estimatedDuration == null) {
-                    CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
-                        Text(stringResource(R.string.enlil_earth_no_impact))
-                    }
+                    SectionPlaceholder(stringResource(R.string.enlil_earth_no_impact), style = MaterialTheme.typography.body1)
                 } else {
-                    SectionHeader(stringResource(R.string.enlil_earth_impact), MaterialTheme.typography.body1)
+                    SectionHeader(stringResource(R.string.enlil_earth_impact), style = MaterialTheme.typography.body1)
                     simulation.estimatedShockArrivalTime?.let {
                         LabelFieldPair(R.string.enlil_earth_shock_arrival_time, formatTime(it))
                     }
@@ -129,14 +117,12 @@ private fun EnlilModelCard(simulation: CoronalMassEjection.EnlilSimulation, form
                     LabelFieldPair(R.string.enlil_kp_180, formatInteger(it))
                 }
                 if (simulation.impacts.isNotEmpty()) {
-                    SectionHeader(stringResource(R.string.enlil_other_impacts), MaterialTheme.typography.body1)
+                    SectionHeader(stringResource(R.string.enlil_other_impacts), style = MaterialTheme.typography.body1)
                     simulation.impacts.forEach { impact ->
                         LabelFieldPair(impact.location, formatTime(impact.arrivalTime))
                     }
                 } else {
-                    CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
-                        Text(stringResource(R.string.enlil_no_other_impacts))
-                    }
+                    SectionPlaceholder(stringResource(R.string.enlil_no_other_impacts), style = MaterialTheme.typography.body1)
                 }
                 val uriHandler = LocalUriHandler.current
                 OutlinedButton({ uriHandler.openUri(simulation.link) }) {

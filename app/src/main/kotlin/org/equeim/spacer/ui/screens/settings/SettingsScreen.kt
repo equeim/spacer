@@ -11,7 +11,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.olshevski.navigation.reimagined.DialogNavHost
 import dev.olshevski.navigation.reimagined.navigate
@@ -19,15 +18,19 @@ import dev.olshevski.navigation.reimagined.pop
 import dev.olshevski.navigation.reimagined.rememberNavController
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.AppSettings
+import org.equeim.spacer.R
 import org.equeim.spacer.ui.LocalAppSettings
 import org.equeim.spacer.ui.LocalNavController
-import org.equeim.spacer.R
 import org.equeim.spacer.ui.components.Dialog
 import org.equeim.spacer.ui.components.RadioButtonListItem
+import org.equeim.spacer.ui.components.SectionHeader
+import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.theme.Dimens
-import org.equeim.spacer.ui.components.SubScreenTopAppBar
-import org.equeim.spacer.ui.utils.*
+import org.equeim.spacer.ui.utils.addBottomInsetUnless
+import org.equeim.spacer.ui.utils.collectAsStateWhenStarted
+import org.equeim.spacer.ui.utils.hasBottomPadding
+import org.equeim.spacer.ui.utils.plus
 
 @Parcelize
 object SettingsScreen : Destination {
@@ -54,21 +57,18 @@ private fun SettingsScreen() {
             return@Scaffold
         }
         Column(
-            modifier = Modifier
+            Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(
                     contentPadding
                         .plus(PaddingValues(vertical = Dimens.ScreenContentPadding))
                         .addBottomInsetUnless(contentPadding.hasBottomPadding)
-                )
+                ),
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
         ) {
-            Text(
-                stringResource(R.string.appearance),
-                color = MaterialTheme.colors.primary,
-                modifier = Modifier.padding(horizontal = Dimens.ScreenContentPadding)
-                    .padding(bottom = 16.dp)
-            )
+            SectionHeader(stringResource(R.string.appearance), Modifier.padding(horizontal = Dimens.ScreenContentPadding))
+
             val darkThemeMode by model.darkThemeMode.collectAsStateWhenStarted()
             ListItem(
                 text = { Text(stringResource(R.string.dark_theme)) },
@@ -86,14 +86,8 @@ private fun SettingsScreen() {
                 }
             )
 
-            Text(
-                stringResource(R.string.behaviour),
-                color = MaterialTheme.colors.primary,
-                modifier = Modifier.padding(
-                    horizontal = Dimens.ScreenContentPadding,
-                    vertical = 16.dp
-                )
-            )
+            SectionHeader(stringResource(R.string.behaviour), Modifier.padding(horizontal = Dimens.ScreenContentPadding))
+
             val displayEventsTimeInUTC by model.displayEventsTimeInUTC.collectAsStateWhenStarted()
             ListItem(
                 text = { Text(stringResource(R.string.display_events_in_utc)) },

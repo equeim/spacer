@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -22,12 +21,13 @@ import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import dev.olshevski.navigation.reimagined.navigate
 import kotlinx.parcelize.Parcelize
-import org.equeim.spacer.ui.LocalDefaultLocale
-import org.equeim.spacer.ui.LocalNavController
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.model.*
 import org.equeim.spacer.donki.data.model.units.Angle
+import org.equeim.spacer.ui.LocalDefaultLocale
+import org.equeim.spacer.ui.LocalNavController
 import org.equeim.spacer.ui.components.Card
+import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.theme.Dimens
@@ -149,7 +149,7 @@ private fun ScreenContentLoaded(
                     )
                     .addBottomInsetUnless(screenHasBottomPadding)
             ),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
     ) {
         Text(
             state.type,
@@ -162,22 +162,25 @@ private fun ScreenContentLoaded(
                 style = MaterialTheme.typography.h6
             )
         }
+        Spacer(Modifier.height(Dimens.SpacingMedium - Dimens.SpacingSmall))
         SpecificEventDetails(state.event, formatTime)
         if (state.linkedEvents.isNotEmpty()) {
             SectionHeader(stringResource(R.string.linked_events))
-            val navController = LocalNavController.current
-            state.linkedEvents.forEach { linkedEvent ->
-                Card(
-                    { navController.navigate(DonkiEventDetailsScreen(linkedEvent.id)) },
-                    Modifier.fillMaxWidth(),
-                ) {
-                    Column {
-                        Text(text = linkedEvent.dateTime)
-                        Text(
-                            text = linkedEvent.type,
-                            style = MaterialTheme.typography.h6,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Dimens.SpacingBetweenCards)) {
+                val navController = LocalNavController.current
+                state.linkedEvents.forEach { linkedEvent ->
+                    Card(
+                        { navController.navigate(DonkiEventDetailsScreen(linkedEvent.id)) },
+                        Modifier.fillMaxWidth(),
+                    ) {
+                        Column {
+                            Text(text = linkedEvent.dateTime)
+                            Text(
+                                text = linkedEvent.type,
+                                style = MaterialTheme.typography.h6,
+                                modifier = Modifier.padding(top = Dimens.SpacingSmall)
+                            )
+                        }
                     }
                 }
             }
@@ -200,16 +203,6 @@ private fun SpecificEventDetails(event: Event, formatTime: @Composable (Instant)
 }
 
 @Composable
-fun SectionHeader(title: String, style: TextStyle = MaterialTheme.typography.h6) {
-    Text(
-        title,
-        color = MaterialTheme.colors.primary,
-        style = style,
-        modifier = Modifier.padding(top = 8.dp)
-    )
-}
-
-@Composable
 fun InstrumentsSection(instruments: List<String>) {
     if (instruments.isNotEmpty()) {
         SectionHeader(stringResource(R.string.instruments))
@@ -221,7 +214,7 @@ fun InstrumentsSection(instruments: List<String>) {
                             Icons.Filled.SatelliteAlt,
                             contentDescription = stringResource(R.string.instruments)
                         )
-                        Text(instrument, modifier = Modifier.padding(start = 16.dp))
+                        Text(instrument, modifier = Modifier.padding(start = Dimens.SpacingLarge))
                     }
                 }
             }
@@ -244,7 +237,7 @@ fun LabelFieldPair(label: String, field: String) {
         )
         SelectionContainer(
             Modifier
-                .padding(start = 8.dp)
+                .padding(start = Dimens.SpacingSmall)
                 .weight(1.0f)
         ) {
             Text(field)

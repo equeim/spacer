@@ -10,10 +10,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import dev.olshevski.navigation.reimagined.pop
-import org.equeim.spacer.ui.LocalNavController
 import org.equeim.spacer.R
+import org.equeim.spacer.ui.LocalNavController
+import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.utils.plus
 
 @Composable
@@ -61,7 +61,7 @@ fun SubScreenTopAppBar(
             IconButton(navController::pop) {
                 Icon(Icons.Filled.ArrowBack, stringResource(R.string.navigate_up))
             }
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(Dimens.SpacingLarge))
             Text(
                 text = title,
                 style = MaterialTheme.typography.h6
