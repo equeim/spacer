@@ -1,4 +1,4 @@
-package org.equeim.spacer.ui.screen.donki
+package org.equeim.spacer.ui.screens.donki
 
 import org.equeim.spacer.ui.components.Card
 
@@ -32,11 +32,12 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.merge
 import kotlinx.parcelize.Parcelize
-import org.equeim.spacer.LocalNavController
+import org.equeim.spacer.ui.LocalNavController
 import org.equeim.spacer.R
 import org.equeim.spacer.ui.components.RootScreenTopAppBar
-import org.equeim.spacer.ui.screen.Destination
-import org.equeim.spacer.ui.screen.settings.SettingsScreen
+import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreen
+import org.equeim.spacer.ui.screens.settings.SettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.utils.addBottomInsetUnless
 import org.equeim.spacer.ui.utils.hasBottomPadding

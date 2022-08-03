@@ -1,4 +1,4 @@
-package org.equeim.spacer.ui.screen.donki
+package org.equeim.spacer.ui.screens.donki.details
 
 import android.app.Application
 import android.util.Log
@@ -12,11 +12,12 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.equeim.spacer.AppSettings
-import org.equeim.spacer.LocalDefaultLocale
+import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.donki.data.DonkiRepository
 import org.equeim.spacer.donki.data.model.Event
 import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventType
+import org.equeim.spacer.ui.screens.donki.displayStringResId
 import org.equeim.spacer.ui.utils.defaultLocaleFlow
 import java.time.Instant
 import java.time.ZoneId

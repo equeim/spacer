@@ -1,4 +1,4 @@
-package org.equeim.spacer.ui.screen.donki
+package org.equeim.spacer.ui.screens.donki.details
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.*
@@ -22,14 +22,14 @@ import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import dev.olshevski.navigation.reimagined.navigate
 import kotlinx.parcelize.Parcelize
-import org.equeim.spacer.LocalDefaultLocale
-import org.equeim.spacer.LocalNavController
+import org.equeim.spacer.ui.LocalDefaultLocale
+import org.equeim.spacer.ui.LocalNavController
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.model.*
 import org.equeim.spacer.donki.data.model.units.Angle
 import org.equeim.spacer.ui.components.Card
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
-import org.equeim.spacer.ui.screen.Destination
+import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.theme.SatelliteAlt

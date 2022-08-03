@@ -12,7 +12,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.olshevski.navigation.reimagined.pop
-import org.equeim.spacer.LocalNavController
+import org.equeim.spacer.ui.LocalNavController
 import org.equeim.spacer.R
 import org.equeim.spacer.ui.utils.plus
 
