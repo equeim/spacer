@@ -1,17 +1,23 @@
 package org.equeim.spacer.ui.utils
 
+import android.content.ComponentCallbacks
 import android.content.Context
-import android.content.Intent
-import android.util.Log
-import kotlinx.coroutines.channels.Channel
+import android.content.res.Configuration
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
-import org.equeim.spacer.utils.systemBroadcastFlow
+import kotlinx.coroutines.launch
 import java.util.*
 
-private const val TAG = "DefaultLocaleFlow"
+fun Context.defaultLocaleFlow(): Flow<Locale> = callbackFlow {
+    val callback = object : ComponentCallbacks {
+        override fun onConfigurationChanged(newConfig: Configuration) {
+            launch { send(newConfig.locales[0]) }
+        }
+        override fun onLowMemory() = Unit
+    }
+    registerComponentCallbacks(callback)
+    awaitClose { unregisterComponentCallbacks(callback) }
+}.onStart { emit(defaultLocale) }.conflate().distinctUntilChanged()
 
-fun Context.defaultLocaleFlow(): Flow<Locale> = systemBroadcastFlow(Intent.ACTION_LOCALE_CHANGED)
-    .map { Locale.getDefault() }
-    .onStart { emit(Locale.getDefault()) }
-    .conflate()
-    .distinctUntilChanged()
+val Context.defaultLocale: Locale
+    get() = resources.configuration.locales[0]

@@ -18,6 +18,7 @@ android {
         isMinifyEnabled = true
         isShrinkResources = true
         proguardFiles.addAll(arrayOf(getDefaultProguardFile("proguard-android-optimize.txt"), file("proguard-rules.pro")))
+        signingConfig = signingConfigs.getByName("debug")
     }
 
     buildFeatures.compose = true

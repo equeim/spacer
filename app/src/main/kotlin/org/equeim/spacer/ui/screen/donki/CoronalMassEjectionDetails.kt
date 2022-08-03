@@ -1,33 +1,27 @@
 package org.equeim.spacer.ui.screen.donki
 
-import androidx.annotation.StringRes
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.model.CoronalMassEjection
-import org.equeim.spacer.donki.data.model.units.Angle
 import org.equeim.spacer.ui.components.ExpandableCard
-import org.equeim.spacer.ui.theme.SatelliteAlt
 import org.equeim.spacer.ui.utils.formatInteger
-import java.text.DecimalFormat
-import java.text.NumberFormat
 import java.time.Duration
 import java.time.Instant
-import java.util.*
-import kotlin.math.abs
 
 @Composable
-fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: (Instant) -> String) =
+fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: @Composable (Instant) -> String) =
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (event.note.isNotEmpty()) {
             SelectionContainer {
@@ -102,7 +96,7 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: (Instant)
     }
 
 @Composable
-private fun EnlilModelCard(simulation: CoronalMassEjection.EnlilSimulation, formatTime: (Instant) -> String) {
+private fun EnlilModelCard(simulation: CoronalMassEjection.EnlilSimulation, formatTime: @Composable (Instant) -> String) {
     ExpandableCard(
         Modifier.fillMaxWidth(),
         content = {

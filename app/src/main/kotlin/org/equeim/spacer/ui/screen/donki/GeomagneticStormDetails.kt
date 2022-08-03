@@ -21,7 +21,7 @@ import org.equeim.spacer.ui.utils.formatInteger
 import java.time.Instant
 
 @Composable
-fun GeomagneticStormDetails(event: GeomagneticStorm, formatTime: (Instant) -> String) {
+fun GeomagneticStormDetails(event: GeomagneticStorm, formatTime: @Composable (Instant) -> String) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         if (event.kpIndexes.isNotEmpty()) {
             SectionHeader(stringResource(R.string.gst_kp_indexes))
