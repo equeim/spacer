@@ -204,32 +204,41 @@ internal class DonkiDataSourceCache(
         events: List<Pair<Event, JsonObject>>,
         loadTime: Instant
     ) {
-        Log.d(TAG, "cacheWeek() called with: week = $week, events = $events, loadTime = $loadTime")
-        db.withTransaction {
-            Log.d(TAG, "cacheWeek: starting transaction for $week")
-            db.cachedWeeks()
-                .updateWeek(
-                    CachedWeek(
-                        week.weekBasedYear,
-                        week.weekOfWeekBasedYear,
-                        eventType,
-                        loadTime
-                    )
-                )
-            for (event in events) {
-                db.events().updateEvent(event.toCachedEvent())
-                when (eventType) {
-                    EventType.CoronalMassEjection ->
-                        db.coronalMassEjection()
-                            .updateExtras((event.first as CoronalMassEjection).toExtras())
-                    EventType.GeomagneticStorm ->
-                        db.geomagneticStorm()
-                            .updateExtras((event.first as GeomagneticStorm).toExtras())
-                    else -> Unit
+        Log.d(TAG, "cacheWeek() called with: week = $week, events count = ${events.size}, loadTime = $loadTime")
+        if (events.isEmpty()) {
+            Log.d(TAG, "cacheWeek: no events, mark as cached without transaction")
+            updateCachedWeek(week, eventType, loadTime)
+        } else {
+            db.withTransaction {
+                Log.d(TAG, "cacheWeek: starting transaction for $week")
+                updateCachedWeek(week, eventType, loadTime)
+                for (event in events) {
+                    db.events().updateEvent(event.toCachedEvent())
+                    when (eventType) {
+                        EventType.CoronalMassEjection ->
+                            db.coronalMassEjection()
+                                .updateExtras((event.first as CoronalMassEjection).toExtras())
+                        EventType.GeomagneticStorm ->
+                            db.geomagneticStorm()
+                                .updateExtras((event.first as GeomagneticStorm).toExtras())
+                        else -> Unit
+                    }
                 }
+                Log.d(TAG, "cacheWeek: completing transaction for $week")
             }
-            Log.d(TAG, "cacheWeek: completing transaction for $week")
         }
+    }
+
+    private suspend fun updateCachedWeek(week: Week, eventType: EventType, loadTime: Instant) {
+        db.cachedWeeks()
+            .updateWeek(
+                CachedWeek(
+                    week.weekBasedYear,
+                    week.weekOfWeekBasedYear,
+                    eventType,
+                    loadTime
+                )
+            )
     }
 
     fun cacheWeekAsync(
