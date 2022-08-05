@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 (c) Alexey Rochev
+#
+# SPDX-License-Identifier: CC0-1.0
+
 # Keep `Companion` object fields of serializable classes.
 # This avoids serializer lookup through `getDeclaredClasses` as done for named companion objects.
 -if @kotlinx.serialization.Serializable class **

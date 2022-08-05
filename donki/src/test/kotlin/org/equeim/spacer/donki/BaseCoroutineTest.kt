@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 Alexey Rochev
+//
+// SPDX-License-Identifier: MIT
+
 @file:OptIn(ExperimentalCoroutinesApi::class)
 
 package org.equeim.spacer.donki

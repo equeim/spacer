@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 Alexey Rochev
+//
+// SPDX-License-Identifier: MIT
+
 package org.equeim.spacer.ui.screens.donki
 
 import androidx.annotation.StringRes

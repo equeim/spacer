@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 (c) Alexey Rochev
+//
+// SPDX-License-Identifier: MIT
+
 pluginManagement {
     repositories {
         gradlePluginPortal()

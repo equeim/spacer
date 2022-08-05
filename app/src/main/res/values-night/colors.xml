@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+SPDX-FileCopyrightText: 2022 (c) Alexey Rochev
+
+SPDX-License-Identifier: MIT
+-->
+
 <resources>
     <color name="navigation_bar_color">@color/navigation_bar_color_dark_theme</color>
     <color name="splash_screen_background">#FF121212</color>
