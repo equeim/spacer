@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 Alexey Rochev
+//
+// SPDX-License-Identifier: MIT
+
 @file:Suppress("FunctionName")
 
 package org.equeim.spacer.donki.data.cache.entities
