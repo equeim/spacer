@@ -17,7 +17,7 @@ on:
 
 jobs:
   build-app:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Check out
@@ -25,7 +25,9 @@ jobs:
 
       - name: Make latest OpenJDK version the default
         run: |
-          sudo update-java-alternatives --auto
+          update-java-alternatives -l || true
+          sudo update-java-alternatives --verbose --auto
+          java -version
 
       - name: Add Kotlin problem matcher
         uses: equeim/kotlin-problem-matcher@v1
@@ -52,3 +54,8 @@ jobs:
           path: |
             */build/reports/*
           retention-days: ${{ github.event_name == 'pull_request' && 3 || github.retention_days }}
+
+      - name: Check REUSE compliance
+        run: |
+          sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --assume-yes install pipx
+          pipx run reuse lint
