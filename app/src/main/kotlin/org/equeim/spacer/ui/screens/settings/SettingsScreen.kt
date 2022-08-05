@@ -67,7 +67,7 @@ private fun SettingsScreen() {
                 ),
             verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
         ) {
-            SectionHeader(stringResource(R.string.appearance), Modifier.padding(horizontal = Dimens.ScreenContentPadding))
+            SectionHeader(stringResource(R.string.appearance), Modifier.padding(horizontal = Dimens.ScreenContentPadding), topPadding = Dimens.SpacingSmall)
 
             val darkThemeMode by model.darkThemeMode.collectAsStateWhenStarted()
             ListItem(
