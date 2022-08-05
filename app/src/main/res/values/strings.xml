@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2022 (c) Alexey Rochev
+
+SPDX-License-Identifier: MIT
+-->
+
 <resources>
     <string name="app_name" translatable="false">Spacer</string>
     <string name="space_weather_events">Space weather events</string>

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 (c) Alexey Rochev
+//
+// SPDX-License-Identifier: MIT
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
