@@ -68,11 +68,7 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
         ).map { (pagingData, displayEventsTimeInUTC, _) ->
             pagingData.toListItems(displayEventsTimeInUTC)
         }.cachedIn(viewModelScope)
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        repository.close()
+        addCloseable(repository)
     }
 
     private fun PagingData<EventSummary>.toListItems(displayEventsTimeInUTC: Boolean): PagingData<ListItem> {

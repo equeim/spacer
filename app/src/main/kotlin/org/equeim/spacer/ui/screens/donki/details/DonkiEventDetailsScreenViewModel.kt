@@ -67,6 +67,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
             combine(defaultLocaleFlow, timeZoneFlow) { _, _ -> }
                 .collect { load(forceRefresh = false) }
         }
+        addCloseable(repository)
     }
 
     private suspend fun load(forceRefresh: Boolean) {
