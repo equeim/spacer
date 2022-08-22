@@ -14,11 +14,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.swiperefresh.SwipeRefresh
@@ -41,7 +39,6 @@ import org.equeim.spacer.ui.utils.addBottomInsetUnless
 import org.equeim.spacer.ui.utils.formatInteger
 import org.equeim.spacer.ui.utils.hasBottomPadding
 import org.equeim.spacer.ui.utils.plus
-import org.equeim.spacer.utils.getApplicationOrThrow
 import java.text.DecimalFormat
 import java.time.Instant
 import kotlin.math.abs
@@ -54,13 +51,12 @@ data class DonkiEventDetailsScreen(val eventId: EventId) : Destination {
 
 @Composable
 private fun ScreenContent(eventId: EventId) {
-    val context = LocalContext.current
-    @Suppress("UNCHECKED_CAST")
-    val model =
-        viewModel<DonkiEventDetailsScreenViewModel>(factory = object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>) =
-                DonkiEventDetailsScreenViewModel(eventId, context.getApplicationOrThrow()) as T
-        })
+    val model = viewModel {
+        DonkiEventDetailsScreenViewModel(
+            eventId,
+            checkNotNull(get(ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY))
+        )
+    }
     ScreenContent(model)
 }
 
