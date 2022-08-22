@@ -38,6 +38,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.mockk)
+    testImplementation(libs.mockk.agent.jvm)
     testImplementation(libs.mockwebserver)
     testImplementation(libs.robolectric)
 }
