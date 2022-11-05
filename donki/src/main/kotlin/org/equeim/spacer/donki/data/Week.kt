@@ -6,7 +6,10 @@ package org.equeim.spacer.donki.data
 
 import androidx.annotation.VisibleForTesting
 import org.equeim.spacer.donki.data.model.EventType
-import java.time.*
+import java.time.Clock
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 import java.time.temporal.ChronoField
 import java.time.temporal.WeekFields
 
@@ -22,6 +25,8 @@ internal value class Week @VisibleForTesting constructor(
 
     val weekOfWeekBasedYear: Int
         get() = firstDay[WeekFields.ISO.weekOfWeekBasedYear()]
+
+    override fun toString() = "Week(firstDay=$firstDay, lastDay=$lastDay, weekBasedYear=$weekBasedYear, weekOfWeekBasedYear=$weekOfWeekBasedYear)"
 
     fun getFirstDayInstant(): Instant = firstDay.atStartOfDay().toInstant(ZoneOffset.UTC)
     fun getInstantAfterLastDay(): Instant = firstDay
