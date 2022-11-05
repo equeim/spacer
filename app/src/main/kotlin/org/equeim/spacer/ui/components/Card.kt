@@ -66,8 +66,7 @@ fun ExpandableCard(
             Modifier.padding(
                 top = contentPadding.calculateTopPadding(),
                 bottom = contentPadding.calculateBottomPadding()
-            ),
-            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
+            )
         ) {
             val layoutDirection = LocalLayoutDirection.current
             Box(
@@ -80,10 +79,10 @@ fun ExpandableCard(
             ) {
                 content()
             }
-            AnimatedVisibility(visible = expanded) {
-                Divider()
+            AnimatedVisibility(expanded) {
+                Divider(Modifier.padding(vertical = Dimens.SpacingSmall))
             }
-            AnimatedVisibility(visible = expanded) {
+            AnimatedVisibility(expanded) {
                 Box(
                     Modifier
                         .fillMaxWidth()
