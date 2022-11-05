@@ -40,8 +40,6 @@ internal class EventsSummariesRemoteMediator(
 
     override suspend fun initialize(): InitializeAction {
         Log.d(TAG, "initialize() called")
-        val initialLoadWeeks = Week.getInitialLoadWeeks(clock)
-        Log.d(TAG, "initialize: initial load weeks are $initialLoadWeeks")
         val weeks = try {
             getRefreshWeeks(initialRefresh = true)
         } catch (e: Exception) {
