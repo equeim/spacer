@@ -68,8 +68,11 @@ private fun ScreenContent(
 ) {
     Scaffold(topBar = { SubScreenTopAppBar(stringResource(R.string.event_details)) },
         floatingActionButton = {
-            val contentUiState = model.contentUiState
-            if (contentUiState is DonkiEventDetailsScreenViewModel.ContentUiState.Loaded) {
+            val state = model.contentUiState.collectAsState()
+            val loadedState by remember(model) {
+                derivedStateOf { state.value as? DonkiEventDetailsScreenViewModel.ContentUiState.Loaded }
+            }
+            loadedState?.let { loaded ->
                 val uriHandler = LocalUriHandler.current
                 ExtendedFloatingActionButton(
                     text = { Text(stringResource(R.string.go_to_donki_website)) },
@@ -79,19 +82,14 @@ private fun ScreenContent(
                             contentDescription = stringResource(R.string.go_to_donki_website)
                         )
                     },
-                    onClick = { uriHandler.openUri(contentUiState.event.link) },
+                    onClick = { uriHandler.openUri(loaded.event.link) },
                     modifier = Modifier.padding(
                         bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
                     )
                 )
             }
         }) { contentPadding ->
-        val showRefreshIndicator by remember(model) {
-            derivedStateOf {
-                model.contentUiState is DonkiEventDetailsScreenViewModel.ContentUiState.Loading ||
-                        model.refreshing
-            }
-        }
+        val showRefreshIndicator by model.showRefreshIndicator.collectAsState()
         val pullRefreshState = rememberPullRefreshState(
             refreshing = showRefreshIndicator,
             onRefresh = model::refresh
@@ -107,12 +105,13 @@ private fun ScreenContent(
                     .verticalScroll(rememberScrollState())
                     .padding(contentPadding)
             ) {
-                when (val contentUiState = model.contentUiState) {
+                val contentUiState by model.contentUiState.collectAsState()
+                when (val state = contentUiState) {
                     is DonkiEventDetailsScreenViewModel.ContentUiState.Loading -> ScreenContentLoadingPlaceholder()
                     is DonkiEventDetailsScreenViewModel.ContentUiState.Error -> ScreenContentErrorPlaceholder()
                     is DonkiEventDetailsScreenViewModel.ContentUiState.Loaded -> {
                         ScreenContentLoaded(
-                            contentUiState,
+                            state,
                             contentPadding.hasBottomPadding
                         ) { model.formatTime(it) }
                     }
