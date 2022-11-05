@@ -6,8 +6,8 @@ package org.equeim.spacer.retrofit
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromStream
-import kotlinx.serialization.json.encodeToStream
+import kotlinx.serialization.json.okio.decodeFromBufferedSource
+import kotlinx.serialization.json.okio.encodeToBufferedSink
 import kotlinx.serialization.serializerOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
@@ -28,7 +28,7 @@ open class JsonConverterFactory(private val json: Json) : Converter.Factory() {
     ): Converter<ResponseBody, *>? {
         val deserializer = json.serializersModule.serializerOrNull(type) ?: return null
         return Converter<ResponseBody, Any> { body ->
-            body.byteStream().use { json.decodeFromStream(deserializer, it) }
+            body.source().use { json.decodeFromBufferedSource(deserializer, it) }
         }
     }
 
@@ -43,7 +43,7 @@ open class JsonConverterFactory(private val json: Json) : Converter.Factory() {
             object : RequestBody() {
                 override fun contentType() = jsonContentType
                 override fun writeTo(sink: BufferedSink) {
-                    json.encodeToStream(serializer, it, sink.outputStream())
+                    json.encodeToBufferedSink(serializer, it, sink)
                 }
             }
         }
