@@ -23,4 +23,5 @@ dependencies {
     implementation(libs.okhttp.logging)
     api(libs.retrofit)
     api(libs.serialization.json)
+    implementation(libs.serialization.json.okio)
 }
