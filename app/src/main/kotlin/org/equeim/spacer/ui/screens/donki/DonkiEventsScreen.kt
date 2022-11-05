@@ -15,6 +15,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,8 +29,6 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import dev.olshevski.navigation.reimagined.navigate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -60,6 +61,7 @@ private fun DonkiEventsScreen() {
     DonkiEventsScreen(paging)
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun DonkiEventsScreen(paging: LazyPagingItems<DonkiEventsScreenViewModel.ListItem>) {
     val listIsEmpty by remember(paging) { derivedStateOf { paging.itemCount == 0 } }
@@ -86,29 +88,28 @@ private fun DonkiEventsScreen(paging: LazyPagingItems<DonkiEventsScreenViewModel
             }
         }
     ) { contentPadding ->
+        val showRefreshIndicator by remember(paging) { derivedStateOf { showRefreshIndicator(paging) } }
+        val pullRefreshState = rememberPullRefreshState(
+            refreshing = showRefreshIndicator,
+            onRefresh = paging::refresh
+        )
         Box(
             Modifier
                 .fillMaxSize()
                 .padding(contentPadding)
+                .pullRefresh(pullRefreshState)
         ) {
-            val showRefreshIndicator by remember(paging) { derivedStateOf { showRefreshIndicator(paging) } }
-            val swipeRefreshState = rememberSwipeRefreshState(showRefreshIndicator)
-            SwipeRefresh(
-                swipeRefreshState,
-                onRefresh = paging::refresh,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                val fullscreenError by remember(paging) { derivedStateOf { getFullscreenError(paging) } }
-                when {
-                    fullscreenError != null -> DonkiEventsScreenContentErrorPlaceholder()
-                    listIsEmpty -> DonkiEventsScreenContentLoadingPlaceholder()
-                    else -> DonkiEventsScreenContentPaging(
-                        lazyListState,
-                        paging,
-                        contentPadding.hasBottomPadding
-                    )
-                }
+            val fullscreenError by remember(paging) { derivedStateOf { getFullscreenError(paging) } }
+            when {
+                fullscreenError != null -> DonkiEventsScreenContentErrorPlaceholder()
+                listIsEmpty -> DonkiEventsScreenContentLoadingPlaceholder()
+                else -> DonkiEventsScreenContentPaging(
+                    lazyListState,
+                    paging,
+                    contentPadding.hasBottomPadding
+                )
             }
+            PullRefreshIndicator(showRefreshIndicator, pullRefreshState, Modifier.align(Alignment.TopCenter))
             if (!listIsEmpty) {
                 if (paging.loadState.source.prepend is LoadState.Loading) {
                     LinearProgressIndicator(
@@ -198,7 +199,8 @@ private fun DonkiEventsScreenContentErrorPlaceholder() {
     Box(
         Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())) {
+            .verticalScroll(rememberScrollState())
+    ) {
         Text(
             text = stringResource(R.string.error),
             modifier = Modifier.align(Alignment.Center),

@@ -11,6 +11,9 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,8 +22,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.google.accompanist.swiperefresh.SwipeRefresh
-import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import dev.olshevski.navigation.reimagined.navigate
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
@@ -60,6 +61,7 @@ private fun ScreenContent(eventId: EventId) {
     ScreenContent(model)
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun ScreenContent(
     model: DonkiEventDetailsScreenViewModel
@@ -90,10 +92,14 @@ private fun ScreenContent(
                         model.refreshing
             }
         }
-        SwipeRefresh(
-            rememberSwipeRefreshState(showRefreshIndicator),
-            onRefresh = { model.refresh() },
-            modifier = Modifier.fillMaxSize()
+        val pullRefreshState = rememberPullRefreshState(
+            refreshing = showRefreshIndicator,
+            onRefresh = model::refresh
+        )
+        Box(
+            Modifier
+                .fillMaxSize()
+                .pullRefresh(pullRefreshState)
         ) {
             Box(
                 Modifier
@@ -105,10 +111,18 @@ private fun ScreenContent(
                     is DonkiEventDetailsScreenViewModel.ContentUiState.Loading -> ScreenContentLoadingPlaceholder()
                     is DonkiEventDetailsScreenViewModel.ContentUiState.Error -> ScreenContentErrorPlaceholder()
                     is DonkiEventDetailsScreenViewModel.ContentUiState.Loaded -> {
-                        ScreenContentLoaded(contentUiState, contentPadding.hasBottomPadding) { model.formatTime(it) }
+                        ScreenContentLoaded(
+                            contentUiState,
+                            contentPadding.hasBottomPadding
+                        ) { model.formatTime(it) }
                     }
                 }
             }
+            PullRefreshIndicator(
+                showRefreshIndicator,
+                pullRefreshState,
+                Modifier.align(Alignment.TopCenter)
+            )
         }
     }
 }
@@ -166,7 +180,10 @@ private fun ScreenContentLoaded(
         SpecificEventDetails(state.event, formatTime)
         if (state.linkedEvents.isNotEmpty()) {
             SectionHeader(stringResource(R.string.linked_events))
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Dimens.SpacingBetweenCards)) {
+            Column(
+                Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(Dimens.SpacingBetweenCards)
+            ) {
                 val navController = LocalNavController.current
                 state.linkedEvents.forEach { linkedEvent ->
                     Card(

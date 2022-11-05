@@ -33,7 +33,6 @@ android {
 
 dependencies {
     implementation(project(":donki"))
-    implementation(libs.appcompanist.swiperefresh)
     implementation(libs.coroutines.android)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core)
