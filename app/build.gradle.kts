@@ -9,6 +9,7 @@ plugins {
 }
 
 android {
+    namespace = "org.equeim.spacer"
     compileSdk = libs.versions.sdk.platform.compile.get().toInt()
     defaultConfig {
         applicationId = "org.equeim.spacer"

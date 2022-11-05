@@ -6,9 +6,7 @@ SPDX-FileCopyrightText: 2022 (c) Alexey Rochev
 SPDX-License-Identifier: MIT
 -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.equeim.spacer">
-
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
         android:name=".SpacerApplication"
         android:allowBackup="true"

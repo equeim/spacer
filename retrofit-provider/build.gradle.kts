@@ -8,6 +8,7 @@ plugins {
 }
 
 android {
+    namespace = "org.equeim.spacer.retrofit"
     compileSdk = libs.versions.sdk.platform.compile.get().toInt()
     defaultConfig {
         minSdk = libs.versions.sdk.platform.min.get().toInt()
