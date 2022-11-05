@@ -11,6 +11,7 @@ plugins {
 }
 
 android {
+    namespace = "org.equeim.spacer.donki"
     compileSdk = libs.versions.sdk.platform.compile.get().toInt()
     defaultConfig {
         minSdk = libs.versions.sdk.platform.min.get().toInt()

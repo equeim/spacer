@@ -6,8 +6,6 @@ SPDX-FileCopyrightText: 2022 (c) Alexey Rochev
 SPDX-License-Identifier: MIT
 -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.equeim.spacer.retrofit">
-
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
 </manifest>
