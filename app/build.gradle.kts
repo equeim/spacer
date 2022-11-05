@@ -45,7 +45,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.paging)
     implementation(libs.androidx.paging.compose)
-    implementation(libs.reimagined)
+    implementation(libs.navigation.reimagined)
 
     testImplementation(libs.junit)
 
