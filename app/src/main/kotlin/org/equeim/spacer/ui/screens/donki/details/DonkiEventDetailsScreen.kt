@@ -109,6 +109,7 @@ private fun ScreenContent(
             ) {
                 val contentState by model.contentState.collectAsState()
                 when (val state = contentState) {
+                    is DonkiEventDetailsScreenViewModel.ContentState.Empty -> Unit
                     is DonkiEventDetailsScreenViewModel.ContentState.LoadingPlaceholder -> ScreenContentLoadingPlaceholder()
                     is DonkiEventDetailsScreenViewModel.ContentState.ErrorPlaceholder -> ScreenContentErrorPlaceholder()
                     is DonkiEventDetailsScreenViewModel.ContentState.EventData -> {
