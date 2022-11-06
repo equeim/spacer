@@ -27,6 +27,7 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.milliseconds
 
 private const val TAG = "DonkiEventDetailsScreenViewModel"
@@ -37,46 +38,39 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
 
     private val repository = DonkiRepository(application)
 
-    private val _contentUiState = MutableStateFlow<ContentUiState>(ContentUiState.Loading)
-    val contentUiState: StateFlow<ContentUiState> by ::_contentUiState
+    private var loadingJob = AtomicReference<Job>(null)
 
-    private enum class RefreshingState {
-        NotRefreshing,
-        RefreshingAutomatically,
-        RefreshingManually
+    private enum class LoadingType {
+        Automatic, Manual
     }
-    private val refreshing = MutableStateFlow(RefreshingState.NotRefreshing)
 
-    private enum class RefreshIndicatorState {
-        Show,
-        ShowDelayed,
-        Hide
-    }
+    private val loadingType = MutableStateFlow<LoadingType?>(null)
+
+    private val _contentState = MutableStateFlow<ContentState>(ContentState.LoadingPlaceholder)
+    val contentState: StateFlow<ContentState> by ::_contentState
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val showRefreshIndicator: StateFlow<Boolean> =
-        combine(contentUiState, refreshing) { contentUiState, refreshing ->
-            when {
-                refreshing == RefreshingState.RefreshingManually -> RefreshIndicatorState.Show
-                contentUiState is ContentUiState.Loading
-                        || refreshing == RefreshingState.RefreshingAutomatically -> RefreshIndicatorState.ShowDelayed
-                else -> RefreshIndicatorState.Hide
+        loadingType.mapLatest { type ->
+            when (type) {
+                LoadingType.Automatic -> {
+                    delay(REFRESH_INDICATOR_DELAY)
+                    true
+                }
+                LoadingType.Manual -> true
+                null -> false
             }
         }
-            .onEach { Log.d(TAG, "Refresh indicator state: $it") }
-            .distinctUntilChanged()
-            .mapLatest {
-                if (it == RefreshIndicatorState.ShowDelayed) delay(REFRESH_INDICATOR_DELAY)
-                it != RefreshIndicatorState.Hide
-            }
             .distinctUntilChanged()
             .onEach { Log.d(TAG, "Show refresh indicator: $it") }
             .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private class LocaleDependentState {
-        val eventTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
+        val eventTimeFormatter: DateTimeFormatter =
+            DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
         val eventTypesStrings = ConcurrentHashMap<EventType, String>()
     }
+
     @Volatile
     private lateinit var localeDependentState: LocaleDependentState
 
@@ -84,41 +78,76 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
     private lateinit var timeZone: ZoneId
 
     init {
+        addCloseable(repository)
         val defaultLocaleFlow = application.defaultLocaleFlow().onEach {
             localeDependentState = LocaleDependentState()
         }
-        val timeZoneFlow = AppSettings(application).displayEventsTimeInUTC.flow().onEach { displayEventsTimeInUTC ->
-            timeZone = if (displayEventsTimeInUTC) {
-                ZoneId.ofOffset("UTC", ZoneOffset.UTC)
-            } else {
-                ZoneId.systemDefault()
+        val timeZoneFlow = AppSettings(application).displayEventsTimeInUTC.flow()
+            .onEach { displayEventsTimeInUTC ->
+                timeZone = if (displayEventsTimeInUTC) {
+                    ZoneId.ofOffset("UTC", ZoneOffset.UTC)
+                } else {
+                    ZoneId.systemDefault()
+                }
             }
-        }
-        viewModelScope.launch {
-            combine(defaultLocaleFlow, timeZoneFlow) { _, _ -> }
-                .collect { load(forceRefresh = false) }
-        }
-        addCloseable(repository)
+        combine(defaultLocaleFlow, timeZoneFlow) { _, _ -> }
+            .onEach { load(LoadingType.Automatic) }
+            .launchIn(viewModelScope)
     }
 
-    private suspend fun load(forceRefresh: Boolean) {
-        _contentUiState.compareAndSet(ContentUiState.Error, ContentUiState.Loading)
-        val eventById = repository.getEventById(eventId, forceRefresh = forceRefresh)
-        val newUiState = withContext(Dispatchers.Default) { eventById.toContentUiState() }
-        if (!forceRefresh && eventById.needsRefreshing) {
-            refresh(fromUi = false)
+    private suspend fun load(type: LoadingType) {
+        Log.d(TAG, "load() called with: type = $type")
+        loadingJob.getAndSet(null)?.let {
+            Log.d(TAG, "load: cancelling loading job $it with type ${loadingType.value}")
+            loadingType.value = null
+            it.cancelAndJoin()
         }
-        _contentUiState.value = newUiState
+        Log.d(TAG, "load: starting loading job")
+        viewModelScope.launch {
+            _contentState.compareAndSet(
+                ContentState.ErrorPlaceholder,
+                ContentState.LoadingPlaceholder
+            )
+            when (type) {
+                LoadingType.Automatic -> {
+                    val event = repository.getEventById(eventId, forceRefresh = false)
+                    _contentState.value = event.toContentState()
+                    if (event.needsRefreshing) {
+                        _contentState.value =
+                            repository.getEventById(eventId, forceRefresh = true).toContentState()
+                    }
+                }
+                LoadingType.Manual -> {
+                    _contentState.value =
+                        repository.getEventById(eventId, forceRefresh = true).toContentState()
+                }
+            }
+        }.also { job ->
+            Log.d(TAG, "load: started loading job $job")
+            loadingJob.set(job)
+            loadingType.value = type
+            job.invokeOnCompletion {
+                Log.d(TAG, "load: completed loading job $job")
+                if (loadingJob.compareAndSet(job, null)) {
+                    loadingType.value = null
+                }
+            }
+        }
     }
 
-    fun refresh(fromUi: Boolean = true) {
-        refreshing.value = if (fromUi) RefreshingState.RefreshingManually else RefreshingState.RefreshingAutomatically
+    private suspend fun DonkiRepository.EventById.toContentState(): ContentState.EventData =
+        withContext(Dispatchers.Default) {
+            ContentState.EventData(
+                type = event.type.getDisplayString(),
+                dateTime = localeDependentState.eventTimeFormatter.format(event.time.atZone(timeZone)),
+                event = event,
+                linkedEvents = event.linkedEvents.mapNotNull { it.toPresentation(timeZone) },
+            )
+        }
+
+    fun refresh() {
         viewModelScope.launch {
-            try {
-                load(forceRefresh = true)
-            } finally {
-                refreshing.value = RefreshingState.NotRefreshing
-            }
+            load(LoadingType.Manual)
         }
     }
 
@@ -127,13 +156,6 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
         LocalDefaultLocale.current
         return localeDependentState.eventTimeFormatter.format(instant.atZone(timeZone))
     }
-
-    private fun DonkiRepository.EventById.toContentUiState() = ContentUiState.Loaded(
-        type = event.type.getDisplayString(),
-        dateTime = localeDependentState.eventTimeFormatter.format(event.time.atZone(timeZone)),
-        event = event,
-        linkedEvents = event.linkedEvents.mapNotNull { it.toPresentation(timeZone) },
-    )
 
     private fun EventId.toPresentation(timeZone: ZoneId): LinkedEventPresentation? {
         val (type, time) = runCatching { parse() }.getOrElse {
@@ -148,21 +170,26 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
     }
 
     private fun EventType.getDisplayString(): String {
-        return localeDependentState.eventTypesStrings.computeIfAbsent(this) { getString(displayStringResId) }
+        return localeDependentState.eventTypesStrings.computeIfAbsent(this) {
+            getString(
+                displayStringResId
+            )
+        }
     }
 
     private fun getString(@StringRes resId: Int) = getApplication<Application>().getString(resId)
 
     @Immutable
-    sealed interface ContentUiState {
-        object Loading : ContentUiState
-        data class Loaded(
+    sealed interface ContentState {
+        object LoadingPlaceholder : ContentState
+        data class EventData(
             val type: String,
             val dateTime: String,
             val event: Event,
             val linkedEvents: List<LinkedEventPresentation>
-        ) : ContentUiState
-        object Error : ContentUiState
+        ) : ContentState
+
+        object ErrorPlaceholder : ContentState
     }
 
     data class LinkedEventPresentation(
