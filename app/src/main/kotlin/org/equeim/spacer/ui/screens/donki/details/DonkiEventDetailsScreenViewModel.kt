@@ -32,6 +32,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 private const val TAG = "DonkiEventDetailsScreenViewModel"
 private val REFRESH_INDICATOR_DELAY = 300.milliseconds
+private val LOADING_PLACEHOLDER_DELAY = 300.milliseconds
 
 class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application: Application) :
     AndroidViewModel(application) {
@@ -46,7 +47,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
 
     private val loadingType = MutableStateFlow<LoadingType?>(null)
 
-    private val _contentState = MutableStateFlow<ContentState>(ContentState.LoadingPlaceholder)
+    private val _contentState = MutableStateFlow<ContentState>(ContentState.Empty)
     val contentState: StateFlow<ContentState> by ::_contentState
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -93,6 +94,11 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
         combine(defaultLocaleFlow, timeZoneFlow) { _, _ -> }
             .onEach { load(LoadingType.Automatic) }
             .launchIn(viewModelScope)
+
+        viewModelScope.launch {
+            delay(LOADING_PLACEHOLDER_DELAY)
+            _contentState.compareAndSet(ContentState.Empty, ContentState.LoadingPlaceholder)
+        }
     }
 
     private suspend fun load(type: LoadingType) {
@@ -181,6 +187,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
 
     @Immutable
     sealed interface ContentState {
+        object Empty : ContentState
         object LoadingPlaceholder : ContentState
         data class EventData(
             val type: String,
