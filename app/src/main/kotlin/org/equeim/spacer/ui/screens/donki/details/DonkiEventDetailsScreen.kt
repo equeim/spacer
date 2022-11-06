@@ -5,6 +5,8 @@
 package org.equeim.spacer.ui.screens.donki.details
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -33,6 +35,7 @@ import org.equeim.spacer.ui.components.Card
 import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreenViewModel.ContentState.*
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.theme.SatelliteAlt
@@ -61,17 +64,18 @@ private fun ScreenContent(eventId: EventId) {
     ScreenContent(model)
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalAnimationApi::class)
 @Composable
 private fun ScreenContent(
     model: DonkiEventDetailsScreenViewModel
 ) {
-    Scaffold(topBar = { SubScreenTopAppBar(stringResource(R.string.event_details)) },
+    Scaffold(
+        topBar = { SubScreenTopAppBar(stringResource(R.string.event_details)) },
         floatingActionButton = {
             val state = model.contentState.collectAsState()
             val eventLink by remember(model) {
                 derivedStateOf {
-                    (state.value as? DonkiEventDetailsScreenViewModel.ContentState.EventData)?.event?.link
+                    (state.value as? EventData)?.event?.link
                 }
             }
             eventLink?.let { link ->
@@ -90,7 +94,8 @@ private fun ScreenContent(
                     )
                 )
             }
-        }) { contentPadding ->
+        }
+    ) { contentPadding ->
         val showRefreshIndicator by model.showRefreshIndicator.collectAsState()
         val pullRefreshState = rememberPullRefreshState(
             refreshing = showRefreshIndicator,
@@ -98,25 +103,23 @@ private fun ScreenContent(
         )
         Box(
             Modifier
-                .fillMaxSize()
                 .pullRefresh(pullRefreshState)
         ) {
-            Box(
+            val contentState by model.contentState.collectAsState()
+            Crossfade(
+                contentState,
                 Modifier
-                    .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(contentPadding)
-            ) {
-                val contentState by model.contentState.collectAsState()
-                when (val state = contentState) {
-                    is DonkiEventDetailsScreenViewModel.ContentState.Empty -> Unit
-                    is DonkiEventDetailsScreenViewModel.ContentState.LoadingPlaceholder -> ScreenContentLoadingPlaceholder()
-                    is DonkiEventDetailsScreenViewModel.ContentState.ErrorPlaceholder -> ScreenContentErrorPlaceholder()
-                    is DonkiEventDetailsScreenViewModel.ContentState.EventData -> {
-                        ScreenContentEventData(
-                            state,
-                            contentPadding.hasBottomPadding
-                        ) { model.formatTime(it) }
+                    .padding(contentPadding.addBottomInsetUnless(contentPadding.hasBottomPadding))
+            ) { state ->
+                Box(Modifier.fillMaxSize()) {
+                    when (state) {
+                        is Empty -> Unit
+                        is LoadingPlaceholder -> ScreenContentLoadingPlaceholder()
+                        is ErrorPlaceholder -> ScreenContentErrorPlaceholder()
+                        is EventData -> {
+                            ScreenContentEventData(state) { model.formatTime(it) }
+                        }
                     }
                 }
             }
@@ -149,8 +152,7 @@ private fun BoxScope.ScreenContentErrorPlaceholder() {
 
 @Composable
 private fun ScreenContentEventData(
-    state: DonkiEventDetailsScreenViewModel.ContentState.EventData,
-    screenHasBottomPadding: Boolean,
+    state: EventData,
     formatTime: @Composable (Instant) -> String
 ) {
     Column(
@@ -163,7 +165,6 @@ private fun ScreenContentEventData(
                             bottom = 64.dp
                         )
                     )
-                    .addBottomInsetUnless(screenHasBottomPadding)
             ),
         verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
     ) {
