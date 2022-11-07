@@ -101,18 +101,15 @@ private fun ScreenContent(
             refreshing = showRefreshIndicator,
             onRefresh = model::refresh
         )
-        Box(
-            Modifier
-                .pullRefresh(pullRefreshState)
-        ) {
+        Box(Modifier.pullRefresh(pullRefreshState)) {
             val contentState by model.contentState.collectAsState()
-            Crossfade(
-                contentState,
-                Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(contentPadding.addBottomInsetUnless(contentPadding.hasBottomPadding))
-            ) { state ->
-                Box(Modifier.fillMaxSize()) {
+            Crossfade(contentState) { state ->
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(contentPadding.addBottomInsetUnless(contentPadding.hasBottomPadding))
+                ) {
                     when (state) {
                         is Empty -> Unit
                         is LoadingPlaceholder -> ScreenContentLoadingPlaceholder()
