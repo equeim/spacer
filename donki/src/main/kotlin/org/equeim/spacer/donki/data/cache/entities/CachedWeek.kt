@@ -5,7 +5,7 @@
 package org.equeim.spacer.donki.data.cache.entities
 
 import androidx.room.*
-import androidx.room.OnConflictStrategy.REPLACE
+import androidx.room.OnConflictStrategy.Companion.REPLACE
 import org.equeim.spacer.donki.data.model.EventType
 import java.time.Instant
 

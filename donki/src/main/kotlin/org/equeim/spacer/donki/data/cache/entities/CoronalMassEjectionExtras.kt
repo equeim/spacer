@@ -7,8 +7,8 @@
 package org.equeim.spacer.donki.data.cache.entities
 
 import androidx.room.*
-import androidx.room.ForeignKey.CASCADE
-import androidx.room.OnConflictStrategy.REPLACE
+import androidx.room.ForeignKey.Companion.CASCADE
+import androidx.room.OnConflictStrategy.Companion.REPLACE
 import org.equeim.spacer.donki.data.model.CoronalMassEjection
 import org.equeim.spacer.donki.data.model.CoronalMassEjectionSummary
 import org.equeim.spacer.donki.data.model.EventId
