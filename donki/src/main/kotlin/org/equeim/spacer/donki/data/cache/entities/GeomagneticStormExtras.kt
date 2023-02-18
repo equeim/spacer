@@ -7,7 +7,7 @@
 package org.equeim.spacer.donki.data.cache.entities
 
 import androidx.room.*
-import androidx.room.ForeignKey.CASCADE
+import androidx.room.ForeignKey.Companion.CASCADE
 import org.equeim.spacer.donki.data.model.GeomagneticStormSummary
 import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventType

@@ -28,7 +28,7 @@ android {
 
     buildFeatures.compose = true
     composeOptions.kotlinCompilerExtensionVersion = libs.versions.androidx.compose.compiler.get()
-    kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
 
 dependencies {
