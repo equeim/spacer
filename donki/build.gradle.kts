@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -15,13 +17,17 @@ android {
     compileSdk = libs.versions.sdk.platform.compile.get().toInt()
     defaultConfig {
         minSdk = libs.versions.sdk.platform.min.get().toInt()
-        targetSdk = libs.versions.sdk.platform.target.get().toInt()
         consumerProguardFiles.add(file("consumer-rules.pro"))
     }
-    kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
 
 ksp.arg("room.incremental", "true")
+
+// Needed for ksp tasks
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+}
 
 dependencies {
     implementation(project(":retrofit-provider"))

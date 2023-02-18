@@ -12,10 +12,9 @@ android {
     compileSdk = libs.versions.sdk.platform.compile.get().toInt()
     defaultConfig {
         minSdk = libs.versions.sdk.platform.min.get().toInt()
-        targetSdk = libs.versions.sdk.platform.target.get().toInt()
         consumerProguardFiles.add(file("consumer-rules.pro"))
     }
-    kotlinOptions.freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
 
 dependencies {
