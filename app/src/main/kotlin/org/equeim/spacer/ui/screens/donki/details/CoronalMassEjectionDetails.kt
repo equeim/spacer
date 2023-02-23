@@ -6,9 +6,9 @@ package org.equeim.spacer.ui.screens.donki.details
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedButton
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -101,9 +101,9 @@ private fun EnlilModelCard(simulation: CoronalMassEjection.EnlilSimulation, form
         expandedContent = {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
                 if (simulation.estimatedShockArrivalTime == null && simulation.estimatedDuration == null) {
-                    SectionPlaceholder(stringResource(R.string.enlil_earth_no_impact), style = MaterialTheme.typography.body1)
+                    SectionPlaceholder(stringResource(R.string.enlil_earth_no_impact), style = MaterialTheme.typography.bodyLarge)
                 } else {
-                    SectionHeader(stringResource(R.string.enlil_earth_impact), style = MaterialTheme.typography.body1)
+                    SectionHeader(stringResource(R.string.enlil_earth_impact), style = MaterialTheme.typography.bodyLarge)
                     simulation.estimatedShockArrivalTime?.let {
                         LabelFieldPair(R.string.enlil_earth_shock_arrival_time, formatTime(it))
                     }
@@ -121,12 +121,12 @@ private fun EnlilModelCard(simulation: CoronalMassEjection.EnlilSimulation, form
                     LabelFieldPair(R.string.enlil_kp_180, formatInteger(it))
                 }
                 if (simulation.impacts.isNotEmpty()) {
-                    SectionHeader(stringResource(R.string.enlil_other_impacts), style = MaterialTheme.typography.body1)
+                    SectionHeader(stringResource(R.string.enlil_other_impacts), style = MaterialTheme.typography.bodyLarge)
                     simulation.impacts.forEach { impact ->
                         LabelFieldPair(impact.location, formatTime(impact.arrivalTime))
                     }
                 } else {
-                    SectionPlaceholder(stringResource(R.string.enlil_no_other_impacts), style = MaterialTheme.typography.body1)
+                    SectionPlaceholder(stringResource(R.string.enlil_no_other_impacts), style = MaterialTheme.typography.bodyLarge)
                 }
                 val uriHandler = LocalUriHandler.current
                 OutlinedButton({ uriHandler.openUri(simulation.link) }) {

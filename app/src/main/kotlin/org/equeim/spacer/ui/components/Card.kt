@@ -6,9 +6,7 @@ package org.equeim.spacer.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Divider
-import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -16,39 +14,69 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.dp
 import org.equeim.spacer.ui.theme.Dimens
 
 val CARD_CONTENT_PADDING = PaddingValues(horizontal = Dimens.SpacingLarge, vertical = Dimens.SpacingMedium)
-private val CARD_SHAPE = RoundedCornerShape(10.dp)
-private val CARD_ELEVATION = 2.dp
 
 @Composable
-@OptIn(ExperimentalMaterialApi::class)
-fun Card(
+@OptIn(ExperimentalMaterial3Api::class)
+fun ElevatedCardWithPadding(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = CARD_CONTENT_PADDING,
+    elevation: CardElevation = CardDefaults.elevatedCardElevation(),
     content: @Composable () -> Unit
 ) {
-    androidx.compose.material.Card(
+    ElevatedCard(
         onClick,
         modifier,
-        shape = CARD_SHAPE,
-        elevation = CARD_ELEVATION
+        elevation = elevation
     ) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .padding(contentPadding)
-        ) {
-            content()
-        }
+        CardContent(content)
     }
 }
 
 @Composable
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
+fun OutlinedCardWithPadding(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    OutlinedCard(
+        onClick,
+        modifier
+    ) {
+        CardContent(content)
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+fun FilledCardWithPadding(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Card(
+        onClick,
+        modifier
+    ) {
+        CardContent(content)
+    }
+}
+
+@Composable
+private inline fun CardContent(content: @Composable () -> Unit) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .padding(CARD_CONTENT_PADDING)) {
+        content()
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun ExpandableCard(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = CARD_CONTENT_PADDING,
@@ -56,11 +84,9 @@ fun ExpandableCard(
     expandedContent: @Composable () -> Unit
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
-    androidx.compose.material.Card(
+    OutlinedCard(
         { expanded = !expanded },
-        modifier,
-        shape = CARD_SHAPE,
-        elevation = CARD_ELEVATION
+        modifier
     ) {
         Column(
             Modifier.padding(

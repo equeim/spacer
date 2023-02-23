@@ -5,14 +5,14 @@
 package org.equeim.spacer.ui.components
 
 import androidx.compose.foundation.clickable
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.ListItem
-import androidx.compose.material.RadioButton
-import androidx.compose.material.Text
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RadioButtonListItem(
     text: String,
@@ -21,13 +21,13 @@ fun RadioButtonListItem(
     modifier: Modifier = Modifier
 ) {
     ListItem(
-        icon = {
+        leadingContent = {
             RadioButton(
                 selected = selected,
                 onClick = null
             )
         },
-        text = { Text(text = text) },
+        headlineText = { Text(text = text) },
         modifier = Modifier.clickable(onClick = onClick).then(modifier)
     )
 }

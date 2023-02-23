@@ -7,49 +7,35 @@ package org.equeim.spacer.ui.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import dev.olshevski.navigation.reimagined.pop
 import org.equeim.spacer.ui.LocalNavController
 import org.equeim.spacer.ui.theme.Dimens
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Dialog(
-    title: String?,
-    addHorizontalPadding: Boolean,
+    title: String,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
     val navController = LocalNavController.current
-    Dialog(
-        onDismissRequest = { navController.pop() }
-    ) {
-        Surface(shape = MaterialTheme.shapes.medium, elevation = 24.dp) {
+    AlertDialog(onDismissRequest = navController::pop, modifier = modifier) {
+        Surface(
+            shape = AlertDialogDefaults.shape,
+            color = AlertDialogDefaults.containerColor,
+            tonalElevation = AlertDialogDefaults.TonalElevation
+        ) {
             Column(Modifier.padding(vertical = Dimens.DialogContentPadding)) {
-                if (title != null) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.h5,
-                        modifier = Modifier.padding(
-                            bottom = Dimens.SpacingLarge,
-                            start = Dimens.DialogContentPadding,
-                            end = Dimens.DialogContentPadding
-                        )
-                    )
-                }
-                Box(
-                    modifier = if (addHorizontalPadding) {
-                        Modifier.padding(horizontal = Dimens.DialogContentPadding)
-                            .then(modifier)
-                    } else {
-                        modifier
-                    }
-                ) {
+                Text(
+                    title,
+                    modifier = Modifier.padding(horizontal = Dimens.DialogContentPadding),
+                    color = AlertDialogDefaults.titleContentColor,
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Box(Modifier.padding(top = Dimens.SpacingLarge)) {
                     content()
                 }
             }
