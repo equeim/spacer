@@ -14,19 +14,16 @@ import android.view.Window
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.core.view.WindowCompat
-import dev.olshevski.navigation.reimagined.AnimatedNavHost
-import dev.olshevski.navigation.reimagined.NavBackHandler
-import dev.olshevski.navigation.reimagined.NavController
-import dev.olshevski.navigation.reimagined.rememberNavController
+import dev.olshevski.navigation.reimagined.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
@@ -69,45 +66,34 @@ val LocalNavController =
 @Composable
 private fun MainActivityScreen(activity: MainActivity) {
     val context = LocalContext.current
+
+    val isDarkTheme by isDarkTheme(activity)
+    LaunchedEffect(activity) {
+        snapshotFlow { isDarkTheme }
+            .collect {
+                val window = activity.window
+                setDarkThemeWindowProperties(window, window.decorView, it)
+            }
+    }
+
     val defaultLocale by remember(context) {
         context.defaultLocaleFlow().onEach {
             Log.d(TAG, "Default locale is $it")
         }
     }.collectAsState(context.defaultLocale)
     val settings = remember { AppSettings(context.getApplicationOrThrow()) }
+    val navController = rememberNavController<Destination>(DonkiEventsScreen)
 
     CompositionLocalProvider(
         LocalDefaultLocale provides defaultLocale,
-        LocalAppSettings provides settings
+        LocalAppSettings provides settings,
+        LocalNavController provides navController
     ) {
-        val isDarkTheme by isDarkTheme(activity)
-        val window = remember(activity) { activity.window }
-        LaunchedEffect(window) {
-            snapshotFlow { isDarkTheme }
-                .collect { setDarkThemeWindowProperties(window, window.decorView, it) }
-        }
-
         ApplicationTheme(isDarkTheme) {
-            val insetsPadding = WindowInsets.systemBars.asPaddingValues()
-            val layoutDirection = LocalLayoutDirection.current
-            Surface(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(
-                        start = insetsPadding.calculateStartPadding(layoutDirection),
-                        end = insetsPadding.calculateEndPadding(layoutDirection)
-                    ),
-                color = MaterialTheme.colors.background
-            ) {
-                val navController = rememberNavController<Destination>(DonkiEventsScreen)
-                CompositionLocalProvider(
-                    LocalNavController provides navController,
-                    LocalAppSettings provides settings
-                ) {
-                    NavBackHandler(navController)
-                    @OptIn(ExperimentalAnimationApi::class)
-                    AnimatedNavHost(navController) { it.Content() }
-                }
+            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                NavBackHandler(navController)
+                @OptIn(ExperimentalAnimationApi::class)
+                AnimatedNavHost(navController, Modifier.fillMaxSize()) { it.Content() }
             }
         }
     }
