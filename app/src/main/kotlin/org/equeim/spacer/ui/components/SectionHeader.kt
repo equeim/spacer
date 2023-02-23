@@ -5,10 +5,9 @@
 package org.equeim.spacer.ui.components
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.ContentAlpha
-import androidx.compose.material.LocalContentAlpha
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
@@ -22,12 +21,12 @@ fun SectionHeader(
     modifier: Modifier = Modifier,
     topPadding: Dp = Dimens.SpacingMedium,
     bottomPadding: Dp = Dimens.SpacingMedium - Dimens.SpacingSmall,
-    style: TextStyle = MaterialTheme.typography.h6
+    style: TextStyle = MaterialTheme.typography.titleLarge
 ) {
     Text(
         title,
         modifier.padding(top = topPadding, bottom = bottomPadding),
-        color = MaterialTheme.colors.primary,
+        color = MaterialTheme.colorScheme.primary,
         style = style
     )
 }
@@ -38,9 +37,9 @@ fun SectionPlaceholder(
     modifier: Modifier = Modifier,
     topPadding: Dp = Dimens.SpacingMedium,
     bottomPadding: Dp = Dimens.SpacingMedium - Dimens.SpacingSmall,
-    style: TextStyle = MaterialTheme.typography.h6
+    style: TextStyle = MaterialTheme.typography.titleLarge
 ) {
-    CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
+    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
         Text(
             title,
             modifier.padding(top = topPadding, bottom = bottomPadding),

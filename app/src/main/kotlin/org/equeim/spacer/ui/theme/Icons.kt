@@ -1,6 +1,6 @@
-// SPDX-FileCopyrightText: 2022 Alexey Rochev
+// SPDX-FileCopyrightText: 2022 The Android Open Source Project
 //
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: Apache-2.0
 
 package org.equeim.spacer.ui.theme
 

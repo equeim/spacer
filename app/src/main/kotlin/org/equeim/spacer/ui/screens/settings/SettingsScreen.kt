@@ -9,7 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -31,10 +31,7 @@ import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.theme.Dimens
-import org.equeim.spacer.ui.utils.addBottomInsetUnless
 import org.equeim.spacer.ui.utils.collectAsStateWhenStarted
-import org.equeim.spacer.ui.utils.hasBottomPadding
-import org.equeim.spacer.ui.utils.plus
 
 @Parcelize
 object SettingsScreen : Destination {
@@ -42,7 +39,9 @@ object SettingsScreen : Destination {
     override fun Content() = SettingsScreen()
 }
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class,
+    ExperimentalLayoutApi::class
+)
 @Composable
 private fun SettingsScreen() {
     val dialogNavController =
@@ -64,19 +63,21 @@ private fun SettingsScreen() {
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(
-                    contentPadding
-                        .plus(PaddingValues(vertical = Dimens.ScreenContentPadding))
-                        .addBottomInsetUnless(contentPadding.hasBottomPadding)
-                ),
+                .padding(contentPadding)
+                .padding(vertical = Dimens.ScreenContentPadding)
+                .consumeWindowInsets(contentPadding),
             verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
         ) {
-            SectionHeader(stringResource(R.string.appearance), Modifier.padding(horizontal = Dimens.ScreenContentPadding), topPadding = Dimens.SpacingSmall)
+            SectionHeader(
+                stringResource(R.string.appearance),
+                Modifier.padding(horizontal = Dimens.ScreenContentPadding),
+                topPadding = Dimens.SpacingSmall
+            )
 
             val darkThemeMode by model.darkThemeMode.collectAsStateWhenStarted()
             ListItem(
-                text = { Text(stringResource(R.string.dark_theme)) },
-                secondaryText = {
+                headlineText = { Text(stringResource(R.string.dark_theme)) },
+                supportingText = {
                     Text(
                         when (darkThemeMode) {
                             AppSettings.DarkThemeMode.FollowSystem -> stringResource(R.string.dark_theme_follow_system)
@@ -86,16 +87,21 @@ private fun SettingsScreen() {
                     )
                 },
                 modifier = Modifier.clickable {
-                    dialogNavController.navigate(DarkThemeDialog(darkThemeMode))
+                    if (dialogNavController.backstack.entries.lastOrNull()?.destination !is DarkThemeDialog) {
+                        dialogNavController.navigate(DarkThemeDialog(darkThemeMode))
+                    }
                 }
             )
 
-            SectionHeader(stringResource(R.string.behaviour), Modifier.padding(horizontal = Dimens.ScreenContentPadding))
+            SectionHeader(
+                stringResource(R.string.behaviour),
+                Modifier.padding(horizontal = Dimens.ScreenContentPadding)
+            )
 
             val displayEventsTimeInUTC by model.displayEventsTimeInUTC.collectAsStateWhenStarted()
             ListItem(
-                text = { Text(stringResource(R.string.display_events_in_utc)) },
-                trailing = { Switch(displayEventsTimeInUTC, onCheckedChange = null) },
+                headlineText = { Text(stringResource(R.string.display_events_in_utc)) },
+                trailingContent = { Switch(displayEventsTimeInUTC, onCheckedChange = null) },
                 modifier = Modifier.clickable {
                     model.settings.displayEventsTimeInUTC.set(!displayEventsTimeInUTC)
                 }
@@ -112,10 +118,7 @@ private data class DarkThemeDialog(val darkThemeMode: AppSettings.DarkThemeMode)
 
 @Composable
 private fun DarkThemeDialogContent(darkThemeMode: AppSettings.DarkThemeMode) {
-    Dialog(
-        title = stringResource(R.string.dark_theme),
-        addHorizontalPadding = false
-    ) {
+    Dialog(title = stringResource(R.string.dark_theme)) {
         Column {
             if (AppSettings.DarkThemeMode.isFollowSystemSupported) {
                 DarkThemeModeChoice(AppSettings.DarkThemeMode.FollowSystem, darkThemeMode)

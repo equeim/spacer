@@ -6,16 +6,15 @@ package org.equeim.spacer.ui.screens.donki.details
 
 import androidx.annotation.StringRes
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.*
+import androidx.compose.material3.pullrefresh.PullRefreshIndicator
+import androidx.compose.material3.pullrefresh.pullRefresh
+import androidx.compose.material3.pullrefresh.rememberPullRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,7 +30,7 @@ import org.equeim.spacer.donki.data.model.*
 import org.equeim.spacer.donki.data.model.units.Angle
 import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.LocalNavController
-import org.equeim.spacer.ui.components.Card
+import org.equeim.spacer.ui.components.OutlinedCardWithPadding
 import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
@@ -39,9 +38,7 @@ import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreenViewMod
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.theme.SatelliteAlt
-import org.equeim.spacer.ui.utils.addBottomInsetUnless
 import org.equeim.spacer.ui.utils.formatInteger
-import org.equeim.spacer.ui.utils.hasBottomPadding
 import org.equeim.spacer.ui.utils.plus
 import java.text.DecimalFormat
 import java.time.Instant
@@ -64,7 +61,7 @@ private fun ScreenContent(eventId: EventId) {
     ScreenContent(model)
 }
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalAnimationApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ScreenContent(
     model: DonkiEventDetailsScreenViewModel
@@ -88,10 +85,7 @@ private fun ScreenContent(
                             contentDescription = stringResource(R.string.go_to_donki_website)
                         )
                     },
-                    onClick = { uriHandler.openUri(link) },
-                    modifier = Modifier.padding(
-                        bottom = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
-                    )
+                    onClick = { uriHandler.openUri(link) }
                 )
             }
         }
@@ -101,14 +95,19 @@ private fun ScreenContent(
             refreshing = showRefreshIndicator,
             onRefresh = model::refresh
         )
-        Box(Modifier.pullRefresh(pullRefreshState)) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .pullRefresh(pullRefreshState)
+        ) {
             val contentState by model.contentState.collectAsState()
             Crossfade(contentState) { state ->
                 Box(
                     Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .padding(contentPadding.addBottomInsetUnless(contentPadding.hasBottomPadding))
+                        .padding(contentPadding)
+                        .consumeWindowInsets(contentPadding)
                 ) {
                     when (state) {
                         is Empty -> Unit
@@ -123,7 +122,10 @@ private fun ScreenContent(
             PullRefreshIndicator(
                 showRefreshIndicator,
                 pullRefreshState,
-                Modifier.align(Alignment.TopCenter)
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(contentPadding)
+                    .consumeWindowInsets(contentPadding)
             )
         }
     }
@@ -133,7 +135,7 @@ private fun ScreenContent(
 private fun BoxScope.ScreenContentLoadingPlaceholder() {
     Text(
         text = stringResource(R.string.loading),
-        style = MaterialTheme.typography.h6,
+        style = MaterialTheme.typography.titleLarge,
         modifier = Modifier.align(Alignment.Center)
     )
 }
@@ -143,7 +145,7 @@ private fun BoxScope.ScreenContentErrorPlaceholder() {
     Text(
         text = stringResource(R.string.error),
         modifier = Modifier.align(Alignment.Center),
-        style = MaterialTheme.typography.h6
+        style = MaterialTheme.typography.titleLarge
     )
 }
 
@@ -159,7 +161,7 @@ private fun ScreenContentEventData(
                 PaddingValues(Dimens.ScreenContentPadding)
                     .plus(
                         PaddingValues(
-                            bottom = 64.dp
+                            bottom = 96.dp
                         )
                     )
             ),
@@ -167,13 +169,13 @@ private fun ScreenContentEventData(
     ) {
         Text(
             state.type,
-            color = MaterialTheme.colors.primary,
-            style = MaterialTheme.typography.h5
+            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.headlineSmall
         )
-        CompositionLocalProvider(LocalContentAlpha provides ContentAlpha.medium) {
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
             Text(
                 state.dateTime,
-                style = MaterialTheme.typography.h6
+                style = MaterialTheme.typography.titleMedium
             )
         }
         Spacer(Modifier.height(Dimens.SpacingMedium - Dimens.SpacingSmall))
@@ -186,7 +188,7 @@ private fun ScreenContentEventData(
             ) {
                 val navController = LocalNavController.current
                 state.linkedEvents.forEach { linkedEvent ->
-                    Card(
+                    OutlinedCardWithPadding(
                         { navController.navigate(DonkiEventDetailsScreen(linkedEvent.id)) },
                         Modifier.fillMaxWidth(),
                     ) {
@@ -194,7 +196,7 @@ private fun ScreenContentEventData(
                             Text(text = linkedEvent.dateTime)
                             Text(
                                 text = linkedEvent.type,
-                                style = MaterialTheme.typography.h6,
+                                style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.padding(top = Dimens.SpacingSmall)
                             )
                         }
@@ -250,7 +252,7 @@ fun LabelFieldPair(label: String, field: String) {
         Text(
             label,
             Modifier.requiredWidth(150.dp),
-            color = MaterialTheme.colors.secondary,
+            color = MaterialTheme.colorScheme.tertiary,
         )
         SelectionContainer(
             Modifier

@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+@file:OptIn(ExperimentalLayoutApi::class)
+
 package org.equeim.spacer.ui.screens.donki
 
 import androidx.compose.foundation.layout.*
@@ -11,15 +13,16 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.*
+import androidx.compose.material3.pullrefresh.PullRefreshIndicator
+import androidx.compose.material3.pullrefresh.pullRefresh
+import androidx.compose.material3.pullrefresh.rememberPullRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -32,15 +35,13 @@ import dev.olshevski.navigation.reimagined.navigate
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
 import org.equeim.spacer.ui.LocalNavController
-import org.equeim.spacer.ui.components.Card
+import org.equeim.spacer.ui.components.ElevatedCardWithPadding
 import org.equeim.spacer.ui.components.RootScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreen
 import org.equeim.spacer.ui.screens.settings.SettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
-import org.equeim.spacer.ui.utils.addBottomInsetUnless
-import org.equeim.spacer.ui.utils.hasBottomPadding
-import org.equeim.spacer.ui.utils.toAppBarElevation
+import org.equeim.spacer.ui.utils.plus
 
 @Parcelize
 object DonkiEventsScreen : Destination {
@@ -58,23 +59,26 @@ private fun DonkiEventsScreen() {
     DonkiEventsScreen(holder)
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
     val listIsEmpty by remember(holder) { derivedStateOf { holder.items.itemCount == 0 } }
     val initialLazyListState = rememberLazyListState()
     val lazyListState = if (listIsEmpty) initialLazyListState else holder.listState
 
-    val scaffoldState = rememberScaffoldState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    ShowSnackbarError(holder, scaffoldState)
+    ShowSnackbarError(holder, snackbarHostState)
+
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
-        scaffoldState = scaffoldState,
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             RootScreenTopAppBar(
                 stringResource(R.string.space_weather_events),
-                elevation = lazyListState.toAppBarElevation()
+                scrollBehavior
             ) {
                 val navController = LocalNavController.current
                 IconButton(onClick = { navController.navigate(SettingsScreen) }) {
@@ -91,38 +95,43 @@ private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
         Box(
             Modifier
                 .fillMaxSize()
-                .padding(contentPadding)
-                .pullRefresh(pullRefreshState)
-        ) {
+                .pullRefresh(pullRefreshState)) {
             val fullscreenError = holder.fullscreenError
             when {
-                fullscreenError != null -> DonkiEventsScreenContentErrorPlaceholder(fullscreenError)
-                listIsEmpty -> DonkiEventsScreenContentLoadingPlaceholder()
+                fullscreenError != null -> DonkiEventsScreenContentErrorPlaceholder(contentPadding)
+                listIsEmpty -> DonkiEventsScreenContentLoadingPlaceholder(contentPadding)
                 else -> DonkiEventsScreenContentPaging(
                     lazyListState,
                     holder.items,
-                    contentPadding.hasBottomPadding
+                    contentPadding
                 )
             }
-            PullRefreshIndicator(
-                showRefreshIndicator,
-                pullRefreshState,
-                Modifier.align(Alignment.TopCenter)
-            )
-            if (!listIsEmpty) {
-                if (holder.items.loadState.source.prepend is LoadState.Loading) {
-                    LinearProgressIndicator(
-                        Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.TopStart)
-                    )
-                }
-                if (holder.items.loadState.source.append is LoadState.Loading) {
-                    LinearProgressIndicator(
-                        Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomStart)
-                    )
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding)
+                    .consumeWindowInsets(contentPadding)
+            ) {
+                PullRefreshIndicator(
+                    showRefreshIndicator,
+                    pullRefreshState,
+                    Modifier.align(Alignment.TopCenter)
+                )
+                if (!listIsEmpty) {
+                    if (holder.items.loadState.source.prepend is LoadState.Loading) {
+                        LinearProgressIndicator(
+                            Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.TopStart)
+                        )
+                    }
+                    if (holder.items.loadState.source.append is LoadState.Loading) {
+                        LinearProgressIndicator(
+                            Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomStart)
+                        )
+                    }
                 }
             }
         }
@@ -130,12 +139,15 @@ private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
 }
 
 @Composable
-private fun ShowSnackbarError(holder: DonkiEventsListStateHolder, scaffoldState: ScaffoldState) {
+private fun ShowSnackbarError(
+    holder: DonkiEventsListStateHolder,
+    snackbarHostState: SnackbarHostState
+) {
     val snackbarError = holder.snackbarError
     if (snackbarError != null) {
         val context = LocalContext.current
-        LaunchedEffect(scaffoldState.snackbarHostState) {
-            val result = scaffoldState.snackbarHostState.showSnackbar(
+        LaunchedEffect(snackbarHostState) {
+            val result = snackbarHostState.showSnackbar(
                 message = context.getString(R.string.error),
                 actionLabel = context.getString(R.string.retry),
                 duration = SnackbarDuration.Indefinite
@@ -148,7 +160,7 @@ private fun ShowSnackbarError(holder: DonkiEventsListStateHolder, scaffoldState:
 }
 
 @Composable
-private fun DonkiEventsScreenContentErrorPlaceholder(@Suppress("UNUSED_PARAMETER") error: LoadState.Error) {
+private fun DonkiEventsScreenContentErrorPlaceholder(contentPadding: PaddingValues) {
     /**
      * We need [verticalScroll] for [pullRefresh] to work
      */
@@ -156,21 +168,26 @@ private fun DonkiEventsScreenContentErrorPlaceholder(@Suppress("UNUSED_PARAMETER
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .padding(contentPadding)
+            .consumeWindowInsets(contentPadding)
     ) {
         Text(
             text = stringResource(R.string.error),
             modifier = Modifier.align(Alignment.Center),
-            style = MaterialTheme.typography.h6
+            style = MaterialTheme.typography.titleLarge
         )
     }
 }
 
 @Composable
-private fun BoxScope.DonkiEventsScreenContentLoadingPlaceholder() {
+private fun BoxScope.DonkiEventsScreenContentLoadingPlaceholder(contentPadding: PaddingValues) {
     Text(
         text = stringResource(R.string.loading),
-        style = MaterialTheme.typography.h6,
-        modifier = Modifier.align(Alignment.Center)
+        style = MaterialTheme.typography.titleLarge,
+        modifier = Modifier
+            .align(Alignment.Center)
+            .padding(contentPadding)
+            .consumeWindowInsets(contentPadding)
     )
 }
 
@@ -178,14 +195,14 @@ private fun BoxScope.DonkiEventsScreenContentLoadingPlaceholder() {
 private fun DonkiEventsScreenContentPaging(
     lazyListState: LazyListState,
     items: LazyPagingItems<DonkiEventsScreenViewModel.ListItem>,
-    screenHasBottomPadding: Boolean
+    contentPadding: PaddingValues
 ) {
-    val listPadding =
-        PaddingValues(Dimens.ScreenContentPadding).addBottomInsetUnless(screenHasBottomPadding)
     LazyColumn(
-        Modifier.fillMaxSize(),
+        Modifier
+            .fillMaxSize()
+            .consumeWindowInsets(contentPadding),
         state = lazyListState,
-        contentPadding = listPadding,
+        contentPadding = contentPadding + PaddingValues(Dimens.ScreenContentPadding),
         verticalArrangement = Arrangement.spacedBy(Dimens.SpacingBetweenCards)
     ) {
         items(
@@ -198,13 +215,13 @@ private fun DonkiEventsScreenContentPaging(
                     Row(Modifier.fillMaxWidth()) {
                         Surface(
                             shape = RoundedCornerShape(percent = 50),
-                            color = MaterialTheme.colors.secondary,
-                            elevation = 6.dp,
+                            color = MaterialTheme.colorScheme.secondary,
+                            tonalElevation = 6.dp,
                             modifier = Modifier.align(Alignment.CenterVertically)
                         ) {
                             Text(
                                 text = item.date,
-                                style = MaterialTheme.typography.h6,
+                                style = MaterialTheme.typography.titleMedium,
                                 modifier = Modifier.padding(
                                     horizontal = Dimens.SpacingLarge,
                                     vertical = 4.dp
@@ -215,15 +232,16 @@ private fun DonkiEventsScreenContentPaging(
                 }
                 is DonkiEventsScreenViewModel.EventPresentation -> {
                     val navController = LocalNavController.current
-                    Card(
+                    ElevatedCardWithPadding(
                         { navController.navigate(DonkiEventDetailsScreen(item.id)) },
-                        Modifier.fillMaxWidth()
+                        Modifier.fillMaxWidth(),
+                        CardDefaults.elevatedCardElevation(2.dp)
                     ) {
                         Column {
                             Text(text = item.time)
                             Text(
                                 text = item.type,
-                                style = MaterialTheme.typography.h6,
+                                style = MaterialTheme.typography.titleLarge,
                                 modifier = Modifier.padding(top = Dimens.SpacingSmall)
                             )
                         }

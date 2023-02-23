@@ -4,9 +4,10 @@
 
 package org.equeim.spacer.ui.utils
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 
 @Composable
@@ -18,18 +19,4 @@ infix operator fun PaddingValues.plus(other: PaddingValues): PaddingValues {
         end = calculateEndPadding(layoutDirection) + other.calculateEndPadding(layoutDirection),
         bottom = calculateBottomPadding() + other.calculateBottomPadding()
     )
-}
-
-val PaddingValues.hasBottomPadding: Boolean
-    get() = calculateBottomPadding().value != 0.0f
-
-@Composable
-fun PaddingValues.addBottomInsetUnless(condition: Boolean): PaddingValues {
-    return if (condition) this else addBottomInset()
-}
-
-@Composable
-private fun PaddingValues.addBottomInset(): PaddingValues {
-    val bottom = with(LocalDensity.current) { WindowInsets.systemBars.getBottom(this).toDp() }
-    return this + PaddingValues(bottom = bottom)
 }
