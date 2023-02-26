@@ -5,7 +5,9 @@
 package org.equeim.spacer.ui.screens.settings
 
 import android.app.Application
-import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -25,6 +27,7 @@ class SettingsScreenViewModel(application: Application) : AndroidViewModel(appli
 
     private val stateInJobs = mutableListOf<Job>()
     val darkThemeMode: StateFlow<AppSettings.DarkThemeMode> by PreferenceStateFlow(settings.darkThemeMode)
+    val useSystemColors: StateFlow<Boolean> by PreferenceStateFlow(settings.useSystemColors)
     val displayEventsTimeInUTC: StateFlow<Boolean> by PreferenceStateFlow(settings.displayEventsTimeInUTC)
 
     init {

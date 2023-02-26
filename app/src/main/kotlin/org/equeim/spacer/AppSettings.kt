@@ -74,6 +74,9 @@ class AppSettings(private val context: Context) {
                 transformToBase = { DarkThemeMode.enumToString[it]!! }
             )
 
+    val useSystemColors: Preference<Boolean> =
+        preference(booleanPreferencesKey("useSystemColors")) { false }
+
     val displayEventsTimeInUTC: Preference<Boolean> = preference(booleanPreferencesKey("displayEventsTimeInUTC")) { false }
 
     interface Preference<T : Any> {
