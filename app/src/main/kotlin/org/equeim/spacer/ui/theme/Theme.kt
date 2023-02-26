@@ -4,8 +4,15 @@
 
 package org.equeim.spacer.ui.theme
 
+import android.os.Build
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import org.equeim.spacer.ui.ColorsSettingsProvider
+import org.equeim.spacer.utils.getApplicationOrThrow
 
 private val LightColors = lightColorScheme(
     primary = md_theme_light_primary,
@@ -77,10 +84,22 @@ fun ApplicationTheme(
     darkTheme: Boolean,
     content: @Composable () -> Unit
 ) {
+    val context = LocalContext.current
+    val useSystemColors by remember {
+        ColorsSettingsProvider.init(context.getApplicationOrThrow()).useSystemColors
+    }.collectAsState()
     val colors = if (darkTheme) {
-        DarkColors
+        if (useSystemColors && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            dynamicDarkColorScheme(context)
+        } else {
+            DarkColors
+        }
     } else {
-        LightColors
+        if (useSystemColors && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            dynamicLightColorScheme(context)
+        } else {
+            LightColors
+        }
     }
 
     MaterialTheme(

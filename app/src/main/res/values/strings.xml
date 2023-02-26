@@ -25,6 +25,7 @@ SPDX-License-Identifier: MIT
     <string name="dark_theme_follow_system">Follow system</string>
     <string name="preference_on">On</string>
     <string name="preference_off">Off</string>
+    <string name="use_system_colors">Use system colors</string>
     <string name="behaviour">Behaviour</string>
     <string name="display_events_in_utc">Display event times in UTC</string>
 
