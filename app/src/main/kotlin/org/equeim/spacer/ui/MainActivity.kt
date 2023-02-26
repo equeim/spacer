@@ -4,7 +4,6 @@
 
 package org.equeim.spacer.ui
 
-import android.app.Application
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
@@ -24,12 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import dev.olshevski.navigation.reimagined.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.runBlocking
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
 import org.equeim.spacer.ui.screens.Destination
@@ -90,30 +84,13 @@ private fun MainActivityScreen(activity: MainActivity) {
         LocalNavController provides navController
     ) {
         ApplicationTheme(isDarkTheme) {
-            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)) {
                 NavBackHandler(navController)
                 @OptIn(ExperimentalAnimationApi::class)
                 AnimatedNavHost(navController, Modifier.fillMaxSize()) { it.Content() }
-            }
-        }
-    }
-}
-
-/**
- * Singleton [AppSettings.DarkThemeMode] provider that blocks current thread when value is retrieved
- * for the first time, to not recompose everything immediately after creation
- */
-private object DarkThemeModeProvider {
-    private val collectingScope = CoroutineScope(Dispatchers.Unconfined)
-
-    @Volatile
-    private var darkThemeModeModeFlow: StateFlow<AppSettings.DarkThemeMode>? = null
-
-    fun darkThemeMode(application: Application): StateFlow<AppSettings.DarkThemeMode> {
-        return darkThemeModeModeFlow ?: runBlocking {
-            val settings = AppSettings(application)
-            settings.darkThemeMode.flow().stateIn(collectingScope).also {
-                darkThemeModeModeFlow = it
             }
         }
     }
@@ -133,8 +110,11 @@ private fun setDarkThemeWindowProperties(window: Window, view: View, isDarkTheme
 
 @Composable
 private fun isDarkTheme(activity: MainActivity): State<Boolean> {
+    val colorsSettingsProvider = remember {
+        ColorsSettingsProvider.init(activity.getApplicationOrThrow())
+    }
     val darkThemeMode by remember {
-        DarkThemeModeProvider.darkThemeMode(activity.getApplicationOrThrow())
+        colorsSettingsProvider.darkThemeModeMode
     }.collectAsState()
     LaunchedEffect(null) {
         snapshotFlow { darkThemeMode }

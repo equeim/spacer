@@ -4,6 +4,7 @@
 
 package org.equeim.spacer.ui.screens.settings
 
+import android.os.Build
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -92,6 +93,17 @@ private fun SettingsScreen() {
                     }
                 }
             )
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val useSystemColors by model.useSystemColors.collectAsStateWhenStarted()
+                ListItem(
+                    headlineText = { Text(stringResource(R.string.use_system_colors)) },
+                    trailingContent = { Switch(useSystemColors, onCheckedChange = null) },
+                    modifier = Modifier.clickable {
+                        model.settings.useSystemColors.set(!useSystemColors)
+                    }
+                )
+            }
 
             SectionHeader(
                 stringResource(R.string.behaviour),
