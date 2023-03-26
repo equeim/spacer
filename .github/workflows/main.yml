@@ -37,8 +37,6 @@ jobs:
         with:
           arguments: build
           cache-read-only: ${{ github.event_name == 'pull_request' }}
-        env:
-          GRADLE_USER_HOME: ${{ runner.temp }}/.gradle
 
       - name: Archive debug APKs
         uses: actions/upload-artifact@v3
