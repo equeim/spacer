@@ -10,7 +10,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -40,7 +43,8 @@ object SettingsScreen : Destination {
     override fun Content() = SettingsScreen()
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class,
+@OptIn(
+    ExperimentalAnimationApi::class,
     ExperimentalLayoutApi::class
 )
 @Composable
@@ -77,8 +81,8 @@ private fun SettingsScreen() {
 
             val darkThemeMode by model.darkThemeMode.collectAsStateWhenStarted()
             ListItem(
-                headlineText = { Text(stringResource(R.string.dark_theme)) },
-                supportingText = {
+                headlineContent = { Text(stringResource(R.string.dark_theme)) },
+                supportingContent = {
                     Text(
                         when (darkThemeMode) {
                             AppSettings.DarkThemeMode.FollowSystem -> stringResource(R.string.dark_theme_follow_system)
@@ -97,7 +101,7 @@ private fun SettingsScreen() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val useSystemColors by model.useSystemColors.collectAsStateWhenStarted()
                 ListItem(
-                    headlineText = { Text(stringResource(R.string.use_system_colors)) },
+                    headlineContent = { Text(stringResource(R.string.use_system_colors)) },
                     trailingContent = { Switch(useSystemColors, onCheckedChange = null) },
                     modifier = Modifier.clickable {
                         model.settings.useSystemColors.set(!useSystemColors)
@@ -112,7 +116,7 @@ private fun SettingsScreen() {
 
             val displayEventsTimeInUTC by model.displayEventsTimeInUTC.collectAsStateWhenStarted()
             ListItem(
-                headlineText = { Text(stringResource(R.string.display_events_in_utc)) },
+                headlineContent = { Text(stringResource(R.string.display_events_in_utc)) },
                 trailingContent = { Switch(displayEventsTimeInUTC, onCheckedChange = null) },
                 modifier = Modifier.clickable {
                     model.settings.displayEventsTimeInUTC.set(!displayEventsTimeInUTC)
