@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 (c) Alexey Rochev
+// SPDX-FileCopyrightText: 2022-2023 Alexey Rochev
 //
 // SPDX-License-Identifier: MIT
 
