@@ -6,7 +6,7 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [ master ]
   pull_request:
     branches:
       - master
@@ -17,7 +17,7 @@ on:
 
 jobs:
   build-app:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out
@@ -53,7 +53,16 @@ jobs:
             */build/reports/*
           retention-days: ${{ github.event_name == 'pull_request' && 3 || github.retention_days }}
 
-      - name: Check REUSE compliance
+  reuse-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
         run: |
           sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --assume-yes install pipx
+
+      - name: Check REUSE compliance
+        run: |
           pipx run reuse lint
