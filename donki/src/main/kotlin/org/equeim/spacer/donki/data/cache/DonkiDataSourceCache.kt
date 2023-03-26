@@ -7,6 +7,7 @@ package org.equeim.spacer.donki.data.cache
 import android.content.Context
 import android.os.storage.StorageManager
 import android.util.Log
+import androidx.annotation.WorkerThread
 import androidx.core.content.getSystemService
 import androidx.room.Room
 import androidx.room.withTransaction
@@ -40,9 +41,16 @@ internal class DonkiDataSourceCache(
     private val coroutineDispatchers: CoroutineDispatchers = CoroutineDispatchers(),
     private val clock: Clock = Clock.systemDefaultZone()
 ) : Closeable {
-    private val coroutineScope = CoroutineScope(coroutineDispatchers.Default + SupervisorJob())
+    private val coroutineScope = CoroutineScope(coroutineDispatchers.IO + SupervisorJob())
+
+    @Volatile
+    private var db: DonkiDatabase? = null
+
+    @Volatile
     private var dbWatchKey: WatchKey? = null
-    private var db: DonkiDatabase
+
+    @Volatile
+    private var dbInitJob: Job? = null
 
     private val _databaseRecreated = MutableSharedFlow<Unit>()
     val databaseRecreated: Flow<Unit> by ::_databaseRecreated
@@ -51,18 +59,24 @@ internal class DonkiDataSourceCache(
         if (db != null) {
             this.db = db
         } else {
-            val databaseDirectory = context.cacheDir.toPath().resolve(DonkiDatabase.NAME)
-            this.db = createDatabase(databaseDirectory)
-            val storageManager = checkNotNull(context.getSystemService<StorageManager>())
-            coroutineScope.launch(Dispatchers.IO) {
-                Files.createDirectories(databaseDirectory)
-                storageManager.setCacheBehaviorGroup(databaseDirectory.toFile(), true)
-                storageManager.setCacheBehaviorTombstone(databaseDirectory.toFile(), true)
-                recreateDatabaseWhenDeleted(databaseDirectory)
+            dbInitJob = coroutineScope.launch { initDatabase() }.apply {
+                invokeOnCompletion { dbInitJob = null }
             }
         }
     }
 
+    @WorkerThread
+    private fun initDatabase() {
+        val databaseDirectory = context.cacheDir.toPath().resolve(DonkiDatabase.NAME)
+        Files.createDirectories(databaseDirectory)
+        val storageManager = checkNotNull(context.getSystemService<StorageManager>())
+        storageManager.setCacheBehaviorGroup(databaseDirectory.toFile(), true)
+        storageManager.setCacheBehaviorTombstone(databaseDirectory.toFile(), true)
+        db = createDatabase(databaseDirectory)
+        recreateDatabaseWhenDeleted(databaseDirectory)
+    }
+
+    @WorkerThread
     private fun createDatabase(databaseDirectory: Path): DonkiDatabase {
         Log.d(TAG, "createDatabase() called with: databaseDirectory = $databaseDirectory")
         return Room.databaseBuilder(
@@ -72,8 +86,7 @@ internal class DonkiDataSourceCache(
         ).build()
     }
 
-    @Suppress("BlockingMethodInNonBlockingContext")
-    private suspend fun recreateDatabaseWhenDeleted(databaseDirectory: Path) {
+    private fun recreateDatabaseWhenDeleted(databaseDirectory: Path) {
         val watchService = FileSystems.getDefault().newWatchService()
         val watchKey =
             databaseDirectory.register(watchService, StandardWatchEventKinds.ENTRY_DELETE)
@@ -81,15 +94,14 @@ internal class DonkiDataSourceCache(
             if ((it.context() as? Path)?.toString() == DonkiDatabase.NAME) {
                 recreateDatabase(databaseDirectory)
             }
-        }.launchIn(coroutineScope + Dispatchers.Main)
-        withContext(coroutineDispatchers.Main) {
-            dbWatchKey = watchKey
-        }
+        }.launchIn(coroutineScope)
+        dbWatchKey = watchKey
     }
 
+    @WorkerThread
     private suspend fun recreateDatabase(databaseDirectory: Path) {
         Log.d(TAG, "recreateDatabase() called with: databaseDirectory = $databaseDirectory")
-        db.close()
+        db?.close()
         db = createDatabase(databaseDirectory)
         _databaseRecreated.emit(Unit)
     }
@@ -97,12 +109,22 @@ internal class DonkiDataSourceCache(
     override fun close() {
         Log.d(TAG, "close() called")
         coroutineScope.cancel()
+        dbInitJob?.cancel()
         dbWatchKey?.cancel()
-        db.close()
+        db?.close()
     }
 
-    suspend fun isWeekCachedAndNeedsRefresh(week: Week, eventType: EventType, refreshIfRecentlyLoaded: Boolean): Boolean {
-        val cacheLoadTime = db.cachedWeeks()
+    private suspend fun awaitDb(): DonkiDatabase {
+        dbInitJob?.join()
+        return checkNotNull(db)
+    }
+
+    suspend fun isWeekCachedAndNeedsRefresh(
+        week: Week,
+        eventType: EventType,
+        refreshIfRecentlyLoaded: Boolean
+    ): Boolean {
+        val cacheLoadTime = awaitDb().cachedWeeks()
             .getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear, eventType)
         return cacheLoadTime != null && week.needsRefresh(cacheLoadTime, refreshIfRecentlyLoaded)
     }
@@ -116,6 +138,7 @@ internal class DonkiDataSourceCache(
             TAG,
             "getEventSummariesForWeek() called with: week = $week, eventType = $eventType, returnCacheThatNeedsRefreshing = $returnCacheThatNeedsRefreshing"
         )
+        val db = awaitDb()
         return try {
             val weekCacheTime = db.cachedWeeks()
                 .getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear, eventType)
@@ -159,12 +182,21 @@ internal class DonkiDataSourceCache(
         }
     }
 
-    suspend fun getEventById(id: EventId, eventType: EventType, week: Week): DonkiRepository.EventById? {
+    suspend fun getEventById(
+        id: EventId,
+        eventType: EventType,
+        week: Week
+    ): DonkiRepository.EventById? {
         Log.d(TAG, "getEventById() called with: id = $id, eventType = $eventType, week = $week")
-        return try {
-            val weekLoadTime = db.cachedWeeks().getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear, eventType)
+        val db = awaitDb()
+        try {
+            val weekLoadTime = db.cachedWeeks()
+                .getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear, eventType)
             if (weekLoadTime == null) {
-                Log.d(TAG, "getEventById: no cache for week = $week, eventType = $eventType, returning null")
+                Log.d(
+                    TAG,
+                    "getEventById: no cache for week = $week, eventType = $eventType, returning null"
+                )
                 return null
             }
             val json = db.events().getEventJsonById(id)
@@ -173,7 +205,7 @@ internal class DonkiDataSourceCache(
                 return null
             }
             val event = DonkiJson.decodeFromString(eventType.eventSerializer(), json)
-            DonkiRepository.EventById(event, week.needsRefresh(weekLoadTime)).also {
+            return DonkiRepository.EventById(event, week.needsRefresh(weekLoadTime)).also {
                 Log.d(TAG, "getEventById: returning event $id")
             }
         } catch (e: Exception) {
@@ -208,11 +240,15 @@ internal class DonkiDataSourceCache(
         events: List<Pair<Event, JsonObject>>,
         loadTime: Instant
     ) {
-        Log.d(TAG, "cacheWeek() called with: week = $week, events count = ${events.size}, loadTime = $loadTime")
+        Log.d(
+            TAG,
+            "cacheWeek() called with: week = $week, events count = ${events.size}, loadTime = $loadTime"
+        )
         if (events.isEmpty()) {
             Log.d(TAG, "cacheWeek: no events, mark as cached without transaction")
             updateCachedWeek(week, eventType, loadTime)
         } else {
+            val db = awaitDb()
             db.withTransaction {
                 Log.d(TAG, "cacheWeek: starting transaction for $week")
                 updateCachedWeek(week, eventType, loadTime)
@@ -234,7 +270,7 @@ internal class DonkiDataSourceCache(
     }
 
     private suspend fun updateCachedWeek(week: Week, eventType: EventType, loadTime: Instant) {
-        db.cachedWeeks()
+        awaitDb().cachedWeeks()
             .updateWeek(
                 CachedWeek(
                     week.weekBasedYear,
@@ -260,9 +296,12 @@ private fun WatchService.events(coroutineDispatchers: CoroutineDispatchers): Flo
     flow {
         try {
             while (currentCoroutineContext().isActive) {
-                val key = runInterruptible { take() }
-                key.pollEvents().forEach { emit(it) }
-                key.reset()
+                val key: WatchKey = runInterruptible { take() }
+                try {
+                    key.pollEvents().forEach { emit(it) }
+                } finally {
+                    key.reset()
+                }
             }
         } catch (ignore: ClosedWatchServiceException) {
         }
