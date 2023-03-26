@@ -37,6 +37,7 @@ import org.equeim.spacer.R
 import org.equeim.spacer.ui.LocalNavController
 import org.equeim.spacer.ui.components.ElevatedCardWithPadding
 import org.equeim.spacer.ui.components.RootScreenTopAppBar
+import org.equeim.spacer.ui.components.ToolbarIcon
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreen
 import org.equeim.spacer.ui.screens.settings.SettingsScreen
@@ -81,8 +82,8 @@ private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
                 scrollBehavior
             ) {
                 val navController = LocalNavController.current
-                IconButton(onClick = { navController.navigate(SettingsScreen) }) {
-                    Icon(Icons.Filled.Settings, stringResource(R.string.settings))
+                ToolbarIcon(Icons.Filled.Settings, R.string.settings) {
+                    navController.navigate(SettingsScreen)
                 }
             }
         }

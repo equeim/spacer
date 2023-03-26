@@ -10,7 +10,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import dev.olshevski.navigation.reimagined.pop
 import org.equeim.spacer.R
@@ -44,9 +43,7 @@ fun SubScreenTopAppBar(
         modifier = modifier,
         navigationIcon = {
             val navController = LocalNavController.current
-            IconButton(onClick = navController::pop) {
-                Icon(Icons.Filled.ArrowBack, stringResource(R.string.navigate_up))
-            }
+            ToolbarIcon(Icons.Filled.ArrowBack, R.string.navigate_up, navController::pop)
         },
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(
