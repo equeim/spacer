@@ -30,7 +30,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.items
+import androidx.paging.compose.itemKey
 import dev.olshevski.navigation.reimagined.navigate
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
@@ -207,11 +207,10 @@ private fun DonkiEventsScreenContentPaging(
         verticalArrangement = Arrangement.spacedBy(Dimens.SpacingBetweenCards)
     ) {
         items(
-            items,
-            key = DonkiEventsScreenViewModel.ListItem::lazyListKey
-        ) { item ->
-            checkNotNull(item)
-            when (item) {
+            count = items.itemCount,
+            key = items.itemKey(DonkiEventsScreenViewModel.ListItem::lazyListKey)
+        ) { index ->
+            when (val item = checkNotNull(items[index])) {
                 is DonkiEventsScreenViewModel.DateSeparator -> {
                     Row(Modifier.fillMaxWidth()) {
                         Surface(
