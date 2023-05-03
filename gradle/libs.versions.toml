@@ -3,39 +3,36 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [versions]
-# Remove android.experimental.legacyTransform.forceNonIncremental=true from gradle.properties
-# after upgrading to 8.0
-android-gradle-plugin = "7.4.2"
-kotlin = "1.8.10"
-ksp = "1.8.10-1.0.9"
+android-gradle-plugin = "8.0.1"
+kotlin = "1.8.21"
+ksp = "1.8.21-1.0.11"
 gradle-versions-plugin = "0.46.0"
 
 sdk-platform-compile = "33"
 sdk-platform-min = "27"
 sdk-platform-target = "33"
 
-androidx-activity = "1.7.0"
-androidx-compose = "1.4.0"
-androidx-compose-compiler = "1.4.4"
-androidx-compose-ui = "1.4.0"
-androidx-compose-material3 = "1.1.0-beta01"
+androidx-activity = "1.7.1"
+androidx-compose = "1.4.3"
+androidx-compose-compiler = "1.4.7"
+androidx-compose-material3 = "1.1.0"
 androidx-core = "1.9.0"
 androidx-datastore = "1.0.0"
 androidx-lifecycle = "2.6.1"
 androidx-paging = "3.1.1"
-androidx-paging-compose = "1.0.0-alpha18"
+androidx-paging-compose = "1.0.0-alpha19"
 androidx-room = "2.5.1"
 androidx-test-core = "1.5.0"
 
-coroutines = "1.6.4"
+coroutines = "1.7.1"
 junit = "4.13.2"
-okhttp = "4.10.0"
-leakcanary = "2.10"
-mockk = "1.13.4"
+okhttp = "4.11.0"
+leakcanary = "2.11"
+mockk = "1.13.5"
 navigation-reimagined = "1.4.0"
 retrofit = "2.9.0"
 robolectric = "4.9.2"
-serialization = "1.5.0"
+serialization = "1.5.1"
 
 [libraries]
 android-gradle-plugin-api = { module = "com.android.tools.build:gradle-api", version.ref = "android-gradle-plugin" }
@@ -46,9 +43,9 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 androidx-core = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "androidx-compose-material3" }
 androidx-compose-material-icons = { module = "androidx.compose.material:material-icons-core", version.ref = "androidx-compose" }
-androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "androidx-compose-ui" }
-androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "androidx-compose-ui" }
-androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "androidx-compose-ui" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui", version.ref = "androidx-compose" }
+androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "androidx-compose" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "androidx-compose" }
 androidx-datastore = { module = "androidx.datastore:datastore-preferences", version.ref = "androidx-datastore" }
 androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
 androidx-lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "androidx-lifecycle" }
