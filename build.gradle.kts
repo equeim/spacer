@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
-import java.util.*
+import java.util.Locale
 
 plugins {
     alias(libs.plugins.android.application) apply(false)
@@ -42,7 +42,7 @@ class VersionChannelProvider {
     private val stableRegex = "^[0-9,.v-]+(-r)?$".toRegex()
 
     fun getChannel(version: String): Channel {
-        val versionUppercase = version.toUpperCase(Locale.ROOT)
+        val versionUppercase = version.uppercase(Locale.ROOT)
         return channels.find {
             it.keywords.any(versionUppercase::contains)
         } ?: if (stableRegex.matches(version)) {
