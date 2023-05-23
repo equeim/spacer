@@ -11,6 +11,8 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -31,12 +33,19 @@ import java.time.Instant
 private const val TAG = "DonkiRepository"
 
 interface DonkiRepository : Closeable {
-    fun getEventSummariesPager(): Pager<*, EventSummary>
+    class PagerFiltersTypesAreEmpty : RuntimeException()
+
+    fun getEventSummariesPager(filters: StateFlow<EventFilters>): Pager<*, EventSummary>
+
     suspend fun getEventById(id: EventId, forceRefresh: Boolean): EventById
 
     data class EventById(
         val event: Event,
         val needsRefreshing: Boolean
+    )
+
+    data class EventFilters(
+        val types: Set<EventType> = EventType.All.toSet()
     )
 }
 
@@ -107,7 +116,7 @@ private class DonkiRepositoryImpl(
     }
 
     @OptIn(ExperimentalPagingApi::class)
-    override fun getEventSummariesPager(): Pager<*, EventSummary> {
+    override fun getEventSummariesPager(filters: StateFlow<DonkiRepository.EventFilters>): Pager<*, EventSummary> {
         val mediator = EventsSummariesRemoteMediator(this, cacheDataSource)
         return Pager(
             PagingConfig(pageSize = 20, enablePlaceholders = false),
@@ -116,7 +125,8 @@ private class DonkiRepositoryImpl(
         ) {
             EventsSummariesPagingSource(
                 this,
-                merge(mediator.refreshed, cacheDataSource.databaseRecreated)
+                merge(mediator.refreshed, cacheDataSource.databaseRecreated, filters.drop(1)),
+                filters.value
             )
         }
     }

@@ -10,6 +10,7 @@ SPDX-License-Identifier: MIT
     <string name="loading">Loading…</string>
     <string name="error">Error</string>
     <string name="retry">Retry</string>
+    <string name="all_event_types">All</string>
     <string name="coronal_mass_ejection">Coronal mass ejection</string>
     <string name="geomagnetic_storm">Geomagnetic storm</string>
     <string name="interplanetary_shock">Interplanetary shock</string>
@@ -66,4 +67,8 @@ SPDX-License-Identifier: MIT
     <string name="flr_end_time">End time</string>
     <string name="flr_class">Class</string>
     <string name="flr_source_location">Source location</string>
+
+    <string name="filters">Filters</string>
+    <string name="event_types">Event types</string>
+    <string name="all_event_types_are_disabled">All event types are disabled</string>
 </resources>
