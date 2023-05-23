@@ -10,8 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import dev.olshevski.navigation.reimagined.pop
-import org.equeim.spacer.ui.LocalNavController
+import androidx.compose.ui.window.DialogProperties
 import org.equeim.spacer.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -19,10 +18,11 @@ import org.equeim.spacer.ui.theme.Dimens
 fun Dialog(
     title: String,
     modifier: Modifier = Modifier,
+    properties: DialogProperties = DialogProperties(),
+    onDismissRequest: () -> Unit,
     content: @Composable () -> Unit
 ) {
-    val navController = LocalNavController.current
-    AlertDialog(onDismissRequest = navController::pop, modifier = modifier) {
+    AlertDialog(onDismissRequest, modifier, properties) {
         Surface(
             shape = AlertDialogDefaults.shape,
             color = AlertDialogDefaults.containerColor,

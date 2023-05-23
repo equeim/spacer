@@ -9,9 +9,14 @@ import android.util.Log
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.paging.*
+import androidx.paging.PagingData
+import androidx.paging.TerminalSeparatorType
+import androidx.paging.cachedIn
+import androidx.paging.insertSeparators
+import androidx.paging.map
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -53,10 +58,12 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
     @Volatile
     private lateinit var localeDependentState: LocaleDependentState
 
+    val filters = MutableStateFlow(DonkiRepository.EventFilters())
+
     val pagingData: Flow<PagingData<ListItem>>
 
     init {
-        val basePagingData = repository.getEventSummariesPager().flow.cachedIn(viewModelScope)
+        val basePagingData = repository.getEventSummariesPager(filters).flow.cachedIn(viewModelScope)
         val defaultLocaleFlow = application.defaultLocaleFlow().onEach {
             localeDependentState = LocaleDependentState()
         }

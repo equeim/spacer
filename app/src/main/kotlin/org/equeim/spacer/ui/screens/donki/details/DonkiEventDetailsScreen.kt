@@ -23,23 +23,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.olshevski.navigation.reimagined.NavController
+import dev.olshevski.navigation.reimagined.NavHostEntry
 import dev.olshevski.navigation.reimagined.navigate
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.model.*
 import org.equeim.spacer.donki.data.model.units.Angle
 import org.equeim.spacer.ui.LocalDefaultLocale
-import org.equeim.spacer.ui.LocalNavController
 import org.equeim.spacer.ui.components.OutlinedCardWithPadding
 import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.LocalNavController
 import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreenViewModel.ContentState.*
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.theme.SatelliteAlt
 import org.equeim.spacer.ui.utils.formatInteger
-import org.equeim.spacer.ui.utils.plus
 import java.text.DecimalFormat
 import java.time.Instant
 import kotlin.math.abs
@@ -47,7 +48,7 @@ import kotlin.math.abs
 @Parcelize
 data class DonkiEventDetailsScreen(val eventId: EventId) : Destination {
     @Composable
-    override fun Content() = ScreenContent(eventId)
+    override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) = ScreenContent(eventId)
 }
 
 @Composable
@@ -108,11 +109,12 @@ private fun ScreenContent(
                         .verticalScroll(rememberScrollState())
                         .padding(contentPadding)
                         .consumeWindowInsets(contentPadding)
+                        .padding(Dimens.ScreenContentPadding)
                 ) {
                     when (state) {
                         is Empty -> Unit
                         is LoadingPlaceholder -> ScreenContentLoadingPlaceholder()
-                        is ErrorPlaceholder -> ScreenContentErrorPlaceholder()
+                        is ErrorPlaceholder -> ScreenContentErrorPlaceholder(state.error)
                         is EventData -> {
                             ScreenContentEventData(state) { model.formatTime(it) }
                         }
@@ -141,9 +143,9 @@ private fun BoxScope.ScreenContentLoadingPlaceholder() {
 }
 
 @Composable
-private fun BoxScope.ScreenContentErrorPlaceholder() {
+private fun BoxScope.ScreenContentErrorPlaceholder(error: String) {
     Text(
-        text = stringResource(R.string.error),
+        text = error,
         modifier = Modifier.align(Alignment.Center),
         style = MaterialTheme.typography.titleLarge
     )
@@ -157,14 +159,7 @@ private fun ScreenContentEventData(
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(
-                PaddingValues(Dimens.ScreenContentPadding)
-                    .plus(
-                        PaddingValues(
-                            bottom = 96.dp
-                        )
-                    )
-            ),
+            .padding(bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
     ) {
         Text(

@@ -4,37 +4,50 @@
 
 package org.equeim.spacer.ui.screens.donki
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.saveable.SaveableStateRegistry
+import androidx.compose.ui.platform.LocalContext
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import java.io.Closeable
+import org.equeim.spacer.R
+import org.equeim.spacer.donki.data.DonkiRepository
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
-fun rememberDonkiEventsListStateHolder(items: LazyPagingItems<DonkiEventsScreenViewModel.ListItem>, listState: LazyListState): DonkiEventsListStateHolder {
+fun rememberDonkiEventsListStateHolder(
+    items: LazyPagingItems<DonkiEventsScreenViewModel.ListItem>,
+    listState: LazyListState,
+    filters: StateFlow<DonkiRepository.EventFilters>
+): DonkiEventsListStateHolder {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val registry = checkNotNull(LocalSaveableStateRegistry.current)
-    val holder = remember(items) { DonkiEventsListStateHolder(items, listState, scope, registry) }
-    DisposableEffect(holder) {
-        onDispose {
-            holder.close()
-        }
+    return remember(items, listState, filters, context, scope, registry) {
+        DonkiEventsListStateHolder(
+            items,
+            listState,
+            filters,
+            context,
+            scope,
+            registry
+        )
     }
-    return holder
 }
 
 class DonkiEventsListStateHolder(
     val items: LazyPagingItems<DonkiEventsScreenViewModel.ListItem>,
     val listState: LazyListState,
+    filters: StateFlow<DonkiRepository.EventFilters>,
+    context: Context,
     coroutineScope: CoroutineScope,
     saveableStateRegistry: SaveableStateRegistry
-): Closeable {
+): RememberObserver {
     private val loading: StateFlow<Boolean> = snapshotFlow {
         with(items.loadState) {
             isAnyLoading(source.refresh, mediator?.refresh) ||
@@ -61,7 +74,7 @@ class DonkiEventsListStateHolder(
         loading
     }.stateIn(coroutineScope, SharingStarted.Eagerly, false)
 
-    val fullscreenError: LoadState.Error? by derivedStateOf {
+    val fullscreenError: String? by derivedStateOf {
         if (items.itemCount == 0) {
             with(items.loadState) {
                 firstErrorOrNull(
@@ -70,27 +83,39 @@ class DonkiEventsListStateHolder(
                     source.append,
                     source.prepend
                 )
+            }?.error?.toString() ?: run {
+                if (filters.value.types.isEmpty()) {
+                    context.getString(R.string.all_event_types_are_disabled)
+                } else {
+                    null
+                }
             }
         } else {
             null
         }
     }
 
-    val snackbarError: LoadState.Error? by derivedStateOf {
+    val snackbarError: String? by derivedStateOf {
         with(items.loadState) {
-            firstErrorOrNull(source.refresh, mediator?.refresh, source.append, source.prepend)
+            firstErrorOrNull(source.refresh, mediator?.refresh, source.append, source.prepend)?.error?.toString()
         }
     }
 
     init {
         scrollToTopAfterSourceRefresh(coroutineScope)
 
-        snapshotFlow { items.itemCount == 0 }.onEach {
-            Log.d(TAG, "list is empty = $it")
+        filters.drop(1).onEach {
+            listState.scrollToItem(0)
         }.launchIn(coroutineScope)
     }
 
-    override fun close() {
+    override fun onRemembered() = Unit
+
+    override fun onForgotten() {
+        registryEntry.unregister()
+    }
+
+    override fun onAbandoned() {
         registryEntry.unregister()
     }
 
