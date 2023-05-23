@@ -2,6 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
+println("java.version = ${System.getProperty("java.version")}")
+println("JavaVersion = ${JavaVersion.current()}")
+
 pluginManagement {
     repositories {
         gradlePluginPortal()
