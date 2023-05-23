@@ -12,27 +12,37 @@ import android.view.View
 import android.view.Window
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
-import dev.olshevski.navigation.reimagined.*
+import dev.olshevski.navigation.reimagined.rememberNavController
 import kotlinx.coroutines.flow.onEach
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
-import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.ScreenDestinationNavHost
 import org.equeim.spacer.ui.screens.donki.DonkiEventsScreen
 import org.equeim.spacer.ui.theme.ApplicationTheme
 import org.equeim.spacer.ui.utils.defaultLocale
 import org.equeim.spacer.ui.utils.defaultLocaleFlow
 import org.equeim.spacer.utils.getApplicationOrThrow
-import java.util.*
+import java.util.Locale
 
 private const val TAG = "MainActivity"
 
@@ -54,8 +64,6 @@ class MainActivity : ComponentActivity() {
 
 val LocalDefaultLocale = compositionLocalOf<Locale> { throw IllegalStateException() }
 val LocalAppSettings = staticCompositionLocalOf<AppSettings> { throw IllegalStateException() }
-val LocalNavController =
-    staticCompositionLocalOf<NavController<Destination>> { throw IllegalStateException() }
 
 @Composable
 private fun MainActivityScreen(activity: MainActivity) {
@@ -76,21 +84,18 @@ private fun MainActivityScreen(activity: MainActivity) {
         }
     }.collectAsState(context.defaultLocale)
     val settings = remember { AppSettings(context.getApplicationOrThrow()) }
-    val navController = rememberNavController<Destination>(DonkiEventsScreen)
 
     CompositionLocalProvider(
         LocalDefaultLocale provides defaultLocale,
-        LocalAppSettings provides settings,
-        LocalNavController provides navController
+        LocalAppSettings provides settings
     ) {
         ApplicationTheme(isDarkTheme) {
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)) {
-                NavBackHandler(navController)
-                @OptIn(ExperimentalAnimationApi::class)
-                AnimatedNavHost(navController, Modifier.fillMaxSize()) { it.Content() }
+                    .background(MaterialTheme.colorScheme.background)
+            ) {
+                ScreenDestinationNavHost(rememberNavController(DonkiEventsScreen))
             }
         }
     }

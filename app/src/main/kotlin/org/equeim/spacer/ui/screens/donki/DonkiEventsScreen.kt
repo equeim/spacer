@@ -31,23 +31,28 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import dev.olshevski.navigation.reimagined.NavController
+import dev.olshevski.navigation.reimagined.NavHostEntry
 import dev.olshevski.navigation.reimagined.navigate
+import dev.olshevski.navigation.reimagined.rememberNavController
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
-import org.equeim.spacer.ui.LocalNavController
 import org.equeim.spacer.ui.components.ElevatedCardWithPadding
 import org.equeim.spacer.ui.components.RootScreenTopAppBar
 import org.equeim.spacer.ui.components.ToolbarIcon
 import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.DialogDestinationNavHost
+import org.equeim.spacer.ui.screens.LocalNavController
 import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreen
 import org.equeim.spacer.ui.screens.settings.SettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
+import org.equeim.spacer.ui.theme.FilterList
 import org.equeim.spacer.ui.utils.plus
 
 @Parcelize
 object DonkiEventsScreen : Destination {
     @Composable
-    override fun Content() = DonkiEventsScreen()
+    override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) = DonkiEventsScreen()
 }
 
 @Composable
@@ -55,7 +60,8 @@ private fun DonkiEventsScreen() {
     val model = viewModel<DonkiEventsScreenViewModel>()
     val holder = rememberDonkiEventsListStateHolder(
         model.pagingData.collectAsLazyPagingItems(),
-        rememberLazyListState()
+        rememberLazyListState(),
+        model.filters
     )
     DonkiEventsScreen(holder)
 }
@@ -73,19 +79,29 @@ private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
+    val dialogNavController =
+        rememberNavController<Destination>(initialBackstack = emptyList())
+    DialogDestinationNavHost(dialogNavController)
+
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             RootScreenTopAppBar(
                 stringResource(R.string.space_weather_events),
-                scrollBehavior
-            ) {
-                val navController = LocalNavController.current
-                ToolbarIcon(Icons.Filled.Settings, R.string.settings) {
-                    navController.navigate(SettingsScreen)
+                scrollBehavior,
+                startActions = {
+                    ToolbarIcon(Icons.Filled.FilterList, R.string.filters) {
+                        dialogNavController.navigate(DonkiEventFilters)
+                    }
+                },
+                endActions = {
+                    val navController = LocalNavController.current
+                    ToolbarIcon(Icons.Filled.Settings, R.string.filters) {
+                        navController.navigate(SettingsScreen)
+                    }
                 }
-            }
+            )
         }
     ) { contentPadding ->
         val showRefreshIndicator by holder.showRefreshIndicator.collectAsState()
@@ -96,10 +112,11 @@ private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
         Box(
             Modifier
                 .fillMaxSize()
-                .pullRefresh(pullRefreshState)) {
+                .pullRefresh(pullRefreshState)
+        ) {
             val fullscreenError = holder.fullscreenError
             when {
-                fullscreenError != null -> DonkiEventsScreenContentErrorPlaceholder(contentPadding)
+                fullscreenError != null -> DonkiEventsScreenContentErrorPlaceholder(fullscreenError, contentPadding)
                 listIsEmpty -> DonkiEventsScreenContentLoadingPlaceholder(contentPadding)
                 else -> DonkiEventsScreenContentPaging(
                     lazyListState,
@@ -142,15 +159,16 @@ private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
 @Composable
 private fun ShowSnackbarError(
     holder: DonkiEventsListStateHolder,
-    snackbarHostState: SnackbarHostState
+    snackbarHostState: SnackbarHostState,
 ) {
     val snackbarError = holder.snackbarError
     if (snackbarError != null) {
         val context = LocalContext.current
         LaunchedEffect(snackbarHostState) {
             val result = snackbarHostState.showSnackbar(
-                message = context.getString(R.string.error),
+                message = snackbarError,
                 actionLabel = context.getString(R.string.retry),
+                withDismissAction = true,
                 duration = SnackbarDuration.Indefinite
             )
             if (result == SnackbarResult.ActionPerformed) {
@@ -161,7 +179,7 @@ private fun ShowSnackbarError(
 }
 
 @Composable
-private fun DonkiEventsScreenContentErrorPlaceholder(contentPadding: PaddingValues) {
+private fun DonkiEventsScreenContentErrorPlaceholder(error: String, contentPadding: PaddingValues) {
     /**
      * We need [verticalScroll] for [pullRefresh] to work
      */
@@ -173,7 +191,7 @@ private fun DonkiEventsScreenContentErrorPlaceholder(contentPadding: PaddingValu
             .consumeWindowInsets(contentPadding)
     ) {
         Text(
-            text = stringResource(R.string.error),
+            text = error,
             modifier = Modifier.align(Alignment.Center),
             style = MaterialTheme.typography.titleLarge
         )
@@ -196,7 +214,7 @@ private fun BoxScope.DonkiEventsScreenContentLoadingPlaceholder(contentPadding: 
 private fun DonkiEventsScreenContentPaging(
     lazyListState: LazyListState,
     items: LazyPagingItems<DonkiEventsScreenViewModel.ListItem>,
-    contentPadding: PaddingValues
+    contentPadding: PaddingValues,
 ) {
     LazyColumn(
         Modifier
@@ -230,6 +248,7 @@ private fun DonkiEventsScreenContentPaging(
                         }
                     }
                 }
+
                 is DonkiEventsScreenViewModel.EventPresentation -> {
                     val navController = LocalNavController.current
                     ElevatedCardWithPadding(

@@ -7,22 +7,30 @@ package org.equeim.spacer.donki.data.paging
 import android.util.Log
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.equeim.spacer.donki.CoroutineDispatchers
+import org.equeim.spacer.donki.data.DonkiRepository
 import org.equeim.spacer.donki.data.DonkiRepositoryInternal
 import org.equeim.spacer.donki.data.Week
 import org.equeim.spacer.donki.data.model.EventSummary
-import org.equeim.spacer.donki.data.model.EventType
 import java.time.Clock
 
 private const val TAG = "EventsSummariesPagingSource"
 
-private val EVENT_TYPES = EventType.All
-
 internal class EventsSummariesPagingSource(
     private val repository: DonkiRepositoryInternal,
-    private val invalidationEvents: Flow<Unit>,
+    private val invalidationEvents: Flow<Any>,
+    private val filters: DonkiRepository.EventFilters,
     private val coroutineDispatchers: CoroutineDispatchers = CoroutineDispatchers(),
     private val clock: Clock = Clock.systemDefaultZone()
 ) : PagingSource<Week, EventSummary>() {
@@ -49,8 +57,12 @@ internal class EventsSummariesPagingSource(
 
     override suspend fun load(params: LoadParams<Week>): LoadResult<Week, EventSummary> {
         Log.d(TAG, m("load() called with: params = $params"))
+        Log.d(TAG, m("load: requested weeks are ${params.key}"))
+        if (filters.types.isEmpty()) {
+            Log.e(TAG, "load: filters' types are empty")
+            return LoadResult.Page(emptyList(), null, null)
+        }
         return withContext(coroutineDispatchers.Default) {
-            Log.d(TAG, m("load: requested weeks are ${params.key}"))
             val currentWeek = Week.getCurrentWeek(clock)
             Log.d(TAG, m("load: current week is $currentWeek"))
             val weeks = params.key?.let { requestedWeek ->
@@ -67,7 +79,7 @@ internal class EventsSummariesPagingSource(
                         async {
                             repository.getEventSummariesForWeek(
                                 week = week,
-                                eventTypes = EVENT_TYPES,
+                                eventTypes = filters.types.toList(),
                                 refreshCacheIfNeeded = params !is LoadParams.Refresh
                             )
                         }

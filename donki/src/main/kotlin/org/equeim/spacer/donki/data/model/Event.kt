@@ -22,7 +22,7 @@ enum class EventType(internal val stringValue: String) {
     RadiationBeltEnhancement("RBE"),
     HighSpeedStream("HSS");
 
-    internal companion object {
+    companion object {
         val All = values().asList()
     }
 }

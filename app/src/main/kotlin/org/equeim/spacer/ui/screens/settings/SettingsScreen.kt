@@ -5,9 +5,13 @@
 package org.equeim.spacer.ui.screens.settings
 
 import android.os.Build
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ListItem
@@ -15,12 +19,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.olshevski.navigation.reimagined.DialogNavHost
+import dev.olshevski.navigation.reimagined.NavController
+import dev.olshevski.navigation.reimagined.NavHostEntry
 import dev.olshevski.navigation.reimagined.navigate
 import dev.olshevski.navigation.reimagined.pop
 import dev.olshevski.navigation.reimagined.rememberNavController
@@ -28,34 +32,29 @@ import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
 import org.equeim.spacer.ui.LocalAppSettings
-import org.equeim.spacer.ui.LocalNavController
 import org.equeim.spacer.ui.components.Dialog
 import org.equeim.spacer.ui.components.RadioButtonListItem
 import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.DialogDestinationNavHost
+import org.equeim.spacer.ui.screens.LocalNavController
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.utils.collectAsStateWhenStarted
 
 @Parcelize
 object SettingsScreen : Destination {
     @Composable
-    override fun Content() = SettingsScreen()
+    override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) =
+        SettingsScreen()
 }
 
-@OptIn(
-    ExperimentalAnimationApi::class,
-    ExperimentalLayoutApi::class
-)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SettingsScreen() {
     val dialogNavController =
         rememberNavController<Destination>(initialBackstack = emptyList())
-    CompositionLocalProvider(LocalNavController provides dialogNavController) {
-        DialogNavHost(dialogNavController) {
-            it.Content()
-        }
-    }
+    DialogDestinationNavHost(dialogNavController)
 
     Scaffold(topBar = {
         SubScreenTopAppBar(stringResource(R.string.settings))
@@ -129,12 +128,16 @@ private fun SettingsScreen() {
 @Parcelize
 private data class DarkThemeDialog(val darkThemeMode: AppSettings.DarkThemeMode) : Destination {
     @Composable
-    override fun Content() = DarkThemeDialogContent(darkThemeMode)
+    override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) =
+        DarkThemeDialogContent(darkThemeMode, navController)
 }
 
 @Composable
-private fun DarkThemeDialogContent(darkThemeMode: AppSettings.DarkThemeMode) {
-    Dialog(title = stringResource(R.string.dark_theme)) {
+private fun DarkThemeDialogContent(
+    darkThemeMode: AppSettings.DarkThemeMode,
+    navController: NavController<Destination>,
+) {
+    Dialog(title = stringResource(R.string.dark_theme), onDismissRequest = navController::pop) {
         Column {
             if (AppSettings.DarkThemeMode.isFollowSystemSupported) {
                 DarkThemeModeChoice(AppSettings.DarkThemeMode.FollowSystem, darkThemeMode)
@@ -148,7 +151,7 @@ private fun DarkThemeDialogContent(darkThemeMode: AppSettings.DarkThemeMode) {
 @Composable
 private fun DarkThemeModeChoice(
     darkThemeMode: AppSettings.DarkThemeMode,
-    initialDarkThemeMode: AppSettings.DarkThemeMode
+    initialDarkThemeMode: AppSettings.DarkThemeMode,
 ) {
     val settings = LocalAppSettings.current
     val navController = LocalNavController.current
