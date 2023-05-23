@@ -23,11 +23,9 @@ jobs:
       - name: Check out
         uses: actions/checkout@v3
 
-      - name: Make latest OpenJDK version the default
+      - name: Set JAVA_HOME to Java 17
         run: |
-          update-java-alternatives -l || true
-          sudo update-java-alternatives --verbose --auto
-          java -version
+          echo "JAVA_HOME=${JAVA_HOME_17_X64}" >> "${GITHUB_ENV}"
 
       - name: Add Kotlin problem matcher
         uses: equeim/kotlin-problem-matcher@v1
