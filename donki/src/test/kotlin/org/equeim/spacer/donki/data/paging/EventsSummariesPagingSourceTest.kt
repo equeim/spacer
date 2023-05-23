@@ -17,6 +17,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.equeim.spacer.donki.BaseCoroutineTest
 import org.equeim.spacer.donki.anyWeek
+import org.equeim.spacer.donki.data.DonkiRepository
 import org.equeim.spacer.donki.data.DonkiRepositoryInternal
 import org.equeim.spacer.donki.data.Week
 import org.equeim.spacer.donki.data.model.EventSummary
@@ -53,6 +54,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
         pagingSource = EventsSummariesPagingSource(
             repository,
             emptyFlow(),
+            DonkiRepository.EventFilters(EventType.All.toSet()),
             coroutineDispatchers,
             clock
         )

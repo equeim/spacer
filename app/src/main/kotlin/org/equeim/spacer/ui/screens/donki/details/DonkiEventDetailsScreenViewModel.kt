@@ -110,22 +110,30 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
         }
         Log.d(TAG, "load: starting loading job")
         viewModelScope.launch {
-            _contentState.compareAndSet(
-                ContentState.ErrorPlaceholder,
-                ContentState.LoadingPlaceholder
-            )
-            when (type) {
-                LoadingType.Automatic -> {
-                    val event = repository.getEventById(eventId, forceRefresh = false)
-                    _contentState.value = event.toContentState()
-                    if (event.needsRefreshing) {
+            _contentState.value.let {
+                if (it is ContentState.ErrorPlaceholder) {
+                    _contentState.compareAndSet(it, ContentState.LoadingPlaceholder)
+                }
+            }
+            try {
+                when (type) {
+                    LoadingType.Automatic -> {
+                        val event = repository.getEventById(eventId, forceRefresh = false)
+                        _contentState.value = event.toContentState()
+                        if (event.needsRefreshing) {
+                            _contentState.value =
+                                repository.getEventById(eventId, forceRefresh = true).toContentState()
+                        }
+                    }
+
+                    LoadingType.Manual -> {
                         _contentState.value =
                             repository.getEventById(eventId, forceRefresh = true).toContentState()
                     }
                 }
-                LoadingType.Manual -> {
-                    _contentState.value =
-                        repository.getEventById(eventId, forceRefresh = true).toContentState()
+            } catch (e: Exception) {
+                if (e !is CancellationException) {
+                    _contentState.value = ContentState.ErrorPlaceholder(e.toString())
                 }
             }
         }.also { job ->
@@ -196,7 +204,8 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
             val linkedEvents: List<LinkedEventPresentation>
         ) : ContentState
 
-        object ErrorPlaceholder : ContentState
+        @JvmInline
+        value class ErrorPlaceholder(val error: String) : ContentState
     }
 
     data class LinkedEventPresentation(
