@@ -22,7 +22,16 @@ package androidx.compose.material3.pullrefresh
 
 import androidx.compose.animation.core.animate
 import androidx.compose.foundation.MutatorMutex
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -64,14 +73,14 @@ fun rememberPullRefreshState(
         refreshingOffsetPx = refreshingOffset.toPx()
     }
 
-    // refreshThreshold and refreshingOffset should not be changed after instantiation, so any
-    // changes to these values are ignored.
     val state = remember(scope) {
         PullRefreshState(scope, onRefreshState, refreshingOffsetPx, thresholdPx)
     }
 
     SideEffect {
         state.setRefreshing(refreshing)
+        state.setThreshold(thresholdPx)
+        state.setRefreshingOffset(refreshingOffsetPx)
     }
 
     return state
@@ -93,8 +102,8 @@ fun rememberPullRefreshState(
 class PullRefreshState internal constructor(
     private val animationScope: CoroutineScope,
     private val onRefreshState: State<() -> Unit>,
-    private val refreshingOffset: Float,
-    internal val threshold: Float,
+    refreshingOffset: Float,
+    threshold: Float,
 ) {
     /**
      * A float representing how far the user has pulled as a percentage of the refreshThreshold.
@@ -108,15 +117,18 @@ class PullRefreshState internal constructor(
 
     internal val refreshing get() = _refreshing
     internal val position get() = _position
+    internal val threshold get() = _threshold
 
     private val adjustedDistancePulled by derivedStateOf { distancePulled * DragMultiplier }
 
     private var _refreshing by mutableStateOf(false)
     private var _position by mutableStateOf(0f)
     private var distancePulled by mutableStateOf(0f)
+    private var _threshold by mutableStateOf(threshold)
+    private var _refreshingOffset by mutableStateOf(refreshingOffset)
 
     internal fun onPull(pullDelta: Float): Float {
-        if (this._refreshing) return 0f // Already refreshing, do nothing.
+        if (_refreshing) return 0f // Already refreshing, do nothing.
 
         val newOffset = (distancePulled + pullDelta).coerceAtLeast(0f)
         val dragConsumed = newOffset - distancePulled
@@ -125,21 +137,43 @@ class PullRefreshState internal constructor(
         return dragConsumed
     }
 
-    internal fun onRelease() {
-        if (!this._refreshing) {
-            if (adjustedDistancePulled > threshold) {
-                onRefreshState.value()
-            }
-            animateIndicatorTo(0f)
+    internal fun onRelease(velocity: Float): Float {
+        if (refreshing) return 0f // Already refreshing, do nothing
+
+        if (adjustedDistancePulled > threshold) {
+            onRefreshState.value()
+        }
+        animateIndicatorTo(0f)
+        val consumed = when {
+            // We are flinging without having dragged the pull refresh (for example a fling inside
+            // a list) - don't consume
+            distancePulled == 0f -> 0f
+            // If the velocity is negative, the fling is upwards, and we don't want to prevent the
+            // the list from scrolling
+            velocity < 0f -> 0f
+            // We are showing the indicator, and the fling is downwards - consume everything
+            else -> velocity
         }
         distancePulled = 0f
+        return consumed
     }
 
     internal fun setRefreshing(refreshing: Boolean) {
-        if (this._refreshing != refreshing) {
-            this._refreshing = refreshing
-            this.distancePulled = 0f
-            animateIndicatorTo(if (refreshing) refreshingOffset else 0f)
+        if (_refreshing != refreshing) {
+            _refreshing = refreshing
+            distancePulled = 0f
+            animateIndicatorTo(if (refreshing) _refreshingOffset else 0f)
+        }
+    }
+
+    internal fun setThreshold(threshold: Float) {
+        _threshold = threshold
+    }
+
+    internal fun setRefreshingOffset(refreshingOffset: Float) {
+        if (_refreshingOffset != refreshingOffset) {
+            _refreshingOffset = refreshingOffset
+            if (refreshing) animateIndicatorTo(refreshingOffset)
         }
     }
 
