@@ -22,10 +22,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.withContext
 import org.equeim.spacer.AppSettings
+import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.DonkiRepository
 import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventSummary
 import org.equeim.spacer.donki.data.model.EventType
+import org.equeim.spacer.donki.data.model.GeomagneticStormSummary
 import org.equeim.spacer.ui.utils.defaultLocaleFlow
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -121,12 +123,22 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
         return EventPresentation(
             id = eventSummary.id,
             type = eventSummary.getTypeDisplayString(),
-            time = localeDependentState.eventTimeFormatter.format(zonedTime)
+            time = localeDependentState.eventTimeFormatter.format(zonedTime),
+            detailsSummary = eventSummary.getDetailsSummary()
         )
     }
 
     private fun EventSummary.getTypeDisplayString(): String {
         return localeDependentState.eventTypesStrings.computeIfAbsent(type) { getString(type.displayStringResId) }
+    }
+
+    private fun EventSummary.getDetailsSummary(): String? {
+        return when (this) {
+            is GeomagneticStormSummary -> kpIndex?.let {
+                getApplication<Application>().getString(R.string.gst_kp_index, it)
+            }
+            else -> null
+        }
     }
 
     private fun getString(@StringRes resId: Int) = getApplication<Application>().getString(resId)
@@ -141,6 +153,7 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
     data class EventPresentation(
         val id: EventId,
         val type: String,
-        val time: String
+        val time: String,
+        val detailsSummary: String?,
     ) : ListItem
 }
