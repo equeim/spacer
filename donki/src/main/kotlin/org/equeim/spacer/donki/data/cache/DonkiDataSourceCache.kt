@@ -39,7 +39,7 @@ internal class DonkiDataSourceCache(
     private val context: Context,
     db: DonkiDatabase? = null,
     private val coroutineDispatchers: CoroutineDispatchers = CoroutineDispatchers(),
-    private val clock: Clock = Clock.systemDefaultZone()
+    private val clock: Clock = Clock.systemDefaultZone(),
 ) : Closeable {
     private val coroutineScope = CoroutineScope(coroutineDispatchers.IO + SupervisorJob())
 
@@ -122,7 +122,7 @@ internal class DonkiDataSourceCache(
     suspend fun isWeekCachedAndNeedsRefresh(
         week: Week,
         eventType: EventType,
-        refreshIfRecentlyLoaded: Boolean
+        refreshIfRecentlyLoaded: Boolean,
     ): Boolean {
         val cacheLoadTime = awaitDb().cachedWeeks()
             .getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear, eventType)
@@ -132,7 +132,7 @@ internal class DonkiDataSourceCache(
     suspend fun getEventSummariesForWeek(
         week: Week,
         eventType: EventType,
-        returnCacheThatNeedsRefreshing: Boolean
+        returnCacheThatNeedsRefreshing: Boolean,
     ): List<EventSummary>? {
         Log.d(
             TAG,
@@ -159,10 +159,9 @@ internal class DonkiDataSourceCache(
             val startTime = week.getFirstDayInstant()
             val endTime = week.getInstantAfterLastDay()
             when (eventType) {
-                EventType.CoronalMassEjection -> db.coronalMassEjection()
-                    .getEventSummaries(startTime, endTime)
-                EventType.GeomagneticStorm -> db.geomagneticStorm()
-                    .getEventSummaries(startTime, endTime)
+                EventType.CoronalMassEjection -> db.coronalMassEjection().getEventSummaries(startTime, endTime)
+                EventType.GeomagneticStorm -> db.geomagneticStorm().getEventSummaries(startTime, endTime)
+                EventType.InterplanetaryShock -> db.interplanetaryShock().getEventSummaries(startTime, endTime)
                 else -> db.events().getEventSummaries(eventType, startTime, endTime)
             }.also {
                 Log.d(
@@ -185,7 +184,7 @@ internal class DonkiDataSourceCache(
     suspend fun getEventById(
         id: EventId,
         eventType: EventType,
-        week: Week
+        week: Week,
     ): DonkiRepository.EventById? {
         Log.d(TAG, "getEventById() called with: id = $id, eventType = $eventType, week = $week")
         val db = awaitDb()
@@ -222,7 +221,7 @@ internal class DonkiDataSourceCache(
 
     private fun Week.needsRefresh(
         cacheLoadTime: Instant,
-        refreshIfRecentlyLoaded: Boolean = false
+        refreshIfRecentlyLoaded: Boolean = false,
     ): Boolean {
         return Duration.between(
             getInstantAfterLastDay(),
@@ -238,7 +237,7 @@ internal class DonkiDataSourceCache(
         week: Week,
         eventType: EventType,
         events: List<Pair<Event, JsonObject>>,
-        loadTime: Instant
+        loadTime: Instant,
     ) {
         Log.d(
             TAG,
@@ -258,9 +257,14 @@ internal class DonkiDataSourceCache(
                         EventType.CoronalMassEjection ->
                             db.coronalMassEjection()
                                 .updateExtras((event.first as CoronalMassEjection).toExtras())
+
                         EventType.GeomagneticStorm ->
                             db.geomagneticStorm()
                                 .updateExtras((event.first as GeomagneticStorm).toExtras())
+
+                        EventType.InterplanetaryShock -> db.interplanetaryShock()
+                            .updateExtras((event.first as InterplanetaryShock).toExtras())
+
                         else -> Unit
                     }
                 }
@@ -285,7 +289,7 @@ internal class DonkiDataSourceCache(
         week: Week,
         eventType: EventType,
         events: List<Pair<Event, JsonObject>>,
-        loadTime: Instant
+        loadTime: Instant,
     ) {
         @OptIn(DelicateCoroutinesApi::class)
         GlobalScope.launch { cacheWeek(week, eventType, events, loadTime) }
