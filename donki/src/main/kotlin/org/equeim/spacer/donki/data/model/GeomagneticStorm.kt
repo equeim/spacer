@@ -22,11 +22,11 @@ data class GeomagneticStorm(
     override val type: EventType
         get() = EventType.GeomagneticStorm
 
-    fun kpIndex(): Int? = kpIndexes.firstOrNull()?.kpIndex
+    fun kpIndex(): Float? = kpIndexes.firstOrNull()?.kpIndex
 
     @Serializable
     data class KpIndex(
-        @SerialName("kpIndex") val kpIndex: Int,
+        @SerialName("kpIndex") val kpIndex: Float,
         @SerialName("observedTime") val observedTime: Instant,
         @SerialName("source") val source: String
     )
@@ -42,11 +42,11 @@ data class GeomagneticStorm(
 interface GeomagneticStormSummary : EventSummary {
     override val type: EventType
         get() = EventType.GeomagneticStorm
-    val kpIndex: Int?
+    val kpIndex: Float?
 }
 
 private data class GeomagneticStormSummaryFromJson(
     override val id: EventId,
     override val time: Instant,
-    override val kpIndex: Int?
+    override val kpIndex: Float?
 ) : GeomagneticStormSummary

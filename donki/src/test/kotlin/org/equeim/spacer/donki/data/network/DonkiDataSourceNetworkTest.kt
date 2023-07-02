@@ -190,12 +190,12 @@ class DonkiDataSourceNetworkTest {
             listOf(
                 GeomagneticStorm.KpIndex(
                     observedTime = instantOf(2022, 4, 14, 18, 0),
-                    kpIndex = 6,
+                    kpIndex = 6.0f,
                     source = "NOAA"
                 ),
                 GeomagneticStorm.KpIndex(
                     observedTime = instantOf(2022, 4, 14, 18, 0),
-                    kpIndex = 6,
+                    kpIndex = 6.0f,
                     source = "NOAA"
                 )
             ), event.kpIndexes

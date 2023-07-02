@@ -7,6 +7,7 @@ package org.equeim.spacer.donki.data.model
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -63,16 +64,23 @@ internal object SourceLocationSerializer : KSerializer<Coordinates?> {
         PrimitiveKind.STRING
     )
 
+    private const val NOT_AVAILABLE = "NA"
+    private const val POSITIVE_LATITUDE_HEMISPHERE = 'N'
     private const val NEGATIVE_LATITUDE_HEMISPHERE = 'S'
+    private const val POSITIVE_LONGITUDE_HEMISPHERE = 'E'
     private const val NEGATIVE_LONGITUDE_HEMISPHERE = 'W'
-    private val longitudeHemispheres = charArrayOf('E', 'W')
+    private val longitudeHemispheres = charArrayOf(POSITIVE_LONGITUDE_HEMISPHERE, NEGATIVE_LONGITUDE_HEMISPHERE)
 
     override fun deserialize(decoder: Decoder): Coordinates? {
         val string = decoder.decodeString()
-        if (string.isEmpty()) return null
+        if (string.isEmpty() || string == NOT_AVAILABLE) return null
         val latitudeHemisphere = string[0]
+        when (latitudeHemisphere) {
+            POSITIVE_LATITUDE_HEMISPHERE, NEGATIVE_LATITUDE_HEMISPHERE -> Unit
+            else -> fail(string)
+        }
         val longitudeHemisphereIndex = string.indexOfAny(longitudeHemispheres)
-        require(longitudeHemisphereIndex != -1)
+        if (longitudeHemisphereIndex == -1) fail(string)
         val longitudeHemisphere = string[longitudeHemisphereIndex]
         val latitude = string.substring(1, longitudeHemisphereIndex).toFloat().let {
             if (latitudeHemisphere == NEGATIVE_LATITUDE_HEMISPHERE && it != 0.0f) -it else it
@@ -81,6 +89,10 @@ internal object SourceLocationSerializer : KSerializer<Coordinates?> {
             if (longitudeHemisphere == NEGATIVE_LONGITUDE_HEMISPHERE && it != 0.0f) -it else it
         }
         return Coordinates(Angle.ofDegrees(latitude), Angle.ofDegrees(longitude))
+    }
+
+    private fun fail(string: String): Nothing {
+        throw SerializationException("Failed to deserialize string '$string' as coordinates")
     }
 
     override fun serialize(encoder: Encoder, value: Coordinates?) = throw NotImplementedError()
