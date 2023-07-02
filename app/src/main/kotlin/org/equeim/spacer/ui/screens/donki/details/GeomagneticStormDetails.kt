@@ -21,7 +21,7 @@ import org.equeim.spacer.ui.components.OutlinedCardWithPadding
 import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SectionPlaceholder
 import org.equeim.spacer.ui.theme.Dimens
-import org.equeim.spacer.ui.utils.formatInteger
+import org.equeim.spacer.ui.utils.formatFloat
 import java.time.Instant
 
 @Composable
@@ -32,7 +32,7 @@ fun GeomagneticStormDetails(event: GeomagneticStorm, formatTime: @Composable (In
             event.kpIndexes.forEach { kpIndex ->
                 OutlinedCardWithPadding(onClick = {}, Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(formatInteger(kpIndex.kpIndex), style = MaterialTheme.typography.titleMedium)
+                        Text(formatFloat(kpIndex.kpIndex), style = MaterialTheme.typography.titleMedium)
                         Column(Modifier.weight(1.0f)) {
                             Text(formatTime(kpIndex.observedTime))
                             Text(kpIndex.source)

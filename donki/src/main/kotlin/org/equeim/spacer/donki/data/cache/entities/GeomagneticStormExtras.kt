@@ -8,10 +8,10 @@ package org.equeim.spacer.donki.data.cache.entities
 
 import androidx.room.*
 import androidx.room.ForeignKey.Companion.CASCADE
-import org.equeim.spacer.donki.data.model.GeomagneticStormSummary
 import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.donki.data.model.GeomagneticStorm
+import org.equeim.spacer.donki.data.model.GeomagneticStormSummary
 import java.time.Instant
 
 @Entity(
@@ -28,7 +28,7 @@ internal data class GeomagneticStormExtras(
     @ColumnInfo(name = "id") @PrimaryKey
     val id: String,
     @ColumnInfo(name = "kp_index")
-    val kpIndex: Int?
+    val kpIndex: Float?
 )
 
 internal fun GeomagneticStorm.toExtras() = GeomagneticStormExtras(
@@ -42,7 +42,7 @@ internal data class GeomagneticStormExtrasSummaryCached(
     @ColumnInfo(name = "time")
     override val time: Instant,
     @ColumnInfo(name = "kp_index")
-    override val kpIndex: Int?
+    override val kpIndex: Float?
 ) : GeomagneticStormSummary {
     override val id: EventId
         get() = EventId(idString)
