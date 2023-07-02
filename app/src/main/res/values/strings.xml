@@ -60,6 +60,7 @@ SPDX-License-Identifier: MIT
     <string name="enlil_kp_90">Predicted Kₚ 90°</string>
     <string name="enlil_kp_135">Predicted Kₚ 135°</string>
     <string name="enlil_kp_180">Predicted Kₚ 180°</string>
+    <string name="gst_kp_index">Kₚ = %1$.2f</string>
     <string name="gst_kp_indexes">Kₚ-indexes</string>
     <string name="gst_no_kp_indexes">No Kₚ-indexes</string>
     <string name="ips_location">Location</string>
