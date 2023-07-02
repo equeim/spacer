@@ -28,6 +28,7 @@ import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventSummary
 import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.donki.data.model.GeomagneticStormSummary
+import org.equeim.spacer.donki.data.model.InterplanetaryShockSummary
 import org.equeim.spacer.ui.utils.defaultLocaleFlow
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -102,6 +103,7 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
                             )
                         }
                     }
+
                     else -> null
                 }
             }
@@ -109,6 +111,7 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
                 when (it) {
                     is EventSummaryWithZonedTime ->
                         withContext(Dispatchers.Default) { it.toPresentation() }
+
                     else -> it
                 } as ListItem
             }
@@ -116,7 +119,7 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
 
     private data class EventSummaryWithZonedTime(
         val eventSummary: EventSummary,
-        val zonedTime: ZonedDateTime
+        val zonedTime: ZonedDateTime,
     )
 
     private fun EventSummaryWithZonedTime.toPresentation(): EventPresentation {
@@ -137,6 +140,8 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
             is GeomagneticStormSummary -> kpIndex?.let {
                 getApplication<Application>().getString(R.string.gst_kp_index, it)
             }
+
+            is InterplanetaryShockSummary -> location
             else -> null
         }
     }
@@ -147,7 +152,7 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
 
     data class DateSeparator(
         val nextEventEpochSecond: Long,
-        val date: String
+        val date: String,
     ) : ListItem
 
     data class EventPresentation(
