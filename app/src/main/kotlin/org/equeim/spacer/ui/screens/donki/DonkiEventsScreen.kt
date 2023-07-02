@@ -30,6 +30,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import dev.olshevski.navigation.reimagined.NavController
 import dev.olshevski.navigation.reimagined.NavHostEntry
@@ -52,7 +53,8 @@ import org.equeim.spacer.ui.utils.plus
 @Parcelize
 object DonkiEventsScreen : Destination {
     @Composable
-    override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) = DonkiEventsScreen()
+    override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) =
+        DonkiEventsScreen()
 }
 
 @Composable
@@ -226,7 +228,8 @@ private fun DonkiEventsScreenContentPaging(
     ) {
         items(
             count = items.itemCount,
-            key = items.itemKey(DonkiEventsScreenViewModel.ListItem::lazyListKey)
+            key = items.itemKey(DonkiEventsScreenViewModel.ListItem::lazyListKey),
+            contentType = items.itemContentType(DonkiEventsScreenViewModel.ListItem::lazyListContentType)
         ) { index ->
             when (val item = checkNotNull(items[index])) {
                 is DonkiEventsScreenViewModel.DateSeparator -> {
@@ -258,11 +261,28 @@ private fun DonkiEventsScreenContentPaging(
                     ) {
                         Column {
                             Text(text = item.time)
-                            Text(
-                                text = item.type,
-                                style = MaterialTheme.typography.titleLarge,
-                                modifier = Modifier.padding(top = Dimens.SpacingSmall)
-                            )
+                            if (item.detailsSummary != null) {
+                                Row(
+                                    Modifier.padding(top = Dimens.SpacingSmall),
+                                    horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = item.type,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        modifier = Modifier.weight(1.0f)
+                                    )
+                                    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
+                                        Text(text = item.detailsSummary, style = MaterialTheme.typography.labelLarge)
+                                    }
+                                }
+                            } else {
+                                Text(
+                                    text = item.type,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    modifier = Modifier.padding(top = Dimens.SpacingSmall)
+                                )
+                            }
                         }
                     }
                 }
@@ -275,4 +295,15 @@ private val DonkiEventsScreenViewModel.ListItem.lazyListKey: Any
     get() = when (this) {
         is DonkiEventsScreenViewModel.EventPresentation -> id
         is DonkiEventsScreenViewModel.DateSeparator -> nextEventEpochSecond
+    }
+
+private val DonkiEventsScreenViewModel.ListItem.lazyListContentType: Any?
+    get() = when (this) {
+        is DonkiEventsScreenViewModel.EventPresentation -> if (detailsSummary != null) {
+            Unit
+        } else {
+            null
+        }
+
+        is DonkiEventsScreenViewModel.DateSeparator -> DonkiEventsScreenViewModel.DateSeparator::class
     }
