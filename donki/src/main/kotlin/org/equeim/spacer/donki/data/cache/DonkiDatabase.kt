@@ -15,7 +15,8 @@ import org.equeim.spacer.donki.data.cache.entities.*
         CachedEvent::class,
         CoronalMassEjectionExtras::class,
         GeomagneticStormExtras::class,
-        InterplanetaryShockExtras::class
+        InterplanetaryShockExtras::class,
+        SolarFlareExtras::class
     ],
     exportSchema = false,
     version = 1
@@ -27,6 +28,7 @@ internal abstract class DonkiDatabase : RoomDatabase() {
     abstract fun coronalMassEjection(): CoronalMassEjectionDao
     abstract fun geomagneticStorm(): GeomagneticStormDao
     abstract fun interplanetaryShock(): InterplanetaryShockDao
+    abstract fun solarFlare(): SolarFlareDao
 
     companion object {
         const val NAME = "donki-cache"
