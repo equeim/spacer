@@ -162,6 +162,7 @@ internal class DonkiDataSourceCache(
                 EventType.CoronalMassEjection -> db.coronalMassEjection().getEventSummaries(startTime, endTime)
                 EventType.GeomagneticStorm -> db.geomagneticStorm().getEventSummaries(startTime, endTime)
                 EventType.InterplanetaryShock -> db.interplanetaryShock().getEventSummaries(startTime, endTime)
+                EventType.SolarFlare -> db.solarFlare().getEventSummaries(startTime, endTime)
                 else -> db.events().getEventSummaries(eventType, startTime, endTime)
             }.also {
                 Log.d(
@@ -264,6 +265,8 @@ internal class DonkiDataSourceCache(
 
                         EventType.InterplanetaryShock -> db.interplanetaryShock()
                             .updateExtras((event.first as InterplanetaryShock).toExtras())
+
+                        EventType.SolarFlare -> db.solarFlare().updateExtras((event.first as SolarFlare).toExtras())
 
                         else -> Unit
                     }

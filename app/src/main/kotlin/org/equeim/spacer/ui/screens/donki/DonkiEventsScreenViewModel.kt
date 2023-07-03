@@ -29,6 +29,7 @@ import org.equeim.spacer.donki.data.model.EventSummary
 import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.donki.data.model.GeomagneticStormSummary
 import org.equeim.spacer.donki.data.model.InterplanetaryShockSummary
+import org.equeim.spacer.donki.data.model.SolarFlareSummary
 import org.equeim.spacer.ui.utils.defaultLocaleFlow
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -142,6 +143,7 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
             }
 
             is InterplanetaryShockSummary -> location
+            is SolarFlareSummary -> classType
             else -> null
         }
     }
