@@ -22,7 +22,7 @@ data class SolarFlare(
     @SerialName("peakTime") val peakTime: Instant,
     @SerialName("endTime") val endTime: Instant?,
     @SerialName("classType") val classType: String,
-    @SerialName("sourceLocation") @Serializable(SourceLocationSerializer::class) val sourceLocation: Coordinates?
+    @SerialName("sourceLocation") @Serializable(SourceLocationSerializer::class) val sourceLocation: Coordinates?,
 ) : Event {
     override val type: EventType
         get() = EventType.SolarFlare
@@ -30,14 +30,19 @@ data class SolarFlare(
     override fun toEventSummary(): EventSummary =
         SolarFlareSummaryFromJson(
             id = id,
-            time = time
+            time = time,
+            classType = classType
         )
+}
+
+interface SolarFlareSummary : EventSummary {
+    override val type: EventType
+        get() = EventType.SolarFlare
+    val classType: String
 }
 
 private data class SolarFlareSummaryFromJson(
     override val id: EventId,
-    override val time: Instant
-) : EventSummary {
-    override val type: EventType
-        get() = EventType.SolarFlare
-}
+    override val time: Instant,
+    override val classType: String,
+) : SolarFlareSummary
