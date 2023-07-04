@@ -2,10 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
+import sys
+
+if sys.version_info < (3, 11):
+    print("Minimum supported Python version is 3.11", file=sys.stderr)
+    exit(1)
+
 import asyncio
 import calendar
-import sys
-from asyncio import TaskGroup, Task, FIRST_COMPLETED
+from asyncio import TaskGroup, Semaphore
 from dataclasses import dataclass
 from datetime import date
 from pathlib import PurePath
@@ -16,7 +21,7 @@ import aiohttp
 from termcolor import cprint
 
 base_url = "https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/"
-#base_url = "https://api.nasa.gov/DONKI/"
+# base_url = "https://api.nasa.gov/DONKI/"
 api_key = None
 datasets_dir = PurePath(__file__).parent / "resources/org/equeim/spacer/donki/data/network/datasets"
 
@@ -42,6 +47,17 @@ events = [
     "MPC"
 ]
 
+parallel_downloads_semaphore = Semaphore(5)
+request_timeout_seconds = 30
+rate_limit_remaining_header = "X-RateLimit-Remaining"
+
+
+def exception_to_string(e: Exception) -> str:
+    message = str(e)
+    if message:
+        return f"{e.__class__.__name__}: {message}"
+    return e.__class__.__name__
+
 
 @dataclass
 class DownloadParameters:
@@ -56,25 +72,28 @@ async def download(params: DownloadParameters, session: aiohttp.ClientSession):
     url = f"{base_url}{params.event}?startDate={start_date}&endDate={end_date}"
     if api_key:
         url += f"&api_key={api_key}"
-    print(f"url = {url}")
-    try:
-        async with session.get(url) as response:
-            response.raise_for_status()
-            try:
-                print("X-RateLimit-Remaining: {}".format(response.headers["X-RateLimit-Remaining"]))
-            except KeyError:
-                pass
-            data = await response.read()
-            if data:
-                file_name = "{}_{}_{}.json".format(params.event, start_date, end_date)
-                file_path = datasets_dir / file_name
+    async with parallel_downloads_semaphore:
+        print(f"url = {url}")
+        try:
+            async with session.get(url) as response:
+                response.raise_for_status()
                 try:
-                    async with aiofiles.open(file_path, "wb") as f:
-                        await f.write(data)
-                except OSError as e:
-                    cprint(f"Nope {file_path}: {repr(e)}", "red", attrs=["bold"], file=sys.stderr)
-    except (aiohttp.ClientError, asyncio.TimeoutError) as e:
-        cprint(f"Nope {url}: {repr(e)}", "red", attrs=["bold"], file=sys.stderr)
+                    print(f"{rate_limit_remaining_header}: {response.headers[rate_limit_remaining_header]}")
+                except KeyError:
+                    pass
+                data = await response.read()
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            cprint(f"Nope for {url}: {exception_to_string(e)}", "red", attrs=["bold"], file=sys.stderr)
+            return
+    if not data:
+        return
+    file_name = "{}_{}_{}.json".format(params.event, start_date, end_date)
+    file_path = datasets_dir / file_name
+    try:
+        async with aiofiles.open(file_path, "wb") as f:
+            await f.write(data)
+    except OSError as e:
+        cprint(f"Nope for {file_path}: {exception_to_string(e)}", "red", attrs=["bold"], file=sys.stderr)
 
 
 def download_parameters() -> Iterator[DownloadParameters]:
@@ -85,21 +104,10 @@ def download_parameters() -> Iterator[DownloadParameters]:
 
 
 async def main():
-    params = download_parameters()
-    max_parallel_tasks = 5
-
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=request_timeout_seconds)) as session:
         async with TaskGroup() as tg:
-            parallel_tasks: set[Task] = set()
-            while True:
-                try:
-                    while len(parallel_tasks) < max_parallel_tasks:
-                        parallel_tasks.add(tg.create_task(download(next(params), session)))
-                except StopIteration:
-                    break
-                done, pending = await asyncio.wait(parallel_tasks, return_when=FIRST_COMPLETED)
-                parallel_tasks = pending
-            await asyncio.wait(parallel_tasks)
+            for params in download_parameters():
+                tg.create_task(download(params, session))
 
 
 if __name__ == "__main__":
