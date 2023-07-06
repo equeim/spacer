@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.olshevski.navigation.reimagined.NavController
 import dev.olshevski.navigation.reimagined.NavHostEntry
@@ -68,15 +69,18 @@ private fun SettingsScreen() {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(contentPadding)
-                .padding(vertical = Dimens.ScreenContentPadding)
+                .padding(vertical = Dimens.ScreenContentPaddingVertical())
                 .consumeWindowInsets(contentPadding),
             verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
         ) {
             SectionHeader(
                 stringResource(R.string.appearance),
-                Modifier.padding(horizontal = Dimens.ScreenContentPadding),
-                topPadding = Dimens.SpacingSmall
+                Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal()),
+                topPadding = 0.dp
             )
+
+            val listItemHorizontalPadding = (Dimens.ScreenContentPaddingHorizontal() - LIST_ITEM_HORIZONTAL_PADDING)
+                .coerceAtLeast(0.dp)
 
             val darkThemeMode by model.darkThemeMode.collectAsStateWhenStarted()
             ListItem(
@@ -90,11 +94,13 @@ private fun SettingsScreen() {
                         }
                     )
                 },
-                modifier = Modifier.clickable {
-                    if (dialogNavController.backstack.entries.lastOrNull()?.destination !is DarkThemeDialog) {
-                        dialogNavController.navigate(DarkThemeDialog(darkThemeMode))
+                modifier = Modifier
+                    .clickable {
+                        if (dialogNavController.backstack.entries.lastOrNull()?.destination !is DarkThemeDialog) {
+                            dialogNavController.navigate(DarkThemeDialog(darkThemeMode))
+                        }
                     }
-                }
+                    .padding(horizontal = listItemHorizontalPadding)
             )
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -102,24 +108,28 @@ private fun SettingsScreen() {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.use_system_colors)) },
                     trailingContent = { Switch(useSystemColors, onCheckedChange = null) },
-                    modifier = Modifier.clickable {
-                        model.settings.useSystemColors.set(!useSystemColors)
-                    }
+                    modifier = Modifier
+                        .clickable {
+                            model.settings.useSystemColors.set(!useSystemColors)
+                        }
+                        .padding(horizontal = listItemHorizontalPadding)
                 )
             }
 
             SectionHeader(
                 stringResource(R.string.behaviour),
-                Modifier.padding(horizontal = Dimens.ScreenContentPadding)
+                Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
             )
 
             val displayEventsTimeInUTC by model.displayEventsTimeInUTC.collectAsStateWhenStarted()
             ListItem(
                 headlineContent = { Text(stringResource(R.string.display_events_in_utc)) },
                 trailingContent = { Switch(displayEventsTimeInUTC, onCheckedChange = null) },
-                modifier = Modifier.clickable {
-                    model.settings.displayEventsTimeInUTC.set(!displayEventsTimeInUTC)
-                }
+                modifier = Modifier
+                    .clickable {
+                        model.settings.displayEventsTimeInUTC.set(!displayEventsTimeInUTC)
+                    }
+                    .padding(horizontal = listItemHorizontalPadding)
             )
         }
     }
@@ -168,6 +178,9 @@ private fun DarkThemeModeChoice(
             settings.darkThemeMode.set(darkThemeMode)
             navController.pop()
         },
-        Modifier.padding(horizontal = Dimens.DialogContentPadding - Dimens.ScreenContentPadding)
+        Modifier.padding(horizontal = Dimens.DialogContentPadding - 16.dp)
     )
 }
+
+// Horizontal padding that ListItem hardcodes
+private val LIST_ITEM_HORIZONTAL_PADDING = 16.dp
