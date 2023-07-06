@@ -133,7 +133,7 @@ private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
                     .weight(1.0f)
                     .pullRefresh(pullRefreshState)
                     .nestedScroll(scrollBehavior.nestedScrollConnection)
-                val mainContentPadding = contentPadding + PaddingValues(Dimens.ScreenContentPadding)
+                val mainContentPadding = contentPadding + Dimens.ScreenContentPadding()
                 when {
                     fullscreenError != null -> DonkiEventsScreenContentErrorPlaceholder(
                         mainContentModifier,
