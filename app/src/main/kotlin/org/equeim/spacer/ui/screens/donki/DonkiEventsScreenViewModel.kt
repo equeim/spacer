@@ -24,6 +24,7 @@ import kotlinx.coroutines.withContext
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.DonkiRepository
+import org.equeim.spacer.donki.data.model.CoronalMassEjectionSummary
 import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventSummary
 import org.equeim.spacer.donki.data.model.EventType
@@ -138,17 +139,17 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
 
     private fun EventSummary.getDetailsSummary(): String? {
         return when (this) {
-            is GeomagneticStormSummary -> kpIndex?.let {
-                getApplication<Application>().getString(R.string.gst_kp_index, it)
-            }
-
+            is GeomagneticStormSummary -> kpIndex?.let { getString(R.string.gst_kp_index, it) }
             is InterplanetaryShockSummary -> location
             is SolarFlareSummary -> classType
+            is CoronalMassEjectionSummary -> if (isEarthShockPredicted) getString(R.string.cme_earth_impact) else null
             else -> null
         }
     }
 
-    private fun getString(@StringRes resId: Int) = getApplication<Application>().getString(resId)
+    private fun getString(@StringRes resId: Int): String = getApplication<Application>().getString(resId)
+    private fun getString(@StringRes resId: Int, vararg formatArgs: Any): String =
+        getApplication<Application>().getString(resId, *formatArgs)
 
     sealed interface ListItem
 
