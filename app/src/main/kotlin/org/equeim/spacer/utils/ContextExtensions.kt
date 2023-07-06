@@ -12,13 +12,23 @@ import android.content.ContextWrapper
 fun Context.getApplicationOrThrow(): Application {
     if (this is Application) return this
     if (this is Activity) {
-        val application = runCatching { this.application }.getOrNull()
+        val application: Application? = this.application
         if (application != null) return application
     }
-    var applicationContext: Context? = this.applicationContext
-    while (applicationContext is ContextWrapper) {
-        if (applicationContext is Application) return applicationContext
-        applicationContext = applicationContext.baseContext
+    return applicationContext.findInstanceOf()
+        ?: throw IllegalStateException("Failed to retrieve Application instance from context $this")
+}
+
+fun Context.getActivityOrThrow(): Activity {
+    if (this is Activity) return this
+    return findInstanceOf() ?: throw IllegalStateException("Failed to retrieve Activity instance from context $this")
+}
+
+private inline fun <reified T : Context> Context.findInstanceOf(): T? {
+    var context: Context? = this
+    while (context is ContextWrapper) {
+        if (context is T) return context
+        context = context.baseContext
     }
-    throw IllegalStateException("Failed to retrieve Application instance from context $this")
+    return null
 }
