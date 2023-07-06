@@ -109,7 +109,7 @@ private fun ScreenContent(
                         .verticalScroll(rememberScrollState())
                         .padding(contentPadding)
                         .consumeWindowInsets(contentPadding)
-                        .padding(Dimens.ScreenContentPadding)
+                        .padding(Dimens.ScreenContentPadding())
                 ) {
                     when (state) {
                         is Empty -> Unit

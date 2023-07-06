@@ -90,11 +90,7 @@ fun DonkiEventFiltersSideSheet(
         Modifier
             .fillMaxHeight()
             .width(256.dp),
-        contentPadding = contentPadding + PaddingValues(
-            top = Dimens.ScreenContentPadding,
-            end = Dimens.ScreenContentPadding,
-            bottom = Dimens.ScreenContentPadding
-        ),
+        contentPadding = contentPadding + Dimens.ScreenContentPadding(start = false),
         title = {
             Text(
                 stringResource(R.string.filters),
