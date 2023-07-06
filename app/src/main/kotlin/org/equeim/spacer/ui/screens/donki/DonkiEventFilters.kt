@@ -9,9 +9,13 @@ package org.equeim.spacer.ui.screens.donki
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.olshevski.navigation.reimagined.NavController
@@ -40,9 +45,10 @@ import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.ui.components.Dialog
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.theme.Dimens
+import org.equeim.spacer.ui.utils.plus
 
 @Parcelize
-object DonkiEventFilters : Destination {
+object DonkiEventFiltersDialog : Destination {
     @Composable
     override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) {
         val model = viewModel<DonkiEventsScreenViewModel>(checkNotNull(parentNavHostEntry))
@@ -61,37 +67,62 @@ private fun DonkiEventFiltersDialog(
     updateFilters: (DonkiRepository.EventFilters) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
-    Dialog(title = stringResource(R.string.filters), onDismissRequest = onDismissRequest, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    Dialog(
+        title = stringResource(R.string.filters),
+        onDismissRequest = onDismissRequest,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         DonkiEventFilters(
-            showTitle = false,
-            modifier = Modifier.padding(horizontal = Dimens.DialogContentPadding),
-            filters,
-            updateFilters
+            contentPadding = PaddingValues(horizontal = Dimens.DialogContentPadding),
+            filters = filters,
+            updateFilters = updateFilters
         )
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun DonkiEventFilters(
-    showTitle: Boolean,
-    modifier: Modifier = Modifier,
+fun DonkiEventFiltersSideSheet(
+    contentPadding: PaddingValues = PaddingValues(),
     filters: () -> DonkiRepository.EventFilters,
     updateFilters: (DonkiRepository.EventFilters) -> Unit,
 ) {
-    Column(
-        modifier
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
-    ) {
-        if (showTitle) {
+    DonkiEventFilters(
+        Modifier
+            .fillMaxHeight()
+            .width(256.dp),
+        contentPadding = contentPadding + PaddingValues(
+            top = Dimens.ScreenContentPadding,
+            end = Dimens.ScreenContentPadding,
+            bottom = Dimens.ScreenContentPadding
+        ),
+        title = {
             Text(
                 stringResource(R.string.filters),
                 Modifier.align(Alignment.CenterHorizontally),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.titleLarge
             )
-        }
+        },
+        filters = filters, updateFilters = updateFilters
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DonkiEventFilters(
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
+    title: @Composable ColumnScope.() -> Unit = {},
+    filters: () -> DonkiRepository.EventFilters,
+    updateFilters: (DonkiRepository.EventFilters) -> Unit,
+) {
+    Column(
+        modifier
+            .verticalScroll(rememberScrollState())
+            .padding(contentPadding),
+        verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
+    ) {
+        title()
 
         Text(
             stringResource(R.string.event_types),
@@ -145,9 +176,8 @@ private fun EventTypeChip(@StringRes label: Int, selected: Boolean, onClick: () 
 
 @Preview
 @Composable
-private fun DonkiEventFiltersPreview() {
-    DonkiEventFilters(
-        showTitle = true,
+private fun DonkiEventFiltersSideSheetPreview() {
+    DonkiEventFiltersSideSheet(
         filters = { DonkiRepository.EventFilters(types = EventType.All.toSet() - EventType.GeomagneticStorm) },
         updateFilters = {}
     )
