@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
@@ -265,7 +266,7 @@ private fun DonkiEventsScreenContentPaging(
                                 Row(
                                     Modifier.padding(top = Dimens.SpacingSmall),
                                     horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall),
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.Top
                                 ) {
                                     Text(
                                         text = item.type,
@@ -273,7 +274,12 @@ private fun DonkiEventsScreenContentPaging(
                                         modifier = Modifier.weight(1.0f)
                                     )
                                     CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
-                                        Text(text = item.detailsSummary, style = MaterialTheme.typography.labelLarge)
+                                        Text(
+                                            text = item.detailsSummary,
+                                            style = MaterialTheme.typography.labelLarge,
+                                            modifier = Modifier.weight(0.3f),
+                                            textAlign = TextAlign.End
+                                        )
                                     }
                                 }
                             } else {
