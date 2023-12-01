@@ -195,8 +195,8 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
 
     @Immutable
     sealed interface ContentState {
-        object Empty : ContentState
-        object LoadingPlaceholder : ContentState
+        data object Empty : ContentState
+        data object LoadingPlaceholder : ContentState
         data class EventData(
             val type: String,
             val dateTime: String,
