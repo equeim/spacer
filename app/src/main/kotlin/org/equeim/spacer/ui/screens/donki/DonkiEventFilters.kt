@@ -128,7 +128,7 @@ private fun DonkiEventFilters(
 
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall),
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.Center
         ) {
             val allTypesSelected by remember {
                 derivedStateOf {
