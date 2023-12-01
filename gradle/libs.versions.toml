@@ -8,9 +8,9 @@ kotlin = "1.8.22"
 ksp = "1.8.22-1.0.11"
 gradle-versions-plugin = "0.47.0"
 
-sdk-platform-compile = "33"
+sdk-platform-compile = "34"
 sdk-platform-min = "27"
-sdk-platform-target = "33"
+sdk-platform-target = "34"
 
 androidx-activity = "1.7.2"
 androidx-compose = "1.4.3"
