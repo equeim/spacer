@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 private const val TAG = "EventsSummariesRemoteMediator"
 
-private val EVENT_TYPES = EventType.All
+private val EVENT_TYPES = EventType.entries
 
 @OptIn(ExperimentalPagingApi::class)
 internal class EventsSummariesRemoteMediator(

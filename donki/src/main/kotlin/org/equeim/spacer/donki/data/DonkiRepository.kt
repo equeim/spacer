@@ -45,7 +45,7 @@ interface DonkiRepository : Closeable {
     )
 
     data class EventFilters(
-        val types: Set<EventType> = EventType.All.toSet()
+        val types: Set<EventType> = EventType.entries.toSet()
     )
 }
 
