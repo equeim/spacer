@@ -3,35 +3,35 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [versions]
-android-gradle-plugin = "8.0.2"
-kotlin = "1.8.22"
-ksp = "1.8.22-1.0.11"
-gradle-versions-plugin = "0.47.0"
+android-gradle-plugin = "8.2.0"
+kotlin = "1.9.20"
+ksp = "1.9.20-1.0.14"
+gradle-versions-plugin = "0.50.0"
 
 sdk-platform-compile = "34"
 sdk-platform-min = "27"
 sdk-platform-target = "34"
 
-androidx-activity = "1.7.2"
-androidx-compose = "1.4.3"
-androidx-compose-compiler = "1.4.8"
-androidx-compose-material3 = "1.1.1"
-androidx-core = "1.9.0"
+androidx-activity = "1.8.1"
+androidx-compose = "1.5.4"
+androidx-compose-compiler = "1.5.5"
+androidx-compose-material3 = "1.1.2"
+androidx-core = "1.12.0"
 androidx-datastore = "1.0.0"
-androidx-lifecycle = "2.6.1"
-androidx-paging = "3.2.0-rc01"
-androidx-room = "2.5.2"
+androidx-lifecycle = "2.6.2"
+androidx-paging = "3.2.1"
+androidx-room = "2.6.1"
 androidx-test-core = "1.5.0"
 
-coroutines = "1.7.2"
+coroutines = "1.7.3"
 junit = "4.13.2"
-okhttp = "4.11.0"
+okhttp = "4.12.0"
 leakcanary = "2.12"
-mockk = "1.13.5"
-navigation-reimagined = "1.4.0"
+mockk = "1.13.7"
+navigation-reimagined = "1.5.0"
 retrofit = "2.9.0"
-robolectric = "4.9.2"
-serialization = "1.5.1"
+robolectric = "4.11.1"
+serialization = "1.6.2"
 
 [libraries]
 android-gradle-plugin-api = { module = "com.android.tools.build:gradle-api", version.ref = "android-gradle-plugin" }
