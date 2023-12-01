@@ -19,5 +19,5 @@ internal object Converters {
     fun eventTypeToString(eventType: EventType): String = eventType.stringValue
 
     @TypeConverter
-    fun eventTypeFromString(eventType: String): EventType = EventType.All.first { it.stringValue == eventType }
+    fun eventTypeFromString(eventType: String): EventType = EventType.entries.first { it.stringValue == eventType }
 }

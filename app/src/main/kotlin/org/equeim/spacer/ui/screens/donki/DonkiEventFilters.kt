@@ -132,18 +132,18 @@ private fun DonkiEventFilters(
         ) {
             val allTypesSelected by remember {
                 derivedStateOf {
-                    filters().types.containsAll(EventType.All)
+                    filters().types.containsAll(EventType.entries)
                 }
             }
             EventTypeChip(R.string.all_event_types, allTypesSelected) {
                 val newTypes = if (allTypesSelected) {
                     emptySet()
                 } else {
-                    EventType.All.toSet()
+                    EventType.entries.toSet()
                 }
                 updateFilters(filters().copy(types = newTypes))
             }
-            for (type in EventType.All) {
+            for (type in EventType.entries) {
                 val typeSelected by remember { derivedStateOf { filters().types.contains(type) } }
                 EventTypeChip(type.displayStringResId, typeSelected) {
                     updateFilters(filters().run {
@@ -174,7 +174,7 @@ private fun EventTypeChip(@StringRes label: Int, selected: Boolean, onClick: () 
 @Composable
 private fun DonkiEventFiltersSideSheetPreview() {
     DonkiEventFiltersSideSheet(
-        filters = { DonkiRepository.EventFilters(types = EventType.All.toSet() - EventType.GeomagneticStorm) },
+        filters = { DonkiRepository.EventFilters(types = EventType.entries.toSet() - EventType.GeomagneticStorm) },
         updateFilters = {}
     )
 }
@@ -183,7 +183,7 @@ private fun DonkiEventFiltersSideSheetPreview() {
 @Composable
 private fun DonkiEventFiltersDialogPreview() {
     DonkiEventFiltersDialog(
-        filters = { DonkiRepository.EventFilters(types = EventType.All.toSet() - EventType.GeomagneticStorm) },
+        filters = { DonkiRepository.EventFilters(types = EventType.entries.toSet() - EventType.GeomagneticStorm) },
         updateFilters = {},
         onDismissRequest = {}
     )
