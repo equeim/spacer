@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import org.equeim.spacer.ui.utils.plus
 import org.equeim.spacer.utils.getActivityOrThrow
 
 object Dimens {
