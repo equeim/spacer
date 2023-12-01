@@ -22,7 +22,10 @@ android {
     kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
 
-ksp.arg("room.incremental", "true")
+ksp {
+    arg("room.incremental", "true")
+    arg("room.generateKotlin", "true")
+}
 
 // Needed for ksp tasks
 tasks.withType<KotlinCompile>().configureEach {
