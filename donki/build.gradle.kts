@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -25,11 +23,6 @@ android {
 ksp {
     arg("room.incremental", "true")
     arg("room.generateKotlin", "true")
-}
-
-// Needed for ksp tasks
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
 }
 
 dependencies {
