@@ -6,7 +6,6 @@ package org.equeim.spacer.donki.data.cache
 
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.equeim.spacer.donki.BaseCoroutineTest
 import org.equeim.spacer.donki.data.Week
@@ -20,7 +19,6 @@ import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(ParameterizedRobolectricTestRunner::class)
 class DonkiDataSourceCacheTest(systemTimeZone: ZoneId) : BaseCoroutineTest() {
     private val clock = Clock.fixed(CURRENT_INSTANT, systemTimeZone)

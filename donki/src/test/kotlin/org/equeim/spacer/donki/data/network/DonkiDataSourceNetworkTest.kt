@@ -29,7 +29,6 @@ import kotlin.io.path.inputStream
 import kotlin.streams.asSequence
 import kotlin.test.*
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("BlockingMethodInNonBlockingContext")
 class DonkiDataSourceNetworkTest {
     private val server = MockWebServer()
