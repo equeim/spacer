@@ -33,8 +33,6 @@ import java.time.Instant
 private const val TAG = "DonkiRepository"
 
 interface DonkiRepository : Closeable {
-    class PagerFiltersTypesAreEmpty : RuntimeException()
-
     fun getEventSummariesPager(filters: StateFlow<EventFilters>): Pager<*, EventSummary>
 
     suspend fun getEventById(id: EventId, forceRefresh: Boolean): EventById
