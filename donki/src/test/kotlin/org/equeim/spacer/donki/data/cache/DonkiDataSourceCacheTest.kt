@@ -14,12 +14,14 @@ import org.equeim.spacer.donki.data.paging.CURRENT_INSTANT
 import org.equeim.spacer.donki.timeZoneParameters
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.time.*
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
 class DonkiDataSourceCacheTest(systemTimeZone: ZoneId) : BaseCoroutineTest() {
     private val clock = Clock.fixed(CURRENT_INSTANT, systemTimeZone)
     private val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), DonkiDatabase::class.java).build()
