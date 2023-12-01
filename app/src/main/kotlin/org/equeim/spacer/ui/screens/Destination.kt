@@ -27,7 +27,6 @@ val LocalNavController =
     staticCompositionLocalOf<NavController<Destination>> { throw IllegalStateException() }
 private val LocalNavHostEntry = staticCompositionLocalOf<NavHostEntry<Destination>?> { null }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ScreenDestinationNavHost(navController: NavController<Destination>, modifier: Modifier = Modifier) {
     val parentNavHostEntry = LocalNavHostEntry.current
@@ -37,7 +36,6 @@ fun ScreenDestinationNavHost(navController: NavController<Destination>, modifier
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun DialogDestinationNavHost(navController: NavController<Destination>) {
     val parentNavHostEntry = LocalNavHostEntry.current
