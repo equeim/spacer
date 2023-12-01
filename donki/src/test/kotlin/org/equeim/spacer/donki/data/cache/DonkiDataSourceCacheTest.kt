@@ -38,7 +38,7 @@ class DonkiDataSourceCacheTest(systemTimeZone: ZoneId) : BaseCoroutineTest() {
     @Test
     fun `isWeekCachedAndNeedsRefresh() returns false when week is not cached`() = runTest {
         val week = Week.getCurrentWeek(clock)
-        for (type in EventType.All) {
+        for (type in EventType.entries) {
             assertFalse(dataSource.isWeekCachedAndNeedsRefresh(week, EventType.GeomagneticStorm, refreshIfRecentlyLoaded = false))
             assertFalse(dataSource.isWeekCachedAndNeedsRefresh(week, EventType.GeomagneticStorm, refreshIfRecentlyLoaded = true))
         }

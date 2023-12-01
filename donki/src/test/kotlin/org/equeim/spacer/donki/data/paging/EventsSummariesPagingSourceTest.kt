@@ -54,7 +54,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
         pagingSource = EventsSummariesPagingSource(
             repository,
             emptyFlow(),
-            DonkiRepository.EventFilters(EventType.All.toSet()),
+            DonkiRepository.EventFilters(EventType.entries.toSet()),
             coroutineDispatchers,
             clock
         )
@@ -87,7 +87,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
 
         coVerifyAll {
             EXPECTED_INITIAL_LOAD_WEEKS.forEach { week ->
-                repository.getEventSummariesForWeek(week, EventType.All, any())
+                repository.getEventSummariesForWeek(week, EventType.entries, any())
             }
         }
     }
@@ -105,7 +105,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
         pagingSource.load(params)
         coVerifyAll {
             EXPECTED_INITIAL_LOAD_WEEKS.forEach { week ->
-                repository.getEventSummariesForWeek(week, EventType.All, refreshCacheIfNeeded = false)
+                repository.getEventSummariesForWeek(week, EventType.entries, refreshCacheIfNeeded = false)
             }
         }
     }
@@ -131,7 +131,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
         coVerify {
             repository.getEventSummariesForWeek(
                 Week(LocalDate.of(2022, 1, 17)),
-                EventType.All,
+                EventType.entries,
                 any()
             )
         }
@@ -158,7 +158,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
         coVerify {
             repository.getEventSummariesForWeek(
                 Week(LocalDate.of(2022, 1, 3)),
-                EventType.All,
+                EventType.entries,
                 any()
             )
         }
@@ -178,7 +178,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
         coVerify {
             repository.getEventSummariesForWeek(
                 Week(LocalDate.of(2022, 1, 3)),
-                EventType.All,
+                EventType.entries,
                 refreshCacheIfNeeded = true
             )
         }
@@ -198,7 +198,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
         coVerify {
             repository.getEventSummariesForWeek(
                 Week(LocalDate.of(2022, 1, 3)),
-                EventType.All,
+                EventType.entries,
                 refreshCacheIfNeeded = true
             )
         }
@@ -228,7 +228,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
             coVerify {
                 repository.getEventSummariesForWeek(
                     Week(LocalDate.of(2022, 1, 10)),
-                    EventType.All,
+                    EventType.entries,
                     any()
                 )
             }

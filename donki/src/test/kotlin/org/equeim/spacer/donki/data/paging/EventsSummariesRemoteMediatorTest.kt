@@ -114,7 +114,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
             assertIs<RemoteMediator.MediatorResult.Success>(result)
             assertFalse(result.endOfPaginationReached)
             assertEquals(listOf(Unit), actualRefreshedEvents)
-            EXPECTED_INITIAL_LOAD_WEEKS.first().forTypes(EventType.All).forEach { (week, type) ->
+            EXPECTED_INITIAL_LOAD_WEEKS.first().forTypes(EventType.entries).forEach { (week, type) ->
                 coVerify { repository.updateEventsForWeek(week, type) }
             }
         }
@@ -128,7 +128,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
             assertFalse(result.endOfPaginationReached)
             assertEquals(listOf(Unit), actualRefreshedEvents)
             `Verify calls to isWeekCachedAndNeedsRefresh()`(expectedRefreshIfRecentlyLoaded = true)
-            EXPECTED_INITIAL_LOAD_WEEKS.first().forTypes(EventType.All).forEach { (week, type) ->
+            EXPECTED_INITIAL_LOAD_WEEKS.first().forTypes(EventType.entries).forEach { (week, type) ->
                 coVerify { repository.updateEventsForWeek(week, type) }
             }
         }
@@ -160,7 +160,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
             assertIs<RemoteMediator.MediatorResult.Success>(result)
             assertFalse(result.endOfPaginationReached)
             assertEquals(listOf(Unit), actualRefreshedEvents)
-            EXPECTED_INITIAL_LOAD_WEEKS.forTypes(EventType.All).forEach { (week, type) ->
+            EXPECTED_INITIAL_LOAD_WEEKS.forTypes(EventType.entries).forEach { (week, type) ->
                 coVerify { repository.updateEventsForWeek(week, type) }
             }
         }
@@ -174,13 +174,13 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
             assertFalse(result.endOfPaginationReached)
             assertEquals(listOf(Unit), actualRefreshedEvents)
             `Verify calls to isWeekCachedAndNeedsRefresh()`(expectedRefreshIfRecentlyLoaded = true)
-            EXPECTED_INITIAL_LOAD_WEEKS.forTypes(EventType.All).forEach { (week, type) ->
+            EXPECTED_INITIAL_LOAD_WEEKS.forTypes(EventType.entries).forEach { (week, type) ->
                 coVerify { repository.updateEventsForWeek(week, type) }
             }
         }
 
     private fun `Verify calls to isWeekCachedAndNeedsRefresh()`(expectedRefreshIfRecentlyLoaded: Boolean) {
-        EXPECTED_INITIAL_LOAD_WEEKS.forTypes(EventType.All).forEach { (week, type) ->
+        EXPECTED_INITIAL_LOAD_WEEKS.forTypes(EventType.entries).forEach { (week, type) ->
             coVerify {
                 cacheDataSource.isWeekCachedAndNeedsRefresh(
                     week,

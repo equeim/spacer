@@ -8,7 +8,6 @@ import android.util.Log
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse
@@ -56,7 +55,7 @@ class DonkiDataSourceNetworkTest {
     fun `Validate urls`() = runTest {
         println(LocalDate.of(2016, 8, 29).dayOfWeek)
         val week = Week(LocalDate.of(2016, 8, 29))
-        for (eventType in EventType.All) {
+        for (eventType in EventType.entries) {
             server.enqueue(MockResponse().setBody(""))
 
             dataSource.getEvents(week, eventType)
@@ -65,7 +64,7 @@ class DonkiDataSourceNetworkTest {
             val url = checkNotNull(request.requestUrl)
 
             val path = url.pathSegments.single()
-            assertNotNull(EventType.All.find { it.stringValue == path })
+            assertNotNull(EventType.entries.find { it.stringValue == path })
 
             val startDateQuery = checkNotNull(url.queryParameter("startDate"))
             assertEquals("2016-08-29", startDateQuery)
@@ -81,7 +80,7 @@ class DonkiDataSourceNetworkTest {
             checkNotNull(cl.getResource("/${cl.packageName.replace('.', '/')}/datasets"))
         Files.list(Paths.get(datasetsUrl.toURI())).asSequence().forEach { datasetPath ->
             val urlPath = datasetPath.fileName.toString().split('_').first()
-            val eventType = EventType.values().first { it.stringValue == urlPath }
+            val eventType = EventType.entries.first { it.stringValue == urlPath }
             server.enqueue(MockResponse().setBody(datasetPath.readToBuffer()))
             dataSource.getEvents(Week(LocalDate.MIN), eventType)
         }
