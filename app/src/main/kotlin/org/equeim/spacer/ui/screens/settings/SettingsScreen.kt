@@ -8,7 +8,6 @@ import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -50,7 +49,6 @@ object SettingsScreen : Destination {
         SettingsScreen()
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SettingsScreen() {
     val dialogNavController =

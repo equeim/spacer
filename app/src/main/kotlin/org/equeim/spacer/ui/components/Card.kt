@@ -5,8 +5,20 @@
 package org.equeim.spacer.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CardElevation
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,7 +31,6 @@ import org.equeim.spacer.ui.theme.Dimens
 val CARD_CONTENT_PADDING = PaddingValues(horizontal = Dimens.SpacingLarge, vertical = Dimens.SpacingMedium)
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 fun ElevatedCardWithPadding(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -36,7 +47,6 @@ fun ElevatedCardWithPadding(
 }
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 fun OutlinedCardWithPadding(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -51,7 +61,6 @@ fun OutlinedCardWithPadding(
 }
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 fun FilledCardWithPadding(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -76,7 +85,6 @@ private inline fun CardContent(content: @Composable () -> Unit) {
 }
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 fun ExpandableCard(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = CARD_CONTENT_PADDING,
@@ -106,7 +114,7 @@ fun ExpandableCard(
                 content()
             }
             AnimatedVisibility(expanded) {
-                Divider(Modifier.padding(vertical = Dimens.SpacingSmall))
+                HorizontalDivider(Modifier.padding(vertical = Dimens.SpacingSmall))
             }
             AnimatedVisibility(expanded) {
                 Box(
