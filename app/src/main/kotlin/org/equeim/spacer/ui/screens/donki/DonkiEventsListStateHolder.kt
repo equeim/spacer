@@ -122,9 +122,11 @@ class DonkiEventsListStateHolder(
         registryEntry.unregister()
     }
 
-    fun refresh() {
-        items.refresh()
-        refreshingManually = true
+    fun refreshIfNotAlreadyLoading() {
+        if (!loading.value) {
+            items.refresh()
+            refreshingManually = true
+        }
     }
 
     fun retry() {

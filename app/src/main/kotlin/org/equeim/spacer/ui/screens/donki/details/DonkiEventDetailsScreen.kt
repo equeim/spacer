@@ -6,18 +6,44 @@ package org.equeim.spacer.ui.screens.donki.details
 
 import androidx.annotation.StringRes
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material3.*
-import androidx.compose.material3.pullrefresh.PullRefreshIndicator
-import androidx.compose.material3.pullrefresh.pullRefresh
-import androidx.compose.material3.pullrefresh.rememberPullRefreshState
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -28,7 +54,16 @@ import dev.olshevski.navigation.reimagined.NavHostEntry
 import dev.olshevski.navigation.reimagined.navigate
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
-import org.equeim.spacer.donki.data.model.*
+import org.equeim.spacer.donki.data.model.CoronalMassEjection
+import org.equeim.spacer.donki.data.model.Event
+import org.equeim.spacer.donki.data.model.EventId
+import org.equeim.spacer.donki.data.model.GeomagneticStorm
+import org.equeim.spacer.donki.data.model.HighSpeedStream
+import org.equeim.spacer.donki.data.model.InterplanetaryShock
+import org.equeim.spacer.donki.data.model.MagnetopauseCrossing
+import org.equeim.spacer.donki.data.model.RadiationBeltEnhancement
+import org.equeim.spacer.donki.data.model.SolarEnergeticParticle
+import org.equeim.spacer.donki.data.model.SolarFlare
 import org.equeim.spacer.donki.data.model.units.Angle
 import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.components.OutlinedCardWithPadding
@@ -36,10 +71,14 @@ import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.LocalNavController
-import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreenViewModel.ContentState.*
+import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreenViewModel.ContentState.Empty
+import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreenViewModel.ContentState.ErrorPlaceholder
+import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreenViewModel.ContentState.EventData
+import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreenViewModel.ContentState.LoadingPlaceholder
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.theme.SatelliteAlt
+import org.equeim.spacer.ui.utils.collectWhenStarted
 import org.equeim.spacer.ui.utils.formatInteger
 import java.text.DecimalFormat
 import java.time.Instant
@@ -48,7 +87,8 @@ import kotlin.math.abs
 @Parcelize
 data class DonkiEventDetailsScreen(val eventId: EventId) : Destination {
     @Composable
-    override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) = ScreenContent(eventId)
+    override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) =
+        ScreenContent(eventId)
 }
 
 @Composable
@@ -62,10 +102,10 @@ private fun ScreenContent(eventId: EventId) {
     ScreenContent(model)
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun ScreenContent(
-    model: DonkiEventDetailsScreenViewModel
+    model: DonkiEventDetailsScreenViewModel,
 ) {
     Scaffold(
         topBar = { SubScreenTopAppBar(stringResource(R.string.event_details)) },
@@ -91,15 +131,24 @@ private fun ScreenContent(
             }
         }
     ) { contentPadding ->
-        val showRefreshIndicator by model.showRefreshIndicator.collectAsState()
-        val pullRefreshState = rememberPullRefreshState(
-            refreshing = showRefreshIndicator,
-            onRefresh = model::refresh
-        )
+        val pullToRefreshState = rememberPullToRefreshState()
+        val lifecycleOwner = LocalLifecycleOwner.current
+        LaunchedEffect(pullToRefreshState, lifecycleOwner) {
+            model.showRefreshIndicator.collectWhenStarted(lifecycleOwner) {
+                if (pullToRefreshState.isRefreshing != it) {
+                    if (it) pullToRefreshState.startRefresh() else pullToRefreshState.endRefresh()
+                }
+            }
+        }
+        if (pullToRefreshState.isRefreshing) {
+            SideEffect {
+                model.refreshIfNotAlreadyLoading()
+            }
+        }
         Box(
             Modifier
                 .fillMaxSize()
-                .pullRefresh(pullRefreshState)
+                .nestedScroll(pullToRefreshState.nestedScrollConnection)
         ) {
             val contentState by model.contentState.collectAsState()
             Crossfade(contentState) { state ->
@@ -121,9 +170,8 @@ private fun ScreenContent(
                     }
                 }
             }
-            PullRefreshIndicator(
-                showRefreshIndicator,
-                pullRefreshState,
+            PullToRefreshContainer(
+                pullToRefreshState,
                 Modifier
                     .align(Alignment.TopCenter)
                     .padding(contentPadding)
@@ -154,7 +202,7 @@ private fun BoxScope.ScreenContentErrorPlaceholder(error: String) {
 @Composable
 private fun ScreenContentEventData(
     state: EventData,
-    formatTime: @Composable (Instant) -> String
+    formatTime: @Composable (Instant) -> String,
 ) {
     Column(
         Modifier
