@@ -26,20 +26,23 @@ jobs:
       - name: Check out
         uses: actions/checkout@v4
 
+      - name: Add Kotlin problem matcher
+        uses: equeim/kotlin-problem-matcher@v1
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Add Kotlin problem matcher
-        uses: equeim/kotlin-problem-matcher@v1
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
 
       - name: Build the app
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: build
-          cache-read-only: ${{ github.event_name == 'pull_request' }}
+        run: |
+          ./gradlew build
 
       - name: Archive debug APKs
         uses: actions/upload-artifact@v4
