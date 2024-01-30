@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package org.equeim.spacer.ui.screens.donki
 
 import androidx.annotation.StringRes
@@ -18,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
@@ -156,7 +153,6 @@ private fun DonkiEventFilters(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EventTypeChip(@StringRes label: Int, selected: Boolean, onClick: () -> Unit) {
     FilterChip(
