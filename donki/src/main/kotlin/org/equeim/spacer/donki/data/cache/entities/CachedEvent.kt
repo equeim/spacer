@@ -19,7 +19,7 @@ import java.time.Instant
 @Entity(tableName = "events")
 internal data class CachedEvent(
     @ColumnInfo(name = "id") @PrimaryKey
-    val id: String,
+    val id: EventId,
     @ColumnInfo(name = "type")
     val type: EventType,
     @ColumnInfo(name = "time", index = true)
@@ -31,7 +31,7 @@ internal data class CachedEvent(
 internal fun Pair<Event, JsonObject>.toCachedEvent(): CachedEvent {
     val (event, json) = this
     return CachedEvent(
-        id = event.id.stringValue,
+        id = event.id,
         type = event.type,
         time = event.time,
         json = DonkiJson.encodeToString(json)
@@ -40,15 +40,12 @@ internal fun Pair<Event, JsonObject>.toCachedEvent(): CachedEvent {
 
 internal data class CachedEventSummary(
     @ColumnInfo(name = "id")
-    private val idString: String,
+    override val id: EventId,
     @ColumnInfo(name = "type")
     override val type: EventType,
     @ColumnInfo(name = "time")
     override val time: Instant
-) : EventSummary {
-    override val id: EventId
-        get() = EventId(idString)
-}
+) : EventSummary
 
 @Dao
 internal abstract class CachedEventsDao {
