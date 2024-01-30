@@ -159,9 +159,11 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
             )
         }
 
-    fun refresh() {
-        viewModelScope.launch {
-            load(LoadingType.Manual)
+    fun refreshIfNotAlreadyLoading() {
+        if (loadingType.value == null) {
+            viewModelScope.launch {
+                load(LoadingType.Manual)
+            }
         }
     }
 

@@ -6,7 +6,17 @@
 
 package org.equeim.spacer.ui.screens.donki
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -15,18 +25,37 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.*
-import androidx.compose.material3.pullrefresh.PullRefreshIndicator
-import androidx.compose.material3.pullrefresh.pullRefresh
-import androidx.compose.material3.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -52,6 +81,7 @@ import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreen
 import org.equeim.spacer.ui.screens.settings.SettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.FilterList
+import org.equeim.spacer.ui.utils.collectWhenStarted
 import org.equeim.spacer.ui.utils.plus
 import org.equeim.spacer.utils.getActivityOrThrow
 
@@ -120,19 +150,28 @@ private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
             )
         }
     ) { contentPadding ->
-        val showRefreshIndicator by holder.showRefreshIndicator.collectAsState()
-        val pullRefreshState = rememberPullRefreshState(
-            refreshing = showRefreshIndicator,
-            onRefresh = holder::refresh
-        )
+        val pullToRefreshState = rememberPullToRefreshState()
+        val lifecycleOwner = LocalLifecycleOwner.current
+        LaunchedEffect(pullToRefreshState, lifecycleOwner) {
+            holder.showRefreshIndicator.collectWhenStarted(lifecycleOwner) {
+                if (pullToRefreshState.isRefreshing != it) {
+                    if (it) pullToRefreshState.startRefresh() else pullToRefreshState.endRefresh()
+                }
+            }
+        }
+        if (pullToRefreshState.isRefreshing) {
+            SideEffect {
+                holder.refreshIfNotAlreadyLoading()
+            }
+        }
         Box(Modifier.consumeWindowInsets(contentPadding)) {
             val fullscreenError = holder.fullscreenError
             Row(Modifier.fillMaxWidth()) {
                 val mainContentModifier = Modifier
                     .fillMaxHeight()
                     .weight(1.0f)
-                    .pullRefresh(pullRefreshState)
                     .nestedScroll(scrollBehavior.nestedScrollConnection)
+                    .nestedScroll(pullToRefreshState.nestedScrollConnection)
                 val mainContentPadding = contentPadding + Dimens.ScreenContentPadding()
                 when {
                     fullscreenError != null -> DonkiEventsScreenContentErrorPlaceholder(
@@ -164,11 +203,7 @@ private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
                     .fillMaxSize()
                     .padding(contentPadding)
             ) {
-                PullRefreshIndicator(
-                    showRefreshIndicator,
-                    pullRefreshState,
-                    Modifier.align(Alignment.TopCenter)
-                )
+                PullToRefreshContainer(pullToRefreshState, Modifier.align(Alignment.TopCenter))
                 if (!listIsEmpty) {
                     if (holder.items.loadState.source.prepend is LoadState.Loading) {
                         LinearProgressIndicator(
