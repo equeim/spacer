@@ -151,7 +151,7 @@ private fun ScreenContent(
                 .nestedScroll(pullToRefreshState.nestedScrollConnection)
         ) {
             val contentState by model.contentState.collectAsState()
-            Crossfade(contentState) { state ->
+            Crossfade(contentState, label = "Content state crossfade") { state ->
                 Box(
                     Modifier
                         .fillMaxSize()
