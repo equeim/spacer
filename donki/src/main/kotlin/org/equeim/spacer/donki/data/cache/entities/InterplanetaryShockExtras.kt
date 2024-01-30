@@ -27,27 +27,24 @@ import java.time.Instant
 )
 internal data class InterplanetaryShockExtras(
     @ColumnInfo(name = "id") @PrimaryKey
-    val id: String,
+    val id: EventId,
     @ColumnInfo(name = "location")
     val location: String
 )
 
 internal fun InterplanetaryShock.toExtras() = InterplanetaryShockExtras(
-    id = id.stringValue,
+    id = id,
     location = location
 )
 
 internal data class InterplanetaryShockExtrasSummaryCached(
     @ColumnInfo(name = "id")
-    private val idString: String,
+    override val id: EventId,
     @ColumnInfo(name = "time")
     override val time: Instant,
     @ColumnInfo(name = "location")
     override val location: String
-) : InterplanetaryShockSummary {
-    override val id: EventId
-        get() = EventId(idString)
-}
+) : InterplanetaryShockSummary
 
 @Dao
 internal abstract class InterplanetaryShockDao {

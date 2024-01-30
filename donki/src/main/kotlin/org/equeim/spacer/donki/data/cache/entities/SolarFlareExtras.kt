@@ -27,27 +27,24 @@ import java.time.Instant
 )
 internal data class SolarFlareExtras(
     @ColumnInfo(name = "id") @PrimaryKey
-    val id: String,
+    val id: EventId,
     @ColumnInfo(name = "class_type")
     val classType: String
 )
 
 internal fun SolarFlare.toExtras() = SolarFlareExtras(
-    id = id.stringValue,
+    id = id,
     classType = classType
 )
 
 internal data class SolarFlareExtrasSummaryCached(
     @ColumnInfo(name = "id")
-    private val idString: String,
+    override val id: EventId,
     @ColumnInfo(name = "time")
     override val time: Instant,
     @ColumnInfo(name = "class_type")
     override val classType: String
-) : SolarFlareSummary {
-    override val id: EventId
-        get() = EventId(idString)
-}
+) : SolarFlareSummary
 
 @Dao
 internal abstract class SolarFlareDao {

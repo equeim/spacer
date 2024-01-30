@@ -27,27 +27,24 @@ import java.time.Instant
 )
 internal data class CoronalMassEjectionExtras(
     @ColumnInfo(name = "id") @PrimaryKey
-    val id: String,
+    val id: EventId,
     @ColumnInfo(name = "is_earth_shock_predicted")
     val isEarthShockPredicted: Boolean
 )
 
 internal fun CoronalMassEjection.toExtras() = CoronalMassEjectionExtras(
-    id = id.stringValue,
+    id = id,
     isEarthShockPredicted = isEarthShockPredicted()
 )
 
 internal data class CoronalMassEjectionExtrasSummaryCached(
     @ColumnInfo(name = "id")
-    private val idString: String,
+    override val id: EventId,
     @ColumnInfo(name = "time")
     override val time: Instant,
     @ColumnInfo(name = "is_earth_shock_predicted")
     override val isEarthShockPredicted: Boolean
-) : CoronalMassEjectionSummary {
-    override val id: EventId
-        get() = EventId(idString)
-}
+) : CoronalMassEjectionSummary
 
 @Dao
 internal abstract class CoronalMassEjectionDao {
