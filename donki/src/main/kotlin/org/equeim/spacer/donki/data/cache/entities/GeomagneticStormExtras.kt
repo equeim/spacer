@@ -26,27 +26,24 @@ import java.time.Instant
 )
 internal data class GeomagneticStormExtras(
     @ColumnInfo(name = "id") @PrimaryKey
-    val id: String,
+    val id: EventId,
     @ColumnInfo(name = "kp_index")
     val kpIndex: Float?
 )
 
 internal fun GeomagneticStorm.toExtras() = GeomagneticStormExtras(
-    id = id.stringValue,
+    id = id,
     kpIndex = kpIndex()
 )
 
 internal data class GeomagneticStormExtrasSummaryCached(
     @ColumnInfo(name = "id")
-    private val idString: String,
+    override val id: EventId,
     @ColumnInfo(name = "time")
     override val time: Instant,
     @ColumnInfo(name = "kp_index")
     override val kpIndex: Float?
-) : GeomagneticStormSummary {
-    override val id: EventId
-        get() = EventId(idString)
-}
+) : GeomagneticStormSummary
 
 @Dao
 internal abstract class GeomagneticStormDao {
