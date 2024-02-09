@@ -10,6 +10,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.Interceptor
+import okhttp3.Response
 import okhttp3.ResponseBody
 import org.equeim.spacer.donki.data.DonkiJson
 import org.equeim.spacer.donki.data.NASA_API_KEY
@@ -24,17 +26,25 @@ import retrofit2.Retrofit
 import retrofit2.create
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
+import kotlin.concurrent.Volatile
 
 private const val TAG = "DonkiDataSourceNetwork"
 
 internal class DonkiDataSourceNetwork(baseUrl: HttpUrl = baseUrl()) {
-    private val api = createRetrofit(baseUrl, TAG) {
-        addConverterFactory(DonkiJsonConverterFactory(DonkiJson))
-    }.create<DonkiApi>()
+    private val api = createRetrofit(
+        baseUrl = baseUrl,
+        logTag = TAG,
+        configureOkHttpClient = {
+            addInterceptor(DonkiNetworkStats.RemainingRequestsInterceptor())
+        },
+        configureRetrofit = {
+            addConverterFactory(DonkiJsonConverterFactory(DonkiJson))
+        }
+    ).create<DonkiApi>()
 
     suspend fun getEvents(
         week: Week,
-        eventType: EventType
+        eventType: EventType,
     ): List<Pair<Event, JsonObject>> = try {
         Log.d(TAG, "getEvents() called with: week = $week, eventType = $eventType")
         val startDate = week.firstDay
@@ -46,32 +56,38 @@ internal class DonkiDataSourceNetwork(baseUrl: HttpUrl = baseUrl()) {
                 endDate,
                 nasaApiKeyOrNull()
             )
+
             EventType.GeomagneticStorm -> api.getGeomagneticStorms(
                 startDate,
                 endDate,
                 nasaApiKeyOrNull()
             )
+
             EventType.InterplanetaryShock -> api.getInterplanetaryShocks(
                 startDate,
                 endDate,
                 nasaApiKeyOrNull()
             )
+
             EventType.SolarFlare -> api.getSolarFlares(startDate, endDate, nasaApiKeyOrNull())
             EventType.SolarEnergeticParticle -> api.getSolarEnergeticParticles(
                 startDate,
                 endDate,
                 nasaApiKeyOrNull()
             )
+
             EventType.MagnetopauseCrossing -> api.getMagnetopauseCrossings(
                 startDate,
                 endDate,
                 nasaApiKeyOrNull()
             )
+
             EventType.RadiationBeltEnhancement -> api.getRadiationBeltEnhancements(
                 startDate,
                 endDate,
                 nasaApiKeyOrNull()
             )
+
             EventType.HighSpeedStream -> api.getHighSpeedStreams(
                 startDate,
                 endDate,
@@ -113,7 +129,7 @@ private class DonkiJsonConverterFactory(json: Json) : JsonConverterFactory(json)
     override fun responseBodyConverter(
         type: Type,
         annotations: Array<out Annotation>,
-        retrofit: Retrofit
+        retrofit: Retrofit,
     ): Converter<ResponseBody, *>? {
         val rawClass = ((type as? ParameterizedType)?.rawType ?: type) as? Class<*>
         val delegate = super.responseBodyConverter(type, annotations, retrofit) ?: return null
@@ -123,6 +139,25 @@ private class DonkiJsonConverterFactory(json: Json) : JsonConverterFactory(json)
             } else {
                 delegate.convert(body)
             }
+        }
+    }
+}
+
+object DonkiNetworkStats {
+    @Volatile
+    var rateLimit: Int? = null
+        private set
+
+    @Volatile
+    var remainingRequests: Int? = null
+        private set
+
+    internal class RemainingRequestsInterceptor : Interceptor {
+        override fun intercept(chain: Interceptor.Chain): Response {
+            val response = chain.proceed(chain.request())
+            rateLimit = response.header("X-RateLimit-Limit")?.toIntOrNull()
+            remainingRequests = response.header("X-RateLimit-Remaining")?.toIntOrNull()
+            return response
         }
     }
 }

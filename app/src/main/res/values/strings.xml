@@ -29,6 +29,10 @@ SPDX-License-Identifier: MIT
     <string name="use_system_colors">Use system colors</string>
     <string name="behaviour">Behaviour</string>
     <string name="display_events_in_utc">Display event times in UTC</string>
+    <string name="rate_limit">Rate limit: %d</string>
+    <string name="rate_limit_unknown">Rate limit: unknown</string>
+    <string name="remaining_requests">Remaining requests before reaching rate limit: %d</string>
+    <string name="remaining_requests_unknown">Remaining requests before reaching rate limit: unknown</string>
 
     <string name="event_details">Event details</string>
     <string name="go_to_donki_website">Go to DONKI website</string>

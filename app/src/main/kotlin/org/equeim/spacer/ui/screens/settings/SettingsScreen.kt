@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -128,6 +129,20 @@ private fun SettingsScreen() {
                         model.settings.displayEventsTimeInUTC.set(!displayEventsTimeInUTC)
                     }
                     .padding(horizontal = listItemHorizontalPadding)
+            )
+
+            HorizontalDivider()
+
+            Text(
+                text = model.rateLimit?.let { stringResource(R.string.rate_limit, it) }
+                    ?: stringResource(R.string.rate_limit_unknown),
+                modifier = Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal()).padding(top = Dimens.SpacingSmall)
+            )
+
+            Text(
+                text = model.remainingRequests?.let { stringResource(R.string.remaining_requests, it) }
+                    ?: stringResource(R.string.remaining_requests_unknown),
+                modifier = Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
             )
         }
     }

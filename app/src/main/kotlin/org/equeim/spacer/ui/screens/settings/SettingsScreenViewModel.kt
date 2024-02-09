@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import org.equeim.spacer.AppSettings
+import org.equeim.spacer.donki.data.network.DonkiNetworkStats
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
@@ -29,6 +30,8 @@ class SettingsScreenViewModel(application: Application) : AndroidViewModel(appli
     val darkThemeMode: StateFlow<AppSettings.DarkThemeMode> by PreferenceStateFlow(settings.darkThemeMode)
     val useSystemColors: StateFlow<Boolean> by PreferenceStateFlow(settings.useSystemColors)
     val displayEventsTimeInUTC: StateFlow<Boolean> by PreferenceStateFlow(settings.displayEventsTimeInUTC)
+    val rateLimit: Int? = DonkiNetworkStats.rateLimit
+    val remainingRequests: Int? = DonkiNetworkStats.remainingRequests
 
     init {
         viewModelScope.launch {
