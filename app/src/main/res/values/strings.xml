@@ -8,7 +8,6 @@ SPDX-License-Identifier: MIT
     <string name="app_name" translatable="false">Spacer</string>
     <string name="space_weather_events">Space weather events</string>
     <string name="loading">Loading…</string>
-    <string name="error">Error</string>
     <string name="retry">Retry</string>
     <string name="all_event_types">All</string>
     <string name="coronal_mass_ejection">Coronal mass ejection</string>
