@@ -113,7 +113,7 @@ internal class DonkiDataSourceNetwork(baseUrl: HttpUrl = baseUrl()) {
     }
 
     private companion object {
-        const val USE_NASA_API = false
+        const val USE_NASA_API = true
 
         fun baseUrl(): HttpUrl {
             return (if (USE_NASA_API) DonkiApi.NASA_API_BASE_URL else DonkiApi.BASE_URL).toHttpUrl()
