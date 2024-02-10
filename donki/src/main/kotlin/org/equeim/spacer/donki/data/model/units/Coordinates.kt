@@ -4,6 +4,9 @@
 
 package org.equeim.spacer.donki.data.model.units
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class Coordinates(
     val latitude: Angle,
     val longitude: Angle

@@ -6,6 +6,7 @@ package org.equeim.spacer.donki.data
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.runtime.Immutable
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -42,6 +43,7 @@ interface DonkiRepository : Closeable {
         val needsRefreshing: Boolean
     )
 
+    @Immutable
     data class EventFilters(
         val types: Set<EventType> = EventType.entries.toSet()
     )
