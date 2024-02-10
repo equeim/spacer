@@ -6,6 +6,7 @@
 
 package org.equeim.spacer.donki.data.model
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -41,6 +42,7 @@ data class CoronalMassEjection(
     }
 
     @Serializable
+    @Immutable
     data class Analysis(
         @SerialName("time21_5") val time215: Instant?,
         @SerialName("latitude") val latitude: Angle?,
@@ -56,6 +58,7 @@ data class CoronalMassEjection(
     )
 
     @Serializable
+    @Immutable
     data class EnlilSimulation(
         @SerialName("au") val au: Float,
         @SerialName("modelCompletionTime") val modelCompletionTime: Instant,
@@ -72,6 +75,7 @@ data class CoronalMassEjection(
     )
 
     @Serializable
+    @Immutable
     data class Impact(
         @SerialName("isGlancingBlow") val isGlancingBlow: Boolean,
         @SerialName("location") val location: String,

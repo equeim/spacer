@@ -5,6 +5,7 @@
 package org.equeim.spacer.donki.data.model
 
 import android.os.Parcelable
+import androidx.compose.runtime.Immutable
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 import java.time.Instant
@@ -45,6 +46,7 @@ value class EventId(internal val stringValue: String) : Parcelable {
     }
 }
 
+@Immutable
 sealed interface Event {
     val id: EventId
     val type: EventType
@@ -55,6 +57,7 @@ sealed interface Event {
     fun toEventSummary(): EventSummary
 }
 
+@Immutable
 interface EventSummary {
     val id: EventId
     val type: EventType
