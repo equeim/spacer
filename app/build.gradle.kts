@@ -28,7 +28,13 @@ android {
 
     buildFeatures.compose = true
     composeOptions.kotlinCompilerExtensionVersion = libs.versions.androidx.compose.compiler.get()
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+        freeCompilerArgs += listOf(
+            "-P",
+            "plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=${layout.projectDirectory.file("compose_compiler_config.conf").asFile.absolutePath}"
+        )
+    }
 }
 
 dependencies {
@@ -36,6 +42,7 @@ dependencies {
     implementation(libs.coroutines.android)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core)
+    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material3.window)
     implementation(libs.androidx.compose.material.icons)

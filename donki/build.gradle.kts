@@ -33,6 +33,9 @@ dependencies {
     implementation(libs.androidx.core)
     implementation(libs.androidx.paging)
 
+    implementation(platform(libs.androidx.compose.bom))
+    compileOnly(libs.androidx.compose.runtime)
+
     implementation(libs.androidx.room)
     ksp(libs.androidx.room.compiler)
 

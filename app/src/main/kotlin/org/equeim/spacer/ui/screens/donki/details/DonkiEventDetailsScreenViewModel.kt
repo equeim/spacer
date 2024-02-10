@@ -210,7 +210,6 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
 
     private fun getString(@StringRes resId: Int) = getApplication<Application>().getString(resId)
 
-    @Immutable
     sealed interface ContentState {
         data object Empty : ContentState
         data object LoadingPlaceholder : ContentState

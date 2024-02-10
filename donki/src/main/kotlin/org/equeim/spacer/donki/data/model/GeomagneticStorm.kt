@@ -6,6 +6,7 @@
 
 package org.equeim.spacer.donki.data.model
 
+import androidx.compose.runtime.Immutable
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
@@ -25,6 +26,7 @@ data class GeomagneticStorm(
     fun kpIndex(): Float? = kpIndexes.firstOrNull()?.kpIndex
 
     @Serializable
+    @Immutable
     data class KpIndex(
         @SerialName("kpIndex") val kpIndex: Float,
         @SerialName("observedTime") val observedTime: Instant,
