@@ -81,6 +81,7 @@ class AppSettings(private val context: Context) {
 
     interface Preference<T : Any> {
         suspend fun get(): T
+        fun getLatestValueOrDefault(): T
         fun set(value: T)
         fun flow(): Flow<T>
     }
@@ -92,12 +93,20 @@ class AppSettings(private val context: Context) {
         private val key: Preferences.Key<T>,
         private val defaultValueProducer: () -> T
     ) : Preference<T> {
+        @Volatile
+        private var latestValue: T? = null
+
         override suspend fun get(): T {
-            return context.dataStore.data.first()[key] ?: defaultValueProducer()
+            return context.dataStore.data.first()[key].also {
+                latestValue = it
+            } ?: defaultValueProducer()
         }
+
+        override fun getLatestValueOrDefault(): T = latestValue ?: defaultValueProducer()
 
         @OptIn(DelicateCoroutinesApi::class)
         override fun set(value: T) {
+            latestValue = value
             GlobalScope.launch {
                 context.dataStore.edit {
                     it[key] = value
@@ -106,7 +115,12 @@ class AppSettings(private val context: Context) {
         }
 
         override fun flow(): Flow<T> {
-            return context.dataStore.data.map { it[key] ?: defaultValueProducer() }.distinctUntilChanged()
+            return context.dataStore.data
+                .map { prefs ->
+                    prefs[key].also {
+                        latestValue = it
+                    } ?: defaultValueProducer()
+                }.distinctUntilChanged()
         }
     }
 }
@@ -117,6 +131,7 @@ private fun <T : Any, V : Any> AppSettings.Preference<T>.map(
 ): AppSettings.Preference<V> {
     return object : AppSettings.Preference<V> {
         override suspend fun get(): V = transformFromBase(this@map.get())
+        override fun getLatestValueOrDefault(): V = transformFromBase(this@map.getLatestValueOrDefault())
         override fun set(value: V) = this@map.set(transformToBase(value))
         override fun flow(): Flow<V> = this@map.flow().map(transformFromBase)
     }

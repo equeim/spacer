@@ -24,13 +24,17 @@ import org.equeim.spacer.ui.components.ExpandableCard
 import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SectionPlaceholder
 import org.equeim.spacer.ui.theme.Dimens
-import org.equeim.spacer.ui.utils.formatInteger
+import org.equeim.spacer.ui.utils.rememberCoordinatesFormatter
+import org.equeim.spacer.ui.utils.rememberIntegerFormatter
+import java.text.NumberFormat
 import java.time.Duration
-import java.time.Instant
+import java.time.format.DateTimeFormatter
 
 @Composable
-fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: @Composable (Instant) -> String) =
+fun CoronalMassEjectionDetails(event: CoronalMassEjection, eventTimeFormatter: () -> DateTimeFormatter) =
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
+        val coordinatesFormatter = rememberCoordinatesFormatter()
+
         if (event.note.isNotEmpty()) {
             SelectionContainer {
                 Text(event.note)
@@ -39,7 +43,7 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: @Composab
         event.sourceLocation?.let {
             LabelFieldPair(
                 R.string.cme_source_location,
-                formatCoordinates(it.latitude, it.longitude)
+                coordinatesFormatter.format(it.latitude, it.longitude)
             )
         }
         InstrumentsSection(event.instruments)
@@ -53,7 +57,8 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: @Composab
                 }
             }
             Spacer(Modifier.height(Dimens.SpacingMedium - Dimens.SpacingSmall))
-            LabelFieldPair(R.string.cme_data_level, formatInteger(analysis.levelOfData))
+            val integerFormatter = rememberIntegerFormatter()
+            LabelFieldPair(R.string.cme_data_level, integerFormatter.format(analysis.levelOfData))
             analysis.speed?.let {
                 LabelFieldPair(R.string.cme_speed, stringResource(R.string.cme_speed_value, it.toKilometersPerSecond()))
             }
@@ -61,7 +66,7 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: @Composab
             if (analysis.latitude != null && analysis.longitude != null) {
                 LabelFieldPair(
                     R.string.cme_direction,
-                    formatCoordinates(analysis.latitude!!, analysis.longitude!!)
+                    coordinatesFormatter.format(analysis.latitude!!, analysis.longitude!!)
                 )
             }
             analysis.halfAngle?.let {
@@ -71,7 +76,7 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: @Composab
                 )
             }
             analysis.time215?.let {
-                LabelFieldPair(R.string.cme_time215, formatTime(it))
+                LabelFieldPair(R.string.cme_time215, eventTimeFormatter().format(it))
             }
             Spacer(Modifier.height(Dimens.SpacingMedium - Dimens.SpacingSmall))
             val uriHandler = LocalUriHandler.current
@@ -83,7 +88,7 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: @Composab
             if (analysis.enlilSimulations.isNotEmpty()) {
                 SectionHeader(stringResource(R.string.enlil_models))
                 analysis.enlilSimulations.forEach { simulation ->
-                    EnlilModelCard(simulation, formatTime)
+                    EnlilModelCard(simulation, integerFormatter, eventTimeFormatter())
                 }
             } else {
                 SectionPlaceholder(stringResource(R.string.enlil_no_models))
@@ -94,12 +99,12 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, formatTime: @Composab
     }
 
 @Composable
-private fun EnlilModelCard(simulation: CoronalMassEjection.EnlilSimulation, formatTime: @Composable (Instant) -> String) {
+private fun EnlilModelCard(simulation: CoronalMassEjection.EnlilSimulation, integerFormatter: NumberFormat, eventTimeFormatter: DateTimeFormatter) {
     ExpandableCard(
         Modifier.fillMaxWidth(),
         content = {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
-                Text(stringResource(R.string.enlil_description, formatTime(simulation.modelCompletionTime), simulation.au))
+                Text(stringResource(R.string.enlil_description, eventTimeFormatter.format(simulation.modelCompletionTime), simulation.au))
             }
         },
         expandedContent = {
@@ -109,25 +114,25 @@ private fun EnlilModelCard(simulation: CoronalMassEjection.EnlilSimulation, form
                 } else {
                     SectionHeader(stringResource(R.string.enlil_earth_impact), style = MaterialTheme.typography.bodyLarge)
                     simulation.estimatedShockArrivalTime?.let {
-                        LabelFieldPair(R.string.enlil_earth_shock_arrival_time, formatTime(it))
+                        LabelFieldPair(R.string.enlil_earth_shock_arrival_time, eventTimeFormatter.format(it))
                     }
                     simulation.estimatedDuration?.let {
                         LabelFieldPair(R.string.enlil_earth_duration, stringResource(R.string.enlil_earth_duration_value, it.seconds.toFloat() / Duration.ofHours(1).seconds.toFloat()))
                     }
                 }
                 simulation.kp90?.let {
-                    LabelFieldPair(R.string.enlil_kp_90, formatInteger(it))
+                    LabelFieldPair(R.string.enlil_kp_90, integerFormatter.format(it))
                 }
                 simulation.kp135?.let {
-                    LabelFieldPair(R.string.enlil_kp_135, formatInteger(it))
+                    LabelFieldPair(R.string.enlil_kp_135, integerFormatter.format(it))
                 }
                 simulation.kp180?.let {
-                    LabelFieldPair(R.string.enlil_kp_180, formatInteger(it))
+                    LabelFieldPair(R.string.enlil_kp_180, integerFormatter.format(it))
                 }
                 if (simulation.impacts.isNotEmpty()) {
                     SectionHeader(stringResource(R.string.enlil_other_impacts), style = MaterialTheme.typography.bodyLarge)
                     simulation.impacts.forEach { impact ->
-                        LabelFieldPair(impact.location, formatTime(impact.arrivalTime))
+                        LabelFieldPair(impact.location, eventTimeFormatter.format(impact.arrivalTime))
                     }
                 } else {
                     SectionPlaceholder(stringResource(R.string.enlil_no_other_impacts), style = MaterialTheme.typography.bodyLarge)

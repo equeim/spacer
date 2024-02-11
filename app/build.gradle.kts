@@ -30,10 +30,19 @@ android {
     composeOptions.kotlinCompilerExtensionVersion = libs.versions.androidx.compose.compiler.get()
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
-        freeCompilerArgs += listOf(
-            "-P",
-            "plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=${layout.projectDirectory.file("compose_compiler_config.conf").asFile.absolutePath}"
-        )
+        freeCompilerArgs += buildList {
+            add("-P")
+            add("plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=${layout.projectDirectory.file("compose_compiler_config.conf").asFile.absolutePath}")
+            val composeReportsDir: String by lazy { layout.buildDirectory.dir("compose_compiler").get().asFile.absolutePath }
+            if (project.findProperty("composeCompilerReports") == "true") {
+                add("-P")
+                add("plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=$composeReportsDir")
+            }
+            if (project.findProperty("composeCompilerMetrics") == "true") {
+                add("-P")
+                add("plugin:androidx.compose.compiler.plugins.kotlin:metricsDestination=$composeReportsDir")
+            }
+        }
     }
 }
 

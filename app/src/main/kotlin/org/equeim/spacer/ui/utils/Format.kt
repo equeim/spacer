@@ -6,18 +6,88 @@ package org.equeim.spacer.ui.utils
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import org.equeim.spacer.donki.data.model.units.Angle
 import org.equeim.spacer.ui.LocalDefaultLocale
 import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
+import java.time.format.FormatStyle
+import java.time.format.TextStyle
+import java.util.Locale
+import kotlin.math.abs
 
 @Composable
-fun formatInteger(integer: Int): String {
-    val numberFormat = remember(LocalDefaultLocale.current) { NumberFormat.getIntegerInstance() }
-    return numberFormat.format(integer)
+fun rememberIntegerFormatter(): NumberFormat {
+    val locale = LocalDefaultLocale.current
+    return remember(locale) { NumberFormat.getIntegerInstance(locale) }
 }
 
 @Composable
-fun formatFloat(float: Float): String {
-    val decimalFormat = remember(LocalDefaultLocale.current) { DecimalFormat("0.##") }
-    return decimalFormat.format(float)
+fun rememberFloatFormatter(): DecimalFormat {
+    val locale = LocalDefaultLocale.current
+    return remember(locale) { DecimalFormat("0.##", DecimalFormatSymbols.getInstance(locale)) }
+}
+
+fun createEventDateTimeFormatter(locale: Locale, zone: ZoneId): DateTimeFormatter =
+    DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
+        .withLocale(locale)
+        .withZone(zone)
+
+fun createEventTimeFormatter(locale: Locale, zone: ZoneId): DateTimeFormatter =
+    DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+        .withLocale(locale)
+        .withZone(zone)
+
+fun createEventDateFormatter(locale: Locale, zone: ZoneId): DateTimeFormatter =
+    DateTimeFormatterBuilder()
+        .appendLocalized(FormatStyle.LONG, null)
+        .appendLiteral(' ')
+        .appendZoneText(TextStyle.SHORT)
+        .toFormatter(locale)
+        .withZone(zone)
+
+private val utcZone: ZoneId by lazy { ZoneId.ofOffset("UTC", ZoneOffset.UTC) }
+
+fun determineEventTimeZone(defaulZone: ZoneId, displayEventsTimeInUTC: Boolean): ZoneId = if (displayEventsTimeInUTC) {
+    utcZone
+} else {
+    defaulZone
+}
+
+class CoordinatesFormatter(locale: Locale) {
+    private val integerFormatter: NumberFormat = NumberFormat.getIntegerInstance(locale)
+    private val secondsFormatter = DecimalFormat("00.###", DecimalFormatSymbols.getInstance(locale))
+
+    fun format(latitude: Angle, longitude: Angle): String = buildString {
+        append(formatCoordinate(latitude, if (latitude.degrees >= 0.0f) "N" else "S"))
+        append(' ')
+        append(formatCoordinate(longitude, if (longitude.degrees >= 0.0f) "E" else "W"))
+    }
+
+    private fun formatCoordinate(coordinate: Angle, hemisphere: String): String {
+        val absDegrees = abs(coordinate.degrees)
+        val degrees = absDegrees.toInt()
+        val minutesFloat = (absDegrees - degrees) * 60.0f
+        val minutes = minutesFloat.toInt()
+        val seconds = (minutesFloat - minutes) * 60.0f
+        return buildString {
+            append(integerFormatter.format(degrees))
+            append("°")
+            append(integerFormatter.format(minutes))
+            append("′")
+            append(secondsFormatter.format(seconds))
+            append("″")
+            append(hemisphere)
+        }
+    }
+}
+
+@Composable
+fun rememberCoordinatesFormatter(): CoordinatesFormatter {
+    val locale = LocalDefaultLocale.current
+    return remember(locale) { CoordinatesFormatter(locale) }
 }

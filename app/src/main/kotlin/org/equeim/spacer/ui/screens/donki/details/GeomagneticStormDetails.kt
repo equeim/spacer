@@ -21,20 +21,21 @@ import org.equeim.spacer.ui.components.OutlinedCardWithPadding
 import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SectionPlaceholder
 import org.equeim.spacer.ui.theme.Dimens
-import org.equeim.spacer.ui.utils.formatFloat
-import java.time.Instant
+import org.equeim.spacer.ui.utils.rememberFloatFormatter
+import java.time.format.DateTimeFormatter
 
 @Composable
-fun GeomagneticStormDetails(event: GeomagneticStorm, formatTime: @Composable (Instant) -> String) {
+fun GeomagneticStormDetails(event: GeomagneticStorm, eventTimeFormatter: () -> DateTimeFormatter) {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
         if (event.kpIndexes.isNotEmpty()) {
             SectionHeader(stringResource(R.string.gst_kp_indexes))
             event.kpIndexes.forEach { kpIndex ->
                 OutlinedCardWithPadding(onClick = {}, Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(formatFloat(kpIndex.kpIndex), style = MaterialTheme.typography.titleMedium)
+                        val floatFormatter = rememberFloatFormatter()
+                        Text(floatFormatter.format(kpIndex.kpIndex), style = MaterialTheme.typography.titleMedium)
                         Column(Modifier.weight(1.0f)) {
-                            Text(formatTime(kpIndex.observedTime))
+                            Text(eventTimeFormatter().format(kpIndex.observedTime))
                             Text(kpIndex.source)
                         }
                     }

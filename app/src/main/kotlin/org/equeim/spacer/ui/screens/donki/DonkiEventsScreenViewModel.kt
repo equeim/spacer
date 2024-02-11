@@ -14,13 +14,16 @@ import androidx.paging.TerminalSeparatorType
 import androidx.paging.cachedIn
 import androidx.paging.insertSeparators
 import androidx.paging.map
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.job
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.DonkiRepository
@@ -31,14 +34,15 @@ import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.donki.data.model.GeomagneticStormSummary
 import org.equeim.spacer.donki.data.model.InterplanetaryShockSummary
 import org.equeim.spacer.donki.data.model.SolarFlareSummary
+import org.equeim.spacer.ui.utils.createEventDateFormatter
+import org.equeim.spacer.ui.utils.createEventTimeFormatter
+import org.equeim.spacer.ui.utils.defaultLocale
 import org.equeim.spacer.ui.utils.defaultLocaleFlow
+import org.equeim.spacer.ui.utils.defaultTimeZoneFlow
+import org.equeim.spacer.ui.utils.determineEventTimeZone
 import java.time.ZoneId
-import java.time.ZoneOffset
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeFormatterBuilder
-import java.time.format.FormatStyle
-import java.time.format.TextStyle
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 private const val TAG = "DonkiEventsScreenViewModel"
@@ -51,90 +55,81 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
     private val repository = DonkiRepository(application)
     private val settings = AppSettings(application)
 
-    private class LocaleDependentState {
-        val eventTimeFormatter: DateTimeFormatter =
-            DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-        val eventDateFormatter: DateTimeFormatter =
-            DateTimeFormatterBuilder().appendLocalized(FormatStyle.LONG, null).appendLiteral(' ')
-                .appendZoneText(TextStyle.SHORT).toFormatter()
-        val eventTypesStrings = ConcurrentHashMap<EventType, String>()
+    private class Formatters(locale: Locale, val zone: ZoneId) {
+        val eventDateFormatter = createEventDateFormatter(locale, zone)
+        val eventTimeFormatter = createEventTimeFormatter(locale, zone)
     }
 
-    @Volatile
-    private lateinit var localeDependentState: LocaleDependentState
-
     val filters = MutableStateFlow(DonkiRepository.EventFilters())
-
     val pagingData: Flow<PagingData<ListItem>>
 
     init {
         val basePagingData = repository.getEventSummariesPager(filters).flow.cachedIn(viewModelScope)
-        val defaultLocaleFlow = application.defaultLocaleFlow().onEach {
-            localeDependentState = LocaleDependentState()
+
+        val defaultLocaleFlow = application.defaultLocaleFlow().stateIn(viewModelScope, SharingStarted.Eagerly, application.defaultLocale)
+        val eventTypesStringsCacheFlow = defaultLocaleFlow.map { ConcurrentHashMap<EventType, String>() }
+        val formattersFlow = combine(
+            defaultLocaleFlow,
+            application.defaultTimeZoneFlow(),
+            settings.displayEventsTimeInUTC.flow()
+        ) { locale, defaultZone, displayEventsTimeInUTC ->
+            Log.d(TAG, "locale = $locale, defaultZone = $defaultZone, displayEventsTimeInUTC = $displayEventsTimeInUTC")
+            Formatters(
+                locale,
+                determineEventTimeZone(defaultZone, displayEventsTimeInUTC)
+            )
         }
+        val pagingDataCoroutineScope = CoroutineScope(SupervisorJob(viewModelScope.coroutineContext.job) + Dispatchers.Default)
         pagingData = combine(
             basePagingData,
-            settings.displayEventsTimeInUTC.flow(),
-            defaultLocaleFlow,
-            ::Triple
-        ).map { (pagingData, displayEventsTimeInUTC, _) ->
-            pagingData.toListItems(displayEventsTimeInUTC)
-        }.cachedIn(viewModelScope)
+            eventTypesStringsCacheFlow,
+            formattersFlow,
+        ) { pagingData, eventTypesStringsCache, formatters ->
+            pagingData.toListItems(eventTypesStringsCache, formatters)
+        }.cachedIn(pagingDataCoroutineScope)
         addCloseable(repository)
     }
 
-    private fun PagingData<EventSummary>.toListItems(displayEventsTimeInUTC: Boolean): PagingData<ListItem> {
-        val timeZone = if (displayEventsTimeInUTC) {
-            ZoneId.ofOffset("UTC", ZoneOffset.UTC)
-        } else {
-            ZoneId.systemDefault()
-        }
+    private fun PagingData<EventSummary>.toListItems(eventTypesStringsCache: ConcurrentHashMap<EventType, String>, formatters: Formatters): PagingData<ListItem> {
         return map {
-            withContext(Dispatchers.Default) {
-                EventSummaryWithZonedTime(it, it.time.atZone(timeZone))
-            }
+            EventSummaryWithDayOfMonth(it, it.time.atZone(formatters.zone).dayOfMonth)
         }
             .insertSeparators(TerminalSeparatorType.SOURCE_COMPLETE) { before, after ->
                 when {
                     after == null -> null
-                    before == null || before.zonedTime.dayOfMonth != after.zonedTime.dayOfMonth -> {
-                        withContext(Dispatchers.Default) {
-                            DateSeparator(
-                                after.eventSummary.time.epochSecond,
-                                localeDependentState.eventDateFormatter.format(after.zonedTime)
-                            )
-                        }
+                    before == null || before.dayOfMonth != after.dayOfMonth -> {
+                        DateSeparator(
+                            after.eventSummary.time.epochSecond,
+                            formatters.eventDateFormatter.format(after.eventSummary.time)
+                        )
                     }
-
                     else -> null
                 }
             }
             .map {
                 when (it) {
-                    is EventSummaryWithZonedTime ->
-                        withContext(Dispatchers.Default) { it.toPresentation() }
-
-                    else -> it
-                } as ListItem
+                    is EventSummaryWithDayOfMonth -> it.eventSummary.toPresentation(eventTypesStringsCache, formatters.eventTimeFormatter)
+                    else -> it as DateSeparator
+                }
             }
     }
 
-    private data class EventSummaryWithZonedTime(
+    private data class EventSummaryWithDayOfMonth(
         val eventSummary: EventSummary,
-        val zonedTime: ZonedDateTime,
+        val dayOfMonth: Int,
     )
 
-    private fun EventSummaryWithZonedTime.toPresentation(): EventPresentation {
+    private fun EventSummary.toPresentation(eventTypesStringsCache: ConcurrentHashMap<EventType, String>, eventTimeFormatter: DateTimeFormatter): EventPresentation {
         return EventPresentation(
-            id = eventSummary.id,
-            type = eventSummary.getTypeDisplayString(),
-            time = localeDependentState.eventTimeFormatter.format(zonedTime),
-            detailsSummary = eventSummary.getDetailsSummary()
+            id = id,
+            type = getTypeDisplayString(eventTypesStringsCache),
+            time = eventTimeFormatter.format(time),
+            detailsSummary = getDetailsSummary()
         )
     }
 
-    private fun EventSummary.getTypeDisplayString(): String {
-        return localeDependentState.eventTypesStrings.computeIfAbsent(type) { getString(type.displayStringResId) }
+    private fun EventSummary.getTypeDisplayString(eventTypesStringsCache: ConcurrentHashMap<EventType, String>): String {
+        return eventTypesStringsCache.computeIfAbsent(type) { getString(type.displayStringResId) }
     }
 
     private fun EventSummary.getDetailsSummary(): String? {
