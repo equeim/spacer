@@ -63,8 +63,6 @@ import org.equeim.spacer.donki.data.model.MagnetopauseCrossing
 import org.equeim.spacer.donki.data.model.RadiationBeltEnhancement
 import org.equeim.spacer.donki.data.model.SolarEnergeticParticle
 import org.equeim.spacer.donki.data.model.SolarFlare
-import org.equeim.spacer.donki.data.model.units.Angle
-import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.components.OutlinedCardWithPadding
 import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
@@ -78,10 +76,7 @@ import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.theme.SatelliteAlt
 import org.equeim.spacer.ui.utils.collectWhenStarted
-import org.equeim.spacer.ui.utils.formatInteger
-import java.text.DecimalFormat
-import java.time.Instant
-import kotlin.math.abs
+import java.time.format.DateTimeFormatter
 
 @Parcelize
 data class DonkiEventDetailsScreen(val eventId: EventId) : Destination {
@@ -164,7 +159,7 @@ private fun ScreenContent(
                         is LoadingPlaceholder -> ScreenContentLoadingPlaceholder()
                         is ErrorPlaceholder -> ScreenContentErrorPlaceholder(state.error)
                         is EventData -> {
-                            ScreenContentEventData(state) { model.formatTime(it) }
+                            ScreenContentEventData(state)
                         }
                     }
                 }
@@ -199,10 +194,7 @@ private fun BoxScope.ScreenContentErrorPlaceholder(error: String) {
 }
 
 @Composable
-private fun ScreenContentEventData(
-    state: EventData,
-    formatTime: @Composable (Instant) -> String,
-) {
+private fun ScreenContentEventData(state: EventData) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -221,7 +213,7 @@ private fun ScreenContentEventData(
             )
         }
         Spacer(Modifier.height(Dimens.SpacingMedium - Dimens.SpacingSmall))
-        SpecificEventDetails(state.event, formatTime)
+        SpecificEventDetails(state.event, state::eventTimeFormatter)
         if (state.linkedEvents.isNotEmpty()) {
             SectionHeader(stringResource(R.string.linked_events))
             Column(
@@ -250,16 +242,16 @@ private fun ScreenContentEventData(
 }
 
 @Composable
-private fun SpecificEventDetails(event: Event, formatTime: @Composable (Instant) -> String) {
+private fun SpecificEventDetails(event: Event, eventTimeFormatter: () -> DateTimeFormatter) {
     when (event) {
-        is CoronalMassEjection -> CoronalMassEjectionDetails(event, formatTime)
-        is GeomagneticStorm -> GeomagneticStormDetails(event, formatTime)
+        is CoronalMassEjection -> CoronalMassEjectionDetails(event, eventTimeFormatter)
+        is GeomagneticStorm -> GeomagneticStormDetails(event, eventTimeFormatter)
         is HighSpeedStream -> HighSpeedStreamDetails(event)
         is InterplanetaryShock -> InterplanetaryShockDetails(event)
         is MagnetopauseCrossing -> MagnetopauseCrossingDetails(event)
         is RadiationBeltEnhancement -> RadiationBeltEnhancementDetails(event)
         is SolarEnergeticParticle -> SolarEnergeticParticleDetails(event)
-        is SolarFlare -> SolarFlareDetails(event, formatTime)
+        is SolarFlare -> SolarFlareDetails(event, eventTimeFormatter())
     }
 }
 
@@ -303,33 +295,5 @@ fun LabelFieldPair(label: String, field: String) {
         ) {
             Text(field)
         }
-    }
-}
-
-@Composable
-fun formatCoordinates(latitude: Angle, longitude: Angle): String {
-    return buildString {
-        append(formatCoordinate(latitude, if (latitude.degrees >= 0.0f) "N" else "S"))
-        append(' ')
-        append(formatCoordinate(longitude, if (longitude.degrees >= 0.0f) "E" else "W"))
-    }
-}
-
-@Composable
-private fun formatCoordinate(coordinate: Angle, hemisphere: String): String {
-    val absDegrees = abs(coordinate.degrees)
-    val degrees = absDegrees.toInt()
-    val minutesFloat = (absDegrees - degrees) * 60.0f
-    val minutes = minutesFloat.toInt()
-    val seconds = (minutesFloat - minutes) * 60.0f
-    val secondsFormat = remember(LocalDefaultLocale.current) { DecimalFormat("00.###") }
-    return buildString {
-        append(formatInteger(degrees))
-        append("°")
-        append(formatInteger(minutes))
-        append("′")
-        append(secondsFormat.format(seconds))
-        append("″")
-        append(hemisphere)
     }
 }
