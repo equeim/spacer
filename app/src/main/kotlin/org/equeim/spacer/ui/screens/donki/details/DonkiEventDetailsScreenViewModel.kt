@@ -9,22 +9,21 @@ import android.util.Log
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.retry
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -85,8 +84,72 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
 
     init {
         addCloseable(repository)
+        viewModelScope.launch {
+            loadEvent()
+        }
+        viewModelScope.launch {
+            loadRequests.send(LoadingType.Automatic)
+            delay(LOADING_PLACEHOLDER_DELAY)
+            _contentState.compareAndSet(ContentState.Empty, ContentState.LoadingPlaceholder)
+        }
+    }
 
-        val defaultLocaleFlow = application.defaultLocaleFlow().stateIn(viewModelScope, SharingStarted.Eagerly, application.defaultLocale)
+    fun refreshIfNotAlreadyLoading() {
+        viewModelScope.launch {
+            if (loadingType.value == null) {
+                loadRequests.send(LoadingType.Manual)
+            }
+        }
+    }
+
+    private suspend fun loadEvent() {
+        viewModelScope.launch {
+            processLoadRequests().mapEventToPresentation().collect {
+                _contentState.value = it
+                Log.d(TAG, "Finished processing loaded event")
+            }
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun processLoadRequests(): Flow<DonkiRepository.EventById> =
+        loadRequests.receiveAsFlow()
+            .onEach {
+                _contentState.value.let {
+                    if (it is ContentState.ErrorPlaceholder) {
+                        _contentState.compareAndSet(it, ContentState.LoadingPlaceholder)
+                    }
+                }
+            }
+            .mapLatest { type ->
+                loadingType.value = type
+                Log.d(TAG, "Loading event with id $eventId, load type is $type")
+                repository.getEventById(
+                    eventId,
+                    forceRefresh = when (type) {
+                        LoadingType.Automatic -> false
+                        LoadingType.Manual -> true
+                    }
+                ).also {
+                    Log.d(TAG, "Loaded event with id $eventId")
+                    loadingType.value = null
+                }
+            }.onEach {
+                if (it.needsRefreshing) {
+                    Log.d(TAG, "Event needs refreshing, schedule load request")
+                    loadRequests.send(LoadingType.Manual)
+                }
+            }.retry {
+                Log.e(TAG, "Failed to load event", it)
+                loadingType.value = null
+                _contentState.value = ContentState.ErrorPlaceholder(it.toString())
+                true
+            }
+
+    private fun Flow<DonkiRepository.EventById>.mapEventToPresentation(): Flow<ContentState.EventData> {
+        val application = getApplication<Application>()
+        val defaultLocaleFlow =
+            application.defaultLocaleFlow().stateIn(viewModelScope, SharingStarted.Eagerly, application.defaultLocale)
         val eventTypesStringsCacheFlow = defaultLocaleFlow.map { ConcurrentHashMap<EventType, String>() }
         val formattersFlow = combine(
             defaultLocaleFlow,
@@ -96,20 +159,19 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
             Log.d(TAG, "locale = $locale, defaultZone = $defaultZone, displayEventsTimeInUTC = $displayEventsTimeInUTC")
             Formatters(locale, determineEventTimeZone(defaultZone, displayEventsTimeInUTC))
         }
-        viewModelScope.launch {
-            combine(
-                loadRequests.receiveAsFlow(),
-                eventTypesStringsCacheFlow,
-                formattersFlow,
-                ::Triple
-            ).collectLatest { (loadType, eventTypesStringsCache, formatters) ->
-                load(loadType, eventTypesStringsCache, formatters)
+        return combine(
+            this,
+            eventTypesStringsCacheFlow,
+            formattersFlow
+        ) { event, eventTypesStringsCache, formatters ->
+            Log.d(TAG, "Converting loaded event to presentation")
+            withContext(Dispatchers.Default) {
+                event.toContentState(eventTypesStringsCache, formatters)
             }
-        }
-        viewModelScope.launch {
-            loadRequests.send(LoadingType.Automatic)
-            delay(LOADING_PLACEHOLDER_DELAY)
-            _contentState.compareAndSet(ContentState.Empty, ContentState.LoadingPlaceholder)
+        }.retry {
+            Log.e(TAG, "Failed to convert loaded event to presentation", it)
+            _contentState.value = ContentState.ErrorPlaceholder(it.toString())
+            true
         }
     }
 
@@ -118,64 +180,26 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
         val eventTimeFormatter = createEventTimeFormatter(locale, eventTimeZone)
     }
 
-    private suspend fun load(
-        type: LoadingType,
+    private fun DonkiRepository.EventById.toContentState(
         eventTypesStringsCache: ConcurrentHashMap<EventType, String>,
         formatters: Formatters,
-    ) {
-        Log.d(TAG, "load() called with: type = $type")
-        loadingType.value = type
-        _contentState.value.let {
-            if (it is ContentState.ErrorPlaceholder) {
-                _contentState.compareAndSet(it, ContentState.LoadingPlaceholder)
-            }
-        }
-        try {
-            when (type) {
-                LoadingType.Automatic -> {
-                    val event = repository.getEventById(eventId, forceRefresh = false)
-                    _contentState.value = event.toContentState(eventTypesStringsCache, formatters)
-                    if (event.needsRefreshing) {
-                        _contentState.value =
-                            repository.getEventById(eventId, forceRefresh = true)
-                                .toContentState(eventTypesStringsCache, formatters)
-                    }
-                }
-
-                LoadingType.Manual -> {
-                    _contentState.value =
-                        repository.getEventById(eventId, forceRefresh = true).toContentState(eventTypesStringsCache, formatters)
-                }
-            }
-        } catch (e: Exception) {
-            if (e !is CancellationException) {
-                _contentState.value = ContentState.ErrorPlaceholder(e.toString())
-            }
-        } finally {
-            loadingType.value = null
-        }
-    }
-
-    private suspend fun DonkiRepository.EventById.toContentState(eventTypesStringsCache: ConcurrentHashMap<EventType, String>, formatters: Formatters): ContentState.EventData =
-        withContext(Dispatchers.Default) {
-            ContentState.EventData(
-                type = event.type.getDisplayString(eventTypesStringsCache),
-                dateTime = formatters.eventDateTimeFormatter.format(event.time),
-                event = event,
-                linkedEvents = event.linkedEvents.mapNotNull { it.toPresentation(eventTypesStringsCache, formatters.eventDateTimeFormatter) },
-                eventTimeFormatter = formatters.eventTimeFormatter
+    ) = ContentState.EventData(
+        type = event.type.getDisplayString(eventTypesStringsCache),
+        dateTime = formatters.eventDateTimeFormatter.format(event.time),
+        event = event,
+        linkedEvents = event.linkedEvents.mapNotNull {
+            it.toPresentation(
+                eventTypesStringsCache,
+                formatters.eventDateTimeFormatter
             )
-        }
+        },
+        eventTimeFormatter = formatters.eventTimeFormatter
+    )
 
-    fun refreshIfNotAlreadyLoading() {
-        if (loadingType.value == null) {
-            viewModelScope.launch {
-                loadRequests.send(LoadingType.Manual)
-            }
-        }
-    }
-
-    private fun EventId.toPresentation(eventTypesStringsCache: ConcurrentHashMap<EventType, String>, eventDateTimeFormatter: DateTimeFormatter): LinkedEventPresentation? {
+    private fun EventId.toPresentation(
+        eventTypesStringsCache: ConcurrentHashMap<EventType, String>,
+        eventDateTimeFormatter: DateTimeFormatter,
+    ): LinkedEventPresentation? {
         val (type, time) = runCatching { parse() }.getOrElse {
             Log.e(TAG, it.message, it)
             null
