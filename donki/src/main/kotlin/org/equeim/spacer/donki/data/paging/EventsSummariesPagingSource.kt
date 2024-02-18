@@ -10,10 +10,7 @@ import androidx.paging.PagingState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -67,31 +64,25 @@ internal class EventsSummariesPagingSource(
             Log.d(TAG, m("load: current week is $currentWeek"))
 
             val requestedWeek = params.key
-            val weeks = when {
+            val week = when {
                 requestedWeek != null -> {
                     if (requestedWeek > currentWeek) {
                         Log.e(TAG, m("load: requested week is in the future"))
                         return@withContext LoadResult.Invalid()
                     }
-                    listOf(requestedWeek)
+                    requestedWeek
                 }
-                filters.dateRange != null -> Week.getInitialLoadWeeksFromTimeRange(filters.dateRange)
-                else -> Week.getInitialLoadWeeks(currentWeek)
+                filters.dateRange != null -> filters.dateRange.lastWeek
+                else -> currentWeek
             }
-            Log.d(TAG, m("load: loading weeks = $weeks"))
+            Log.d(TAG, m("load: loading week = $week"))
             try {
-                val events = coroutineScope {
-                    weeks.map { week ->
-                        async {
-                            repository.getEventSummariesForWeek(
-                                week = week,
-                                eventTypes = filters.types.toList(),
-                                dateRange = filters.dateRange?.coerceToWeek(week),
-                                refreshCacheIfNeeded = params !is LoadParams.Refresh
-                            )
-                        }
-                    }.awaitAll().flatten()
-                }
+                val events = repository.getEventSummariesForWeek(
+                    week = week,
+                    eventTypes = filters.types.toList(),
+                    dateRange = filters.dateRange?.coerceToWeek(week),
+                    refreshCacheIfNeeded = params !is LoadParams.Refresh
+                )
                 if (lastLoadReturnedEmptyPage && events.isEmpty()) {
                     Log.d(
                         TAG,
@@ -102,8 +93,8 @@ internal class EventsSummariesPagingSource(
                 lastLoadReturnedEmptyPage = events.isEmpty()
                 LoadResult.Page(
                     events,
-                    weeks.first().prev(currentWeek, filters.dateRange),
-                    weeks.last().next(filters.dateRange)
+                    week.prev(currentWeek, filters.dateRange),
+                    week.next(filters.dateRange)
                 )
             } catch (e: Exception) {
                 if (e is CancellationException) throw e

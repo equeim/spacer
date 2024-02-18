@@ -19,7 +19,6 @@ import org.equeim.spacer.donki.data.DonkiRepository
 import org.equeim.spacer.donki.data.DonkiRepositoryInternal
 import org.equeim.spacer.donki.data.Week
 import org.equeim.spacer.donki.data.cache.DonkiDataSourceCache
-import org.equeim.spacer.donki.data.forTypes
 import org.equeim.spacer.donki.data.model.EventSummary
 import org.equeim.spacer.donki.data.model.EventType
 import java.time.Clock
@@ -96,26 +95,22 @@ internal class EventsSummariesRemoteMediator(
     private suspend fun getRefreshWeeks(initialRefresh: Boolean): List<Pair<Week, EventType>> {
         Log.d(TAG, "getRefreshWeeks() called with: initialRefresh = $initialRefresh")
         val filters = this.filters.value
-        val initialLoadWeeks =
-            filters.dateRange?.let { Week.getInitialLoadWeeksFromTimeRange(it) } ?: Week.getInitialLoadWeeks(clock)
-        Log.d(TAG, "getRefreshWeeks: initial load weeks are $initialLoadWeeks")
+        val initialLoadWeek = filters.dateRange?.lastWeek ?: Week.getCurrentWeek(clock)
+        Log.d(TAG, "getRefreshWeeks: initial load week is $initialLoadWeek")
         /**
          * Can't use [Sequence.filter] because it isn't inline and we can't suspend
          */
-        val weeks = mutableListOf<Pair<Week, EventType>>()
-        initialLoadWeeks
-            .forTypes(filters.types)
-            .filterTo(weeks) { (week, type) ->
-                cacheDataSource.isWeekCachedAndNeedsRefresh(week, type, refreshIfRecentlyLoaded = !initialRefresh)
-                    .also {
-                        if (it) {
-                            Log.d(
-                                TAG,
-                                "getRefreshWeeks: week $week with event type $type is cached but needs to be refreshed"
-                            )
-                        }
-                    }
+        val weeks = ArrayList<Pair<Week, EventType>>(filters.types.size)
+        for (type in filters.types) {
+            val needsRefresh = cacheDataSource.isWeekCachedAndNeedsRefresh(initialLoadWeek, type, refreshIfRecentlyLoaded = !initialRefresh)
+            if (needsRefresh) {
+                Log.d(
+                    TAG,
+                    "getRefreshWeeks: week $initialLoadWeek with event type $type is cached but needs to be refreshed"
+                )
+                weeks.add(initialLoadWeek to type)
             }
+        }
         if (weeks.isEmpty()) {
             Log.d(TAG, "getRefreshWeeks: don't need to refresh cache for initial load weeks")
         }

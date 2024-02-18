@@ -9,7 +9,6 @@ import org.equeim.spacer.donki.data.model.EventType
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.ZoneOffset
 import java.time.temporal.ChronoField
 import java.time.temporal.WeekFields
@@ -63,40 +62,7 @@ internal value class Week @VisibleForTesting constructor(
 
     companion object {
         fun getCurrentWeek(clock: Clock): Week = fromInstant(Instant.now(clock))
-
-        private const val INITIAL_LOAD_WEEKS_COUNT = 3
-
-        fun getInitialLoadWeeks(currentWeek: Week): List<Week> =
-            (0 until INITIAL_LOAD_WEEKS_COUNT - 1).runningFold(currentWeek) { week, _ -> week.next() }
-
-        fun getInitialLoadWeeks(clock: Clock): List<Week> =
-            getInitialLoadWeeks(getCurrentWeek(clock))
-
-        fun getInitialLoadWeeksFromTimeRange(dateRange: DonkiRepository.DateRange): List<Week> {
-            val firstWeek = fromInstant(dateRange.firstDayInstant)
-            val lastWeek = dateRange.instantAfterLastDay.atOffset(ZoneOffset.UTC)?.let { endTimeExclusive ->
-                var dayOfLastWeek = endTimeExclusive.toLocalDate()
-                if (endTimeExclusive.toLocalTime() == LocalTime.MIDNIGHT) {
-                    dayOfLastWeek = dayOfLastWeek.minusDays(1)
-                }
-                Week(dayOfLastWeek.with(ChronoField.DAY_OF_WEEK, 1))
-            }
-            if (lastWeek == firstWeek) return listOf(lastWeek)
-            return buildList {
-                addAll(generateSequence(lastWeek) {
-                    val next = it.next()
-                    if (next == firstWeek) null else next
-                })
-                add(firstWeek)
-            }
-        }
-
-        fun fromInstant(instant: Instant): Week = Week(instant.atOffset(ZoneOffset.UTC).toLocalDate().with(ChronoField.DAY_OF_WEEK, 1))
+        fun fromLocalDate(localDate: LocalDate): Week = Week(localDate.with(ChronoField.DAY_OF_WEEK, 1))
+        fun fromInstant(instant: Instant): Week = fromLocalDate(instant.atOffset(ZoneOffset.UTC).toLocalDate())
     }
 }
-
-internal fun List<Week>.forTypes(eventTypes: Set<EventType>): Sequence<Pair<Week, EventType>> =
-    asSequence().flatMap { it.forTypes(eventTypes) }
-
-internal fun Week.forTypes(eventTypes: Set<EventType>): Sequence<Pair<Week, EventType>> =
-    eventTypes.asSequence().map { type -> this to type }

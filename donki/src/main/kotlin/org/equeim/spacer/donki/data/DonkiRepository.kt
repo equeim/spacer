@@ -31,6 +31,8 @@ import java.io.Closeable
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.time.LocalTime
+import java.time.ZoneOffset
 
 private const val TAG = "DonkiRepository"
 
@@ -41,13 +43,13 @@ interface DonkiRepository : Closeable {
 
     data class EventById(
         val event: Event,
-        val needsRefreshing: Boolean
+        val needsRefreshing: Boolean,
     )
 
     @Immutable
     data class EventFilters(
         val types: Set<EventType> = EventType.entries.toSet(),
-        val dateRange: DateRange? = null
+        val dateRange: DateRange? = null,
     )
 
     @Immutable
@@ -56,6 +58,17 @@ interface DonkiRepository : Closeable {
         val instantAfterLastDay: Instant,
     ) {
         val lastDayInstant: Instant get() = instantAfterLastDay - Duration.ofDays(1)
+
+        internal val lastWeek: Week
+            get() = instantAfterLastDay.atOffset(ZoneOffset.UTC).let {
+                Week.fromLocalDate(
+                    if (it.toLocalTime() == LocalTime.MIDNIGHT) {
+                        it.toLocalDate().minusDays(1)
+                    } else {
+                        it.toLocalDate()
+                    }
+                )
+            }
 
         internal fun coerceToWeek(week: Week): DateRange {
             val weekFirstDayInstant = week.getFirstDayInstant()
@@ -75,18 +88,18 @@ internal interface DonkiRepositoryInternal : DonkiRepository {
         week: Week,
         eventTypes: List<EventType>,
         dateRange: DonkiRepository.DateRange?,
-        refreshCacheIfNeeded: Boolean
+        refreshCacheIfNeeded: Boolean,
     ): List<EventSummary>
 
     suspend fun updateEventsForWeek(
         week: Week,
-        eventType: EventType
+        eventType: EventType,
     ): List<Pair<Event, JsonObject>>
 }
 
 private class DonkiRepositoryImpl(
     context: Context,
-    private val clock: Clock = Clock.systemDefaultZone()
+    private val clock: Clock = Clock.systemDefaultZone(),
 ) : DonkiRepositoryInternal {
     private val networkDataSource = DonkiDataSourceNetwork()
     private val cacheDataSource = DonkiDataSourceCache(context)
@@ -99,7 +112,7 @@ private class DonkiRepositoryImpl(
         week: Week,
         eventTypes: List<EventType>,
         dateRange: DonkiRepository.DateRange?,
-        refreshCacheIfNeeded: Boolean
+        refreshCacheIfNeeded: Boolean,
     ): List<EventSummary> {
         Log.d(
             TAG,
@@ -111,7 +124,12 @@ private class DonkiRepositoryImpl(
             for (eventType in eventTypes) {
                 launch {
                     val cachedEvents =
-                        cacheDataSource.getEventSummariesForWeek(week, eventType, dateRange, returnCacheThatNeedsRefreshing = !refreshCacheIfNeeded)
+                        cacheDataSource.getEventSummariesForWeek(
+                            week,
+                            eventType,
+                            dateRange,
+                            returnCacheThatNeedsRefreshing = !refreshCacheIfNeeded
+                        )
                     if (cachedEvents != null) {
                         mutex.withLock { allEvents.addAll(cachedEvents) }
                     } else {
@@ -163,7 +181,7 @@ private class DonkiRepositoryImpl(
 
     override suspend fun getEventById(
         id: EventId,
-        forceRefresh: Boolean
+        forceRefresh: Boolean,
     ): DonkiRepository.EventById {
         Log.d(TAG, "getEventById() called with: id = $id, forceRefresh = $forceRefresh")
         return try {
