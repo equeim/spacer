@@ -7,6 +7,7 @@ package org.equeim.spacer.donki
 import io.mockk.MockKMatcherScope
 import org.equeim.spacer.donki.data.Week
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -22,3 +23,7 @@ fun timeZoneParameters(): List<ZoneId> = setOf(
     ZoneId.of("Asia/Yakutsk"),
     ZoneId.of("America/Los_Angeles")
 ).toList()
+
+internal fun weekOf(year: Int, month: Int, dayOfMonthAtStartOfWeek: Int): Week {
+    return Week(LocalDate.of(year, month, dayOfMonthAtStartOfWeek))
+}

@@ -13,7 +13,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import org.equeim.spacer.donki.data.DonkiRepository
 import org.equeim.spacer.donki.data.DonkiRepositoryInternal
 import org.equeim.spacer.donki.data.Week
 import org.equeim.spacer.donki.data.cache.DonkiDataSourceCache
@@ -25,13 +27,12 @@ import java.util.concurrent.atomic.AtomicReference
 
 private const val TAG = "EventsSummariesRemoteMediator"
 
-private val EVENT_TYPES = EventType.entries
-
 @OptIn(ExperimentalPagingApi::class)
 internal class EventsSummariesRemoteMediator(
     private val repository: DonkiRepositoryInternal,
     private val cacheDataSource: DonkiDataSourceCache,
-    private val clock: Clock = Clock.systemDefaultZone()
+    private val filters: StateFlow<DonkiRepository.EventFilters>,
+    private val clock: Clock = Clock.systemDefaultZone(),
 ) : RemoteMediator<Week, EventSummary>() {
     private val _refreshed = MutableSharedFlow<Unit>()
     val refreshed: Flow<Unit> by ::_refreshed
@@ -59,7 +60,7 @@ internal class EventsSummariesRemoteMediator(
 
     override suspend fun load(
         loadType: LoadType,
-        state: PagingState<Week, EventSummary>
+        state: PagingState<Week, EventSummary>,
     ): MediatorResult {
         Log.d(TAG, "load() called with: loadType = $loadType, state = $state")
         if (loadType != LoadType.REFRESH) {
@@ -94,23 +95,26 @@ internal class EventsSummariesRemoteMediator(
 
     private suspend fun getRefreshWeeks(initialRefresh: Boolean): List<Pair<Week, EventType>> {
         Log.d(TAG, "getRefreshWeeks() called with: initialRefresh = $initialRefresh")
-        val initialLoadWeeks = Week.getInitialLoadWeeks(clock)
+        val filters = this.filters.value
+        val initialLoadWeeks =
+            filters.dateRange?.let { Week.getInitialLoadWeeksFromTimeRange(it) } ?: Week.getInitialLoadWeeks(clock)
         Log.d(TAG, "getRefreshWeeks: initial load weeks are $initialLoadWeeks")
         /**
          * Can't use [Sequence.filter] because it isn't inline and we can't suspend
          */
         val weeks = mutableListOf<Pair<Week, EventType>>()
         initialLoadWeeks
-            .forTypes(EVENT_TYPES)
+            .forTypes(filters.types)
             .filterTo(weeks) { (week, type) ->
-                cacheDataSource.isWeekCachedAndNeedsRefresh(week, type, refreshIfRecentlyLoaded = !initialRefresh).also {
-                    if (it) {
-                        Log.d(
-                            TAG,
-                            "getRefreshWeeks: week $week with event type $type is cached but needs to be refreshed"
-                        )
+                cacheDataSource.isWeekCachedAndNeedsRefresh(week, type, refreshIfRecentlyLoaded = !initialRefresh)
+                    .also {
+                        if (it) {
+                            Log.d(
+                                TAG,
+                                "getRefreshWeeks: week $week with event type $type is cached but needs to be refreshed"
+                            )
+                        }
                     }
-                }
             }
         if (weeks.isEmpty()) {
             Log.d(TAG, "getRefreshWeeks: don't need to refresh cache for initial load weeks")

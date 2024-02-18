@@ -76,4 +76,9 @@ SPDX-License-Identifier: MIT
     <string name="filters">Filters</string>
     <string name="event_types">Event types</string>
     <string name="all_event_types_are_disabled">All event types are disabled</string>
+    <string name="no_events_in_date_range">No events in this date range</string>
+    <string name="date_range_filter">Filter by date range</string>
+    <string name="select_date_range">Select date range</string>
+    <string name="date_range_string">%1$s - %2$s %3$s</string>
+    <string name="date_range_picker_headline">Time zone: %s</string>
 </resources>

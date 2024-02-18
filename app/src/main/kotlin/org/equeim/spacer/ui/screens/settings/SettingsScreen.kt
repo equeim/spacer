@@ -191,7 +191,7 @@ private fun DarkThemeModeChoice(
             settings.darkThemeMode.set(darkThemeMode)
             navController.pop()
         },
-        Modifier.padding(horizontal = Dimens.DialogContentPadding - 16.dp)
+        Modifier.padding(horizontal = Dimens.listItemHorizontalPadding(Dimens.DialogContentPadding))
     )
 }
 

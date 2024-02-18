@@ -110,10 +110,11 @@ class DonkiEventsListStateHolder(
                     source.prepend
                 )
             }?.error?.toString() ?: run {
-                if (filters.value.types.isEmpty()) {
-                    context.getString(R.string.all_event_types_are_disabled)
-                } else {
-                    null
+                val filters = filters.value
+                when {
+                    filters.types.isEmpty() -> context.getString(R.string.all_event_types_are_disabled)
+                    filters.dateRange != null -> context.getString(R.string.no_events_in_date_range)
+                    else -> null
                 }
             }
         } else {
