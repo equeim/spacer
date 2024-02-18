@@ -71,11 +71,5 @@ internal abstract class CachedEventsDao {
             WHERE id = :id
         """
     )
-    protected abstract suspend fun _getEventJsonById(id: String): String?
-
-    /*
-     * TODO: remove when Room supports value classes
-     */
-    suspend fun getEventJsonById(id: EventId): String? =
-        _getEventJsonById(id.stringValue)
+    abstract suspend fun getEventJsonById(id: EventId): String?
 }
