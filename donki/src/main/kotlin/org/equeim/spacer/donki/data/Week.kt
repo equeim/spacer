@@ -5,7 +5,6 @@
 package org.equeim.spacer.donki.data
 
 import androidx.annotation.VisibleForTesting
-import org.equeim.spacer.donki.data.model.EventType
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -36,7 +35,7 @@ internal value class Week @VisibleForTesting constructor(
         .toInstant(ZoneOffset.UTC)
 
     // Back to the future
-    fun prev(currentWeek: Week, dateRange: DonkiRepository.DateRange?): Week? {
+    fun futureWeek(currentWeek: Week, dateRange: DonkiRepository.DateRange?): Week? {
         if (this == currentWeek) return null
         val futureWeek = Week(firstDay.plusWeeks(1))
         return if (dateRange == null || futureWeek.getFirstDayInstant() < dateRange.instantAfterLastDay) {
@@ -47,16 +46,14 @@ internal value class Week @VisibleForTesting constructor(
     }
 
     // Forward to the past
-    fun next(dateRange: DonkiRepository.DateRange?): Week? {
-        val pastWeek = next()
+    fun pastWeek(dateRange: DonkiRepository.DateRange?): Week? {
+        val pastWeek = Week(firstDay.minusWeeks(1))
         return if (dateRange == null || pastWeek.getInstantAfterLastDay() > dateRange.firstDayInstant) {
             pastWeek
         } else {
             null
         }
     }
-
-    internal fun next(): Week = Week(firstDay.minusWeeks(1))
 
     override fun compareTo(other: Week) = firstDay.compareTo(other.firstDay)
 
