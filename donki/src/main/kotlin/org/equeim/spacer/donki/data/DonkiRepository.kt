@@ -29,6 +29,7 @@ import org.equeim.spacer.donki.data.paging.EventsSummariesPagingSource
 import org.equeim.spacer.donki.data.paging.EventsSummariesRemoteMediator
 import java.io.Closeable
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 
 private const val TAG = "DonkiRepository"
@@ -45,8 +46,26 @@ interface DonkiRepository : Closeable {
 
     @Immutable
     data class EventFilters(
-        val types: Set<EventType> = EventType.entries.toSet()
+        val types: Set<EventType> = EventType.entries.toSet(),
+        val dateRange: DateRange? = null
     )
+
+    @Immutable
+    data class DateRange(
+        val firstDayInstant: Instant,
+        val instantAfterLastDay: Instant,
+    ) {
+        val lastDayInstant: Instant get() = instantAfterLastDay - Duration.ofDays(1)
+
+        internal fun coerceToWeek(week: Week): DateRange {
+            val weekFirstDayInstant = week.getFirstDayInstant()
+            val weekInstantAfterLastDay = week.getInstantAfterLastDay()
+            return DateRange(
+                firstDayInstant = firstDayInstant.coerceIn(weekFirstDayInstant, weekInstantAfterLastDay.minusNanos(1)),
+                instantAfterLastDay = instantAfterLastDay.coerceIn(weekFirstDayInstant, weekInstantAfterLastDay)
+            )
+        }
+    }
 }
 
 fun DonkiRepository(context: Context): DonkiRepository = DonkiRepositoryImpl(context)
@@ -55,6 +74,7 @@ internal interface DonkiRepositoryInternal : DonkiRepository {
     suspend fun getEventSummariesForWeek(
         week: Week,
         eventTypes: List<EventType>,
+        dateRange: DonkiRepository.DateRange?,
         refreshCacheIfNeeded: Boolean
     ): List<EventSummary>
 
@@ -78,27 +98,37 @@ private class DonkiRepositoryImpl(
     override suspend fun getEventSummariesForWeek(
         week: Week,
         eventTypes: List<EventType>,
+        dateRange: DonkiRepository.DateRange?,
         refreshCacheIfNeeded: Boolean
     ): List<EventSummary> {
         Log.d(
             TAG,
-            "getEventSummariesForWeek() called with: week = $week, eventTypes = $eventTypes, refreshCacheIfNeeded = $refreshCacheIfNeeded"
+            "getEventSummariesForWeek() called with: week = $week, eventTypes = $eventTypes, timeRange = $dateRange, refreshCacheIfNeeded = $refreshCacheIfNeeded"
         )
-        val allEvents = mutableListOf<EventSummary>()
+        val allEvents = ArrayList<EventSummary>()
         val mutex = Mutex()
         coroutineScope {
             for (eventType in eventTypes) {
                 launch {
                     val cachedEvents =
-                        cacheDataSource.getEventSummariesForWeek(week, eventType, returnCacheThatNeedsRefreshing = !refreshCacheIfNeeded)
+                        cacheDataSource.getEventSummariesForWeek(week, eventType, dateRange, returnCacheThatNeedsRefreshing = !refreshCacheIfNeeded)
                     if (cachedEvents != null) {
                         mutex.withLock { allEvents.addAll(cachedEvents) }
                     } else {
                         val weekLoadTime = Instant.now(clock)
                         val events = networkDataSource.getEvents(week, eventType)
                         cacheDataSource.cacheWeekAsync(week, eventType, events, weekLoadTime)
-                        val summaries = events.map { it.first.toEventSummary() }
-                        mutex.withLock { allEvents.addAll(summaries) }
+                        val summaries = if (dateRange == null) {
+                            events.asSequence()
+                        } else {
+                            events.asSequence()
+                                .dropWhile { (event, _) -> event.time < dateRange.firstDayInstant }
+                                .takeWhile { (event, _) -> event.time < dateRange.instantAfterLastDay }
+                        }.map { it.first.toEventSummary() }
+                        mutex.withLock {
+                            allEvents.ensureCapacity(allEvents.size + events.size)
+                            allEvents.addAll(summaries)
+                        }
                     }
                 }
             }
@@ -117,7 +147,7 @@ private class DonkiRepositoryImpl(
 
     @OptIn(ExperimentalPagingApi::class)
     override fun getEventSummariesPager(filters: StateFlow<DonkiRepository.EventFilters>): Pager<*, EventSummary> {
-        val mediator = EventsSummariesRemoteMediator(this, cacheDataSource)
+        val mediator = EventsSummariesRemoteMediator(this, cacheDataSource, filters)
         return Pager(
             PagingConfig(pageSize = 20, enablePlaceholders = false),
             null,

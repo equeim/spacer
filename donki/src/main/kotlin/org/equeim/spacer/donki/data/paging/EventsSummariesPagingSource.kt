@@ -65,13 +65,19 @@ internal class EventsSummariesPagingSource(
         return withContext(coroutineDispatchers.Default) {
             val currentWeek = Week.getCurrentWeek(clock)
             Log.d(TAG, m("load: current week is $currentWeek"))
-            val weeks = params.key?.let { requestedWeek ->
-                if (requestedWeek > currentWeek) {
-                    Log.e(TAG, m("load: requested week is in the future"))
-                    return@withContext LoadResult.Invalid()
+
+            val requestedWeek = params.key
+            val weeks = when {
+                requestedWeek != null -> {
+                    if (requestedWeek > currentWeek) {
+                        Log.e(TAG, m("load: requested week is in the future"))
+                        return@withContext LoadResult.Invalid()
+                    }
+                    listOf(requestedWeek)
                 }
-                listOf(requestedWeek)
-            } ?: Week.getInitialLoadWeeks(currentWeek)
+                filters.dateRange != null -> Week.getInitialLoadWeeksFromTimeRange(filters.dateRange)
+                else -> Week.getInitialLoadWeeks(currentWeek)
+            }
             Log.d(TAG, m("load: loading weeks = $weeks"))
             try {
                 val events = coroutineScope {
@@ -80,6 +86,7 @@ internal class EventsSummariesPagingSource(
                             repository.getEventSummariesForWeek(
                                 week = week,
                                 eventTypes = filters.types.toList(),
+                                dateRange = filters.dateRange?.coerceToWeek(week),
                                 refreshCacheIfNeeded = params !is LoadParams.Refresh
                             )
                         }
@@ -95,8 +102,8 @@ internal class EventsSummariesPagingSource(
                 lastLoadReturnedEmptyPage = events.isEmpty()
                 LoadResult.Page(
                     events,
-                    weeks.first().prev(currentWeek),
-                    weeks.last().next()
+                    weeks.first().prev(currentWeek, filters.dateRange),
+                    weeks.last().next(filters.dateRange)
                 )
             } catch (e: Exception) {
                 if (e is CancellationException) throw e

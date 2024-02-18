@@ -23,6 +23,7 @@ import org.equeim.spacer.donki.data.Week
 import org.equeim.spacer.donki.data.model.EventSummary
 import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.donki.timeZoneParameters
+import org.equeim.spacer.donki.weekOf
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.time.*
@@ -72,13 +73,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
 
     @Test
     fun `Validate load() if requested week is null`() = runTest {
-        coEvery {
-            repository.getEventSummariesForWeek(
-                anyWeek(),
-                any(),
-                any()
-            )
-        } returns emptyList()
+        mockEmptySummaries()
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         val result = pagingSource.load(params).assertIsPage()
         assertNull(result.prevKey)
@@ -87,38 +82,36 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
 
         coVerifyAll {
             EXPECTED_INITIAL_LOAD_WEEKS.forEach { week ->
-                repository.getEventSummariesForWeek(week, EventType.entries, any())
+                repository.getEventSummariesForWeek(
+                    week = week,
+                    eventTypes = EventType.entries,
+                    dateRange = null,
+                    refreshCacheIfNeeded = false
+                )
             }
         }
     }
 
     @Test
     fun `Validate that load() does not refresh cache when refreshing`() = runTest {
-        coEvery {
-            repository.getEventSummariesForWeek(
-                anyWeek(),
-                any(),
-                refreshCacheIfNeeded = false
-            )
-        } returns emptyList()
+        mockEmptySummaries()
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         pagingSource.load(params)
         coVerifyAll {
             EXPECTED_INITIAL_LOAD_WEEKS.forEach { week ->
-                repository.getEventSummariesForWeek(week, EventType.entries, refreshCacheIfNeeded = false)
+                repository.getEventSummariesForWeek(
+                    week = week,
+                    eventTypes = EventType.entries,
+                    dateRange = null,
+                    refreshCacheIfNeeded = false
+                )
             }
         }
     }
 
     @Test
     fun `Validate load() if requested week is current week`() = runTest {
-        coEvery {
-            repository.getEventSummariesForWeek(
-                anyWeek(),
-                any(),
-                any()
-            )
-        } returns emptyList()
+        mockEmptySummaries()
 
         val requestedWeeks = weekOf(2022, 1, 17)
 
@@ -130,22 +123,17 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
 
         coVerify {
             repository.getEventSummariesForWeek(
-                Week(LocalDate.of(2022, 1, 17)),
-                EventType.entries,
-                any()
+                week = Week(LocalDate.of(2022, 1, 17)),
+                eventTypes = EventType.entries,
+                dateRange = null,
+                refreshCacheIfNeeded = false
             )
         }
     }
 
     @Test
     fun `Validate load() if requested week is in the past`() = runTest {
-        coEvery {
-            repository.getEventSummariesForWeek(
-                anyWeek(),
-                any(),
-                any()
-            )
-        } returns emptyList()
+        mockEmptySummaries()
 
         val requestedWeeks = weekOf(2022, 1, 3)
 
@@ -157,28 +145,24 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
         assertEquals(weekOf(2021, 12, 27), result.nextKey)
         coVerify {
             repository.getEventSummariesForWeek(
-                Week(LocalDate.of(2022, 1, 3)),
-                EventType.entries,
-                any()
+                week = Week(LocalDate.of(2022, 1, 3)),
+                eventTypes = EventType.entries,
+                dateRange = null,
+                refreshCacheIfNeeded = false
             )
         }
     }
 
     @Test
     fun `Validate that load() refreshes cache when appending`() = runTest {
-        coEvery {
-            repository.getEventSummariesForWeek(
-                anyWeek(),
-                any(),
-                refreshCacheIfNeeded = true
-            )
-        } returns emptyList()
+        mockEmptySummaries()
         val params = PagingSource.LoadParams.Append(weekOf(2022, 1, 3), 20, false)
         pagingSource.load(params)
         coVerify {
             repository.getEventSummariesForWeek(
-                Week(LocalDate.of(2022, 1, 3)),
-                EventType.entries,
+                week = Week(LocalDate.of(2022, 1, 3)),
+                eventTypes = EventType.entries,
+                dateRange = null,
                 refreshCacheIfNeeded = true
             )
         }
@@ -186,19 +170,14 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
 
     @Test
     fun `Validate that load() refreshes cache cache when prepending`() = runTest {
-        coEvery {
-            repository.getEventSummariesForWeek(
-                anyWeek(),
-                any(),
-                refreshCacheIfNeeded = true
-            )
-        } returns emptyList()
+        mockEmptySummaries()
         val params = PagingSource.LoadParams.Prepend(weekOf(2022, 1, 3), 20, false)
         pagingSource.load(params)
         coVerify {
             repository.getEventSummariesForWeek(
-                Week(LocalDate.of(2022, 1, 3)),
-                EventType.entries,
+                week = Week(LocalDate.of(2022, 1, 3)),
+                eventTypes = EventType.entries,
+                dateRange = null,
                 refreshCacheIfNeeded = true
             )
         }
@@ -207,13 +186,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
     @Test
     fun `Validate load() if requested week is in the past and previous page (next week) is current week`() =
         runTest {
-            coEvery {
-                repository.getEventSummariesForWeek(
-                    anyWeek(),
-                    any(),
-                    any()
-                )
-            } returns emptyList()
+            mockEmptySummaries()
 
             val requestedWeeks = weekOf(2022, 1, 10)
 
@@ -227,9 +200,10 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
             )
             coVerify {
                 repository.getEventSummariesForWeek(
-                    Week(LocalDate.of(2022, 1, 10)),
-                    EventType.entries,
-                    any()
+                    week = Week(LocalDate.of(2022, 1, 10)),
+                    eventTypes = EventType.entries,
+                    dateRange = null,
+                    refreshCacheIfNeeded = false
                 )
             }
         }
@@ -245,23 +219,32 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
     fun `Validate that load() handles exceptions`() = runTest {
         coEvery {
             repository.getEventSummariesForWeek(
-                anyWeek(),
-                any(),
-                any()
+                week = anyWeek(),
+                eventTypes = any(),
+                dateRange = any(),
+                refreshCacheIfNeeded = any()
             )
         } throws Exception("nope")
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         pagingSource.load(params).assertIsError()
-        coVerify { repository.getEventSummariesForWeek(anyWeek(), any(), any()) }
+        coVerify {
+            repository.getEventSummariesForWeek(
+                week = anyWeek(),
+                eventTypes = any(),
+                dateRange = any(),
+                refreshCacheIfNeeded = any()
+            )
+        }
     }
 
     @Test
     fun `Validate that load() handles cancellation`() = runTest {
         coEvery {
             repository.getEventSummariesForWeek(
-                anyWeek(),
-                any(),
-                any()
+                week = anyWeek(),
+                eventTypes = any(),
+                dateRange = any(),
+                refreshCacheIfNeeded = any()
             )
         } coAnswers {
             delay(1000)
@@ -275,25 +258,44 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
         }
         runCurrent()
         job.cancel()
-        coVerify { repository.getEventSummariesForWeek(anyWeek(), any(), any()) }
+        coVerify {
+            repository.getEventSummariesForWeek(
+                week = anyWeek(),
+                eventTypes = any(),
+                dateRange = any(),
+                refreshCacheIfNeeded = any()
+            )
+        }
     }
 
     @Test
     fun `Validate that successive loads of empty pages throttle`() = runTest {
-        coEvery {
-            repository.getEventSummariesForWeek(
-                anyWeek(),
-                any(),
-                any()
-            )
-        } returns emptyList()
+        mockEmptySummaries()
         val requestedWeeks = weekOf(2022, 1, 10)
         val params = PagingSource.LoadParams.Append(requestedWeeks, 20, false)
         pagingSource.load(params)
         val time = currentTime
         pagingSource.load(params)
         assertNotEquals(time, currentTime)
-        coVerify { repository.getEventSummariesForWeek(anyWeek(), any(), any()) }
+        coVerify {
+            repository.getEventSummariesForWeek(
+                week = anyWeek(),
+                eventTypes = any(),
+                dateRange = any(),
+                refreshCacheIfNeeded = any()
+            )
+        }
+    }
+
+    private fun mockEmptySummaries() {
+        coEvery {
+            repository.getEventSummariesForWeek(
+                week = anyWeek(),
+                eventTypes = any(),
+                dateRange = any(),
+                refreshCacheIfNeeded = any()
+            )
+        } returns emptyList()
     }
 
     companion object {
@@ -303,9 +305,6 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
     }
 }
 
-private fun weekOf(year: Int, month: Int, dayOfMonthAtStartOfWeek: Int): Week {
-    return Week(LocalDate.of(year, month, dayOfMonthAtStartOfWeek))
-}
 
 private fun Week.validate() {
     val firstDayDateTime = getFirstDayInstant().atOffset(ZoneOffset.UTC)

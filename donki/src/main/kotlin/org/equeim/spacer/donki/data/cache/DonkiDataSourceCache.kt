@@ -11,8 +11,23 @@ import androidx.annotation.WorkerThread
 import androidx.core.content.getSystemService
 import androidx.room.Room
 import androidx.room.withTransaction
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runInterruptible
 import kotlinx.serialization.json.JsonObject
 import org.equeim.spacer.donki.CoroutineDispatchers
 import org.equeim.spacer.donki.data.DonkiJson
@@ -22,9 +37,23 @@ import org.equeim.spacer.donki.data.cache.entities.CachedWeek
 import org.equeim.spacer.donki.data.cache.entities.toCachedEvent
 import org.equeim.spacer.donki.data.cache.entities.toExtras
 import org.equeim.spacer.donki.data.eventSerializer
-import org.equeim.spacer.donki.data.model.*
+import org.equeim.spacer.donki.data.model.CoronalMassEjection
+import org.equeim.spacer.donki.data.model.Event
+import org.equeim.spacer.donki.data.model.EventId
+import org.equeim.spacer.donki.data.model.EventSummary
+import org.equeim.spacer.donki.data.model.EventType
+import org.equeim.spacer.donki.data.model.GeomagneticStorm
+import org.equeim.spacer.donki.data.model.InterplanetaryShock
+import org.equeim.spacer.donki.data.model.SolarFlare
 import java.io.Closeable
-import java.nio.file.*
+import java.nio.file.ClosedWatchServiceException
+import java.nio.file.FileSystems
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardWatchEventKinds
+import java.nio.file.WatchEvent
+import java.nio.file.WatchKey
+import java.nio.file.WatchService
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -132,11 +161,12 @@ internal class DonkiDataSourceCache(
     suspend fun getEventSummariesForWeek(
         week: Week,
         eventType: EventType,
+        dateRange: DonkiRepository.DateRange?,
         returnCacheThatNeedsRefreshing: Boolean,
     ): List<EventSummary>? {
         Log.d(
             TAG,
-            "getEventSummariesForWeek() called with: week = $week, eventType = $eventType, returnCacheThatNeedsRefreshing = $returnCacheThatNeedsRefreshing"
+            "getEventSummariesForWeek() called with: week = $week, eventType = $eventType, timeRange = $dateRange, returnCacheThatNeedsRefreshing = $returnCacheThatNeedsRefreshing"
         )
         val db = awaitDb()
         return try {
@@ -156,8 +186,17 @@ internal class DonkiDataSourceCache(
                 )
                 return null
             }
-            val startTime = week.getFirstDayInstant()
-            val endTime = week.getInstantAfterLastDay()
+
+            val startTime: Instant
+            val endTime: Instant
+            if (dateRange != null) {
+                startTime = dateRange.firstDayInstant
+                endTime = dateRange.instantAfterLastDay
+            } else {
+                startTime = week.getFirstDayInstant()
+                endTime = week.getInstantAfterLastDay()
+            }
+
             when (eventType) {
                 EventType.CoronalMassEjection -> db.coronalMassEjection().getEventSummaries(startTime, endTime)
                 EventType.GeomagneticStorm -> db.geomagneticStorm().getEventSummaries(startTime, endTime)
