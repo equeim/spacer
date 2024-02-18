@@ -12,7 +12,6 @@ import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
 import java.time.ZoneId
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.format.FormatStyle
@@ -50,12 +49,12 @@ fun createEventDateFormatter(locale: Locale, zone: ZoneId): DateTimeFormatter =
         .toFormatter(locale)
         .withZone(zone)
 
-private val utcZone: ZoneId by lazy { ZoneId.ofOffset("UTC", ZoneOffset.UTC) }
+val ZoneId.isUTC: Boolean get() = id == "UTC"
 
-fun determineEventTimeZone(defaulZone: ZoneId, displayEventsTimeInUTC: Boolean): ZoneId = if (displayEventsTimeInUTC) {
-    utcZone
+fun determineEventTimeZone(defaultZone: ZoneId, displayEventsTimeInUTC: Boolean): ZoneId = if (displayEventsTimeInUTC) {
+    ZoneId.of("UTC")
 } else {
-    defaulZone
+    defaultZone
 }
 
 class CoordinatesFormatter(locale: Locale) {

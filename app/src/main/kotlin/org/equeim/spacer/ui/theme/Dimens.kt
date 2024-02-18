@@ -6,6 +6,8 @@ package org.equeim.spacer.ui.theme
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
@@ -13,7 +15,9 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import org.equeim.spacer.utils.getActivityOrThrow
 
@@ -73,4 +77,17 @@ object Dimens {
     val SpacingLarge = 16.dp
 
     val SpacingBetweenCards = 16.dp
+
+    fun listItemHorizontalPadding(horizontalPadding: Dp): Dp {
+        // 16dp is ListItem's own hardcoded padding
+        return (horizontalPadding - 16.dp).coerceAtLeast(0.dp)
+    }
+
+    @Composable
+    fun listItemHorizontalPadding(padding: PaddingValues): PaddingValues {
+        val direction = LocalLayoutDirection.current
+        val start = padding.calculateStartPadding(direction)
+        val end = padding.calculateEndPadding(direction)
+        return PaddingValues(start = listItemHorizontalPadding(start), end = listItemHorizontalPadding(end))
+    }
 }
