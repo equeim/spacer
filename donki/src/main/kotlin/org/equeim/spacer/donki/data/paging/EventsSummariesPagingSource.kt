@@ -92,9 +92,9 @@ internal class EventsSummariesPagingSource(
                 }
                 lastLoadReturnedEmptyPage = events.isEmpty()
                 LoadResult.Page(
-                    events,
-                    week.prev(currentWeek, filters.dateRange),
-                    week.next(filters.dateRange)
+                    data = events,
+                    prevKey = week.futureWeek(currentWeek, filters.dateRange),
+                    nextKey = week.pastWeek(filters.dateRange)
                 )
             } catch (e: Exception) {
                 if (e is CancellationException) throw e

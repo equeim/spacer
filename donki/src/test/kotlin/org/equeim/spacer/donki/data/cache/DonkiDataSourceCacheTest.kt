@@ -82,7 +82,7 @@ class DonkiDataSourceCacheTest(systemTimeZone: ZoneId) : BaseCoroutineTest() {
     @Test
     fun `Validate isWeekCachedAndNeedsRefresh() when week was loaded less than a week after its last day and more than hour ago`() =
         runTest {
-            val week = Week.getCurrentWeek(clock).next()
+            val week = assertNotNull(Week.getCurrentWeek(clock).pastWeek(dateRange = null))
             val eventType = EventType.GeomagneticStorm
             val loadTime = week.getInstantAfterLastDay().plus(Duration.ofDays(3))
             dataSource.cacheWeek(week, eventType, emptyList(), loadTime)
@@ -93,7 +93,7 @@ class DonkiDataSourceCacheTest(systemTimeZone: ZoneId) : BaseCoroutineTest() {
     @Test
     fun `Validate isWeekCachedAndNeedsRefresh() when week was loaded less than a week after its last day and less than hour ago`() =
         runTest {
-            val week = Week.getCurrentWeek(clock).next()
+            val week = assertNotNull(Week.getCurrentWeek(clock).pastWeek(dateRange = null))
             val eventType = EventType.GeomagneticStorm
             val loadTime = Instant.now(clock).minus(Duration.ofMinutes(42))
             dataSource.cacheWeek(week, eventType, emptyList(), loadTime)
