@@ -21,7 +21,6 @@ import org.equeim.spacer.donki.anyWeek
 import org.equeim.spacer.donki.data.DonkiRepository
 import org.equeim.spacer.donki.data.DonkiRepositoryInternal
 import org.equeim.spacer.donki.data.cache.DonkiDataSourceCache
-import org.equeim.spacer.donki.data.forTypes
 import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.donki.timeZoneParameters
 import org.junit.runner.RunWith
@@ -49,25 +48,23 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         confirmVerified(repository, cacheDataSource)
     }
 
-    private fun `None of initial load weeks require refresh`() {
-        EXPECTED_INITIAL_LOAD_WEEKS.forEach {
-            coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(it, any(), any()) } returns false
-        }
+    private fun `Initial week does not require refresh`() {
+        coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(EXPECTED_INITIAL_LOAD_WEEK, any(), any()) } returns false
     }
 
     @Test
-    fun `None of initial load weeks require refresh ## validate initialize()`() =
+    fun `Initial week does not require refresh ## validate initialize()`() =
         base {
-            `None of initial load weeks require refresh`()
+            `Initial week does not require refresh`()
             val action = mediator.initialize()
             assertEquals(RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH, action)
             `Verify calls to isWeekCachedAndNeedsRefresh()`(expectedRefreshIfRecentlyLoaded = false)
         }
 
     @Test
-    fun `None of initial load weeks require refresh ## validate load() when refresh is initial`() =
+    fun `Initial week does not require refresh ## validate load() when refresh is initial`() =
         base {
-            `None of initial load weeks require refresh`()
+            `Initial week does not require refresh`()
             mediator.initialize()
             clearMocks(cacheDataSource)
             val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
@@ -77,9 +74,9 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         }
 
     @Test
-    fun `None of initial load weeks require refresh ## validate load() when refresh is not initial`() =
+    fun `Initial week does not require refresh ## validate load() when refresh is not initial`() =
         base {
-            `None of initial load weeks require refresh`()
+            `Initial week does not require refresh`()
             val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
             assertIs<RemoteMediator.MediatorResult.Success>(result)
             assertFalse(result.endOfPaginationReached)
@@ -87,24 +84,15 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
             `Verify calls to isWeekCachedAndNeedsRefresh()`(expectedRefreshIfRecentlyLoaded = true)
         }
 
-    private fun `Some of initial load weeks require refresh`() {
-        coEvery {
-            cacheDataSource.isWeekCachedAndNeedsRefresh(
-                EXPECTED_INITIAL_LOAD_WEEKS.first(),
-                any(),
-                any()
-            )
-        } returns true
-        EXPECTED_INITIAL_LOAD_WEEKS.drop(1).forEach {
-            coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(it, any(), any()) } returns false
-        }
+    private fun `Initial load week requires refresh`() {
+        coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(EXPECTED_INITIAL_LOAD_WEEK, any(), any()) } returns true
         coEvery { repository.updateEventsForWeek(anyWeek(), any()) } returns emptyList()
     }
 
     @Test
-    fun `Some of initial load weeks require refresh ## validate initialize()`() =
+    fun `Initial load week requires refresh ## validate initialize()`() =
         base {
-            `Some of initial load weeks require refresh`()
+            `Initial load week requires refresh`()
             val action = mediator.initialize()
             assertEquals(RemoteMediator.InitializeAction.LAUNCH_INITIAL_REFRESH, action)
             `Verify calls to isWeekCachedAndNeedsRefresh()`(expectedRefreshIfRecentlyLoaded = false)
@@ -112,85 +100,39 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         }
 
     @Test
-    fun `Some of initial load weeks require refresh ## validate load() when refresh is initial`() =
+    fun `Initial load week requires refresh ## validate load() when refresh is initial`() =
         base {
-            `Some of initial load weeks require refresh`()
+            `Initial load week requires refresh`()
             mediator.initialize()
             clearMocks(cacheDataSource)
             val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
             assertIs<RemoteMediator.MediatorResult.Success>(result)
             assertFalse(result.endOfPaginationReached)
             assertEquals(listOf(Unit), actualRefreshedEvents)
-            EXPECTED_INITIAL_LOAD_WEEKS.first().forTypes(EventType.entries.toSet()).forEach { (week, type) ->
-                coVerify { repository.updateEventsForWeek(week, type) }
+            for (type in EventType.entries) {
+                coVerify { repository.updateEventsForWeek(EXPECTED_INITIAL_LOAD_WEEK, type) }
             }
         }
 
     @Test
-    fun `Some of initial load weeks require refresh ## validate load() when refresh is not initial`() =
+    fun `Initial load week requires refresh ## validate load() when refresh is not initial`() =
         base {
-            `Some of initial load weeks require refresh`()
+            `Initial load week requires refresh`()
             val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
             assertIs<RemoteMediator.MediatorResult.Success>(result)
             assertFalse(result.endOfPaginationReached)
             assertEquals(listOf(Unit), actualRefreshedEvents)
             `Verify calls to isWeekCachedAndNeedsRefresh()`(expectedRefreshIfRecentlyLoaded = true)
-            EXPECTED_INITIAL_LOAD_WEEKS.first().forTypes(EventType.entries.toSet()).forEach { (week, type) ->
-                coVerify { repository.updateEventsForWeek(week, type) }
-            }
-        }
-
-    private fun `All of initial load weeks require refresh`() {
-        EXPECTED_INITIAL_LOAD_WEEKS.forEach {
-            coEvery { cacheDataSource.isWeekCachedAndNeedsRefresh(it, any(), any()) } returns true
-        }
-        coEvery { repository.updateEventsForWeek(anyWeek(), any()) } returns emptyList()
-    }
-
-    @Test
-    fun `All of initial load weeks require refresh ## validate initialize()`() =
-        base {
-            `All of initial load weeks require refresh`()
-            val action = mediator.initialize()
-            assertEquals(RemoteMediator.InitializeAction.LAUNCH_INITIAL_REFRESH, action)
-            `Verify calls to isWeekCachedAndNeedsRefresh()`(expectedRefreshIfRecentlyLoaded = false)
-            assertEquals(emptyList(), actualRefreshedEvents)
-        }
-
-    @Test
-    fun `All of initial load weeks require refresh ## validate load() when refresh is initial`() =
-        base {
-            `All of initial load weeks require refresh`()
-            mediator.initialize()
-            clearMocks(cacheDataSource)
-            val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
-            assertIs<RemoteMediator.MediatorResult.Success>(result)
-            assertFalse(result.endOfPaginationReached)
-            assertEquals(listOf(Unit), actualRefreshedEvents)
-            EXPECTED_INITIAL_LOAD_WEEKS.forTypes(EventType.entries.toSet()).forEach { (week, type) ->
-                coVerify { repository.updateEventsForWeek(week, type) }
-            }
-        }
-
-    @Test
-    fun `All of initial load weeks require refresh ## validate load() when refresh is not initial`() =
-        base {
-            `All of initial load weeks require refresh`()
-            val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
-            assertIs<RemoteMediator.MediatorResult.Success>(result)
-            assertFalse(result.endOfPaginationReached)
-            assertEquals(listOf(Unit), actualRefreshedEvents)
-            `Verify calls to isWeekCachedAndNeedsRefresh()`(expectedRefreshIfRecentlyLoaded = true)
-            EXPECTED_INITIAL_LOAD_WEEKS.forTypes(EventType.entries.toSet()).forEach { (week, type) ->
-                coVerify { repository.updateEventsForWeek(week, type) }
+            for (type in EventType.entries) {
+                coVerify { repository.updateEventsForWeek(EXPECTED_INITIAL_LOAD_WEEK, type) }
             }
         }
 
     private fun `Verify calls to isWeekCachedAndNeedsRefresh()`(expectedRefreshIfRecentlyLoaded: Boolean) {
-        EXPECTED_INITIAL_LOAD_WEEKS.forTypes(EventType.entries.toSet()).forEach { (week, type) ->
+        for (type in EventType.entries) {
             coVerify {
                 cacheDataSource.isWeekCachedAndNeedsRefresh(
-                    week,
+                    EXPECTED_INITIAL_LOAD_WEEK,
                     type,
                     refreshIfRecentlyLoaded = expectedRefreshIfRecentlyLoaded
                 )
@@ -241,7 +183,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
     @Test
     fun `Verify that load() handles updateEventsForWeek() errors`() =
         base {
-            `All of initial load weeks require refresh`()
+            `Initial load week requires refresh`()
             coEvery { repository.updateEventsForWeek(anyWeek(), any()) } throws RuntimeException("NOPE")
             val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
             assertIs<RemoteMediator.MediatorResult.Error>(result)

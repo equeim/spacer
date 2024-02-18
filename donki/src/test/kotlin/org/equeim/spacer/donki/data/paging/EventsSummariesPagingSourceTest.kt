@@ -31,11 +31,7 @@ import java.time.temporal.ChronoUnit
 import kotlin.test.*
 
 val CURRENT_INSTANT: Instant = LocalDate.of(2022, 1, 20).atTime(4, 2).toInstant(ZoneOffset.UTC)
-internal val EXPECTED_INITIAL_LOAD_WEEKS: List<Week> = listOf(
-    Week(LocalDate.of(2022, 1, 17)),
-    Week(LocalDate.of(2022, 1, 10)),
-    Week(LocalDate.of(2022, 1, 3))
-)
+internal val EXPECTED_INITIAL_LOAD_WEEK: Week = Week(LocalDate.of(2022, 1, 17))
 internal val EMPTY_PAGING_STATE = PagingState<Week, EventSummary>(
     listOf(PagingSource.LoadResult.Page(emptyList(), null, null)),
     anchorPosition = null,
@@ -78,17 +74,15 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
         val result = pagingSource.load(params).assertIsPage()
         assertNull(result.prevKey)
         assertNotNull(result.nextKey).validate()
-        assertEquals(weekOf(2021, 12, 27), result.nextKey)
+        assertEquals(weekOf(2022, 1, 10), result.nextKey)
 
         coVerifyAll {
-            EXPECTED_INITIAL_LOAD_WEEKS.forEach { week ->
-                repository.getEventSummariesForWeek(
-                    week = week,
-                    eventTypes = EventType.entries,
-                    dateRange = null,
-                    refreshCacheIfNeeded = false
-                )
-            }
+            repository.getEventSummariesForWeek(
+                week = EXPECTED_INITIAL_LOAD_WEEK,
+                eventTypes = EventType.entries,
+                dateRange = null,
+                refreshCacheIfNeeded = false
+            )
         }
     }
 
@@ -98,14 +92,12 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         pagingSource.load(params)
         coVerifyAll {
-            EXPECTED_INITIAL_LOAD_WEEKS.forEach { week ->
-                repository.getEventSummariesForWeek(
-                    week = week,
-                    eventTypes = EventType.entries,
-                    dateRange = null,
-                    refreshCacheIfNeeded = false
-                )
-            }
+            repository.getEventSummariesForWeek(
+                week = EXPECTED_INITIAL_LOAD_WEEK,
+                eventTypes = EventType.entries,
+                dateRange = null,
+                refreshCacheIfNeeded = false
+            )
         }
     }
 
