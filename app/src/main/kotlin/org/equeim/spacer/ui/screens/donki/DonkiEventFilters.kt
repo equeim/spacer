@@ -37,9 +37,7 @@ import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDateRangePickerState
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -76,7 +74,6 @@ import org.equeim.spacer.ui.utils.defaultTimeZoneFlow
 import org.equeim.spacer.ui.utils.determineEventTimeZone
 import org.equeim.spacer.ui.utils.isUTC
 import org.equeim.spacer.ui.utils.plus
-import org.equeim.spacer.utils.getActivityOrThrow
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -296,7 +293,7 @@ private fun EventTypeChip(@StringRes label: Int, selected: Boolean, onClick: () 
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DateRangePickerDialog(
     initialDateRange: DonkiRepository.DateRange?,
@@ -305,7 +302,7 @@ private fun DateRangePickerDialog(
     onDismissRequest: () -> Unit,
     onAcceptRequest: (DonkiRepository.DateRange) -> Unit,
 ) {
-    val heightSizeClass = calculateWindowSizeClass(LocalContext.current.getActivityOrThrow()).heightSizeClass
+    val heightSizeClass = Dimens.calculateWindowSizeClass().heightSizeClass
     val initialDisplayMode: DisplayMode by remember {
         derivedStateOf {
             if (heightSizeClass == WindowHeightSizeClass.Compact) {

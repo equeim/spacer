@@ -14,9 +14,11 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import org.equeim.spacer.utils.getActivityOrThrow
@@ -34,7 +36,7 @@ object Dimens {
         end: Boolean = true,
         bottom: Boolean = true,
     ): PaddingValues {
-        val windowSizeClass = calculateWindowSizeClass(LocalContext.current.getActivityOrThrow())
+        val windowSizeClass = calculateWindowSizeClass()
         val horizontal = ScreenContentPaddingHorizontal(windowSizeClass)
         val vertical = ScreenContentPaddingVertical(windowSizeClass)
         return PaddingValues(
@@ -48,12 +50,12 @@ object Dimens {
     @SuppressLint("ComposableNaming")
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     @Composable
-    fun ScreenContentPaddingHorizontal(): Dp = ScreenContentPaddingHorizontal(calculateWindowSizeClass(LocalContext.current.getActivityOrThrow()))
+    fun ScreenContentPaddingHorizontal(): Dp = ScreenContentPaddingHorizontal(calculateWindowSizeClass())
 
     @SuppressLint("ComposableNaming")
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     @Composable
-    fun ScreenContentPaddingVertical(): Dp = ScreenContentPaddingVertical(calculateWindowSizeClass(LocalContext.current.getActivityOrThrow()))
+    fun ScreenContentPaddingVertical(): Dp = ScreenContentPaddingVertical(calculateWindowSizeClass())
 
     private fun ScreenContentPaddingHorizontal(windowSizeClass: WindowSizeClass): Dp =
         if (windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
@@ -89,5 +91,18 @@ object Dimens {
         val start = padding.calculateStartPadding(direction)
         val end = padding.calculateEndPadding(direction)
         return PaddingValues(start = listItemHorizontalPadding(start), end = listItemHorizontalPadding(end))
+    }
+
+    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
+    @Composable
+    fun calculateWindowSizeClass(): WindowSizeClass {
+        // getActivityOrThrow() will fail in previews
+        val isRealAndroid = remember {
+            System.getProperty("java.vm.name") == "Dalvik"
+        }
+        if (isRealAndroid) {
+            return calculateWindowSizeClass(LocalContext.current.getActivityOrThrow())
+        }
+        return WindowSizeClass.calculateFromSize(DpSize(width = 400.dp, height = 900.dp))
     }
 }
