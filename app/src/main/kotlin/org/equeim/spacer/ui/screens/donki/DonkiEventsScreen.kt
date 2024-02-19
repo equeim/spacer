@@ -37,9 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -80,7 +78,6 @@ import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.FilterList
 import org.equeim.spacer.ui.utils.collectWhenStarted
 import org.equeim.spacer.ui.utils.plus
-import org.equeim.spacer.utils.getActivityOrThrow
 
 @Parcelize
 object DonkiEventsScreen : Destination {
@@ -101,7 +98,7 @@ private fun DonkiEventsScreen() {
     DonkiEventsScreen(holder)
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
     val listIsEmpty by remember(holder) { derivedStateOf { holder.items.itemCount == 0 } }
@@ -115,7 +112,7 @@ private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     val showFiltersAsDialog =
-        calculateWindowSizeClass(LocalContext.current.getActivityOrThrow()).widthSizeClass == WindowWidthSizeClass.Compact
+        Dimens.calculateWindowSizeClass().widthSizeClass == WindowWidthSizeClass.Compact
 
     val dialogNavController = if (showFiltersAsDialog) {
         val navController = rememberNavController<Destination>(initialBackstack = emptyList())
