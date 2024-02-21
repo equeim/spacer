@@ -38,7 +38,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
     private val mediator = EventsSummariesRemoteMediator(
         repository = repository,
         cacheDataSource = cacheDataSource,
-        filters = MutableStateFlow(DonkiRepository.EventFilters()),
+        filters = MutableStateFlow(DonkiRepository.EventFilters(types = EventType.entries.toSet(), dateRange = null)),
         clock = clock,
     )
     private val actualRefreshedEvents = mutableListOf<Unit>()

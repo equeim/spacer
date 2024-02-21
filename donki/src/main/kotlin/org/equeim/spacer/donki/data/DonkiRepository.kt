@@ -5,6 +5,7 @@
 package org.equeim.spacer.donki.data
 
 import android.content.Context
+import android.os.Parcelable
 import android.util.Log
 import androidx.compose.runtime.Immutable
 import androidx.paging.ExperimentalPagingApi
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.json.JsonObject
 import org.equeim.spacer.donki.data.cache.DonkiDataSourceCache
 import org.equeim.spacer.donki.data.model.Event
@@ -48,15 +50,16 @@ interface DonkiRepository : Closeable {
 
     @Immutable
     data class EventFilters(
-        val types: Set<EventType> = EventType.entries.toSet(),
-        val dateRange: DateRange? = null,
+        val types: Set<EventType>,
+        val dateRange: DateRange?,
     )
 
     @Immutable
+    @Parcelize
     data class DateRange(
         val firstDayInstant: Instant,
         val instantAfterLastDay: Instant,
-    ) {
+    ): Parcelable {
         val lastDayInstant: Instant get() = instantAfterLastDay - Duration.ofDays(1)
 
         internal val lastWeek: Week
