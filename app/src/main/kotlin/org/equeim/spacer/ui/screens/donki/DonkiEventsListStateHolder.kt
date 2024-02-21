@@ -47,7 +47,6 @@ fun rememberDonkiEventsListStateHolder(
     items: LazyPagingItems<DonkiEventsScreenViewModel.ListItem>,
     listState: LazyListState,
     filters: StateFlow<DonkiRepository.EventFilters>,
-    updateFilters: (DonkiRepository.EventFilters) -> Unit,
 ): DonkiEventsListStateHolder {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -57,7 +56,6 @@ fun rememberDonkiEventsListStateHolder(
             items,
             listState,
             filters,
-            updateFilters,
             context,
             scope,
             registry
@@ -68,8 +66,7 @@ fun rememberDonkiEventsListStateHolder(
 class DonkiEventsListStateHolder(
     val items: LazyPagingItems<DonkiEventsScreenViewModel.ListItem>,
     val listState: LazyListState,
-    val filters: StateFlow<DonkiRepository.EventFilters>,
-    val updateFilters: (DonkiRepository.EventFilters) -> Unit,
+    private val filters: StateFlow<DonkiRepository.EventFilters>,
     context: Context,
     coroutineScope: CoroutineScope,
     saveableStateRegistry: SaveableStateRegistry
