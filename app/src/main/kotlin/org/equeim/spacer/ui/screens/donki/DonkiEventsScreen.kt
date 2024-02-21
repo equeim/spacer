@@ -37,12 +37,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -76,8 +75,10 @@ import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreen
 import org.equeim.spacer.ui.screens.settings.SettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.FilterList
+import org.equeim.spacer.ui.utils.collectAsStateWhenStarted
 import org.equeim.spacer.ui.utils.collectWhenStarted
 import org.equeim.spacer.ui.utils.plus
+import java.time.ZoneId
 
 @Parcelize
 object DonkiEventsScreen : Destination {
@@ -92,15 +93,21 @@ private fun DonkiEventsScreen() {
     val holder = rememberDonkiEventsListStateHolder(
         model.pagingData.collectAsLazyPagingItems(),
         rememberLazyListState(),
-        model.filters,
-        model.filters::value::set
+        model.repositoryFilters,
     )
-    DonkiEventsScreen(holder)
+    val filters = model.filters.collectAsStateWhenStarted()
+    val eventsTimeZone = model.eventsTimeZone.collectAsStateWhenStarted()
+    DonkiEventsScreen(holder, filters, model::updateFilters, eventsTimeZone)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
+private fun DonkiEventsScreen(
+    holder: DonkiEventsListStateHolder,
+    filters: State<DonkiEventsScreenViewModel.Filters>,
+    updateFilters: (DonkiEventsScreenViewModel.Filters) -> Unit,
+    eventsTimeZone: State<ZoneId?>,
+) {
     val listIsEmpty by remember(holder) { derivedStateOf { holder.items.itemCount == 0 } }
     val initialLazyListState = rememberLazyListState()
     val lazyListState = if (listIsEmpty) initialLazyListState else holder.listState
@@ -111,16 +118,11 @@ private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
-    val showFiltersAsDialog =
-        Dimens.calculateWindowSizeClass().widthSizeClass == WindowWidthSizeClass.Compact
+    val dialogNavController = rememberNavController<Destination>(initialBackstack = emptyList())
+    DialogDestinationNavHost(dialogNavController)
 
-    val dialogNavController = if (showFiltersAsDialog) {
-        val navController = rememberNavController<Destination>(initialBackstack = emptyList())
-        DialogDestinationNavHost(navController)
-        navController
-    } else {
-        null
-    }
+    val showFiltersAsDialog = shouldShowFiltersAsDialog()
+    HandleFiltersDialogVisibility(showFiltersAsDialog, dialogNavController)
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -129,7 +131,7 @@ private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
                 stringResource(R.string.space_weather_events),
                 scrollBehavior,
                 startActions = {
-                    if (dialogNavController != null) {
+                    if (showFiltersAsDialog.value) {
                         ToolbarIcon(Icons.Filled.FilterList, R.string.filters) {
                             dialogNavController.navigate(DonkiEventFiltersDialog)
                         }
@@ -183,12 +185,13 @@ private fun DonkiEventsScreen(holder: DonkiEventsListStateHolder) {
                     )
                 }
 
-                if (!showFiltersAsDialog) {
-                    val filters = holder.filters.collectAsState()
+                if (!showFiltersAsDialog.value) {
                     DonkiEventFiltersSideSheet(
                         contentPadding = contentPadding,
-                        filters = filters::value,
-                        updateFilters = holder.updateFilters
+                        filters = filters,
+                        updateFilters = updateFilters,
+                        eventsTimeZone = eventsTimeZone,
+                        dialogNavController = { dialogNavController },
                     )
                 }
             }

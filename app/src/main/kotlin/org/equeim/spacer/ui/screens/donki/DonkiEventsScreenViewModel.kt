@@ -5,9 +5,11 @@
 package org.equeim.spacer.ui.screens.donki
 
 import android.app.Application
+import android.os.Parcelable
 import android.util.Log
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.TerminalSeparatorType
@@ -18,12 +20,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.job
+import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.DonkiRepository
@@ -47,7 +51,8 @@ import java.util.concurrent.ConcurrentHashMap
 
 private const val TAG = "DonkiEventsScreenViewModel"
 
-class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(application) {
+class DonkiEventsScreenViewModel(application: Application, private val savedStateHandle: SavedStateHandle) :
+    AndroidViewModel(application) {
     init {
         Log.d(TAG, "DonkiEventsScreenViewModel() called")
     }
@@ -60,26 +65,47 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
         val eventTimeFormatter = createEventTimeFormatter(locale, zone)
     }
 
-    val filters = MutableStateFlow(DonkiRepository.EventFilters())
+    @Parcelize
+    data class Filters(
+        val types: Set<EventType> = EventType.entries.toSet(),
+        val dateRange: DonkiRepository.DateRange? = null,
+        val dateRangeEnabled: Boolean = false,
+    ) : Parcelable {
+        fun toRepositoryFilters() = DonkiRepository.EventFilters(types, if (dateRangeEnabled) dateRange else null)
+    }
+
+    val filters: StateFlow<Filters> = savedStateHandle.getStateFlow(FILTERS_KEY, Filters())
+    fun updateFilters(filters: Filters) {
+        savedStateHandle[FILTERS_KEY] = filters
+    }
+
+    val repositoryFilters: StateFlow<DonkiRepository.EventFilters> = filters.map(Filters::toRepositoryFilters)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, Filters().toRepositoryFilters())
+
     val pagingData: Flow<PagingData<ListItem>>
 
-    init {
-        val basePagingData = repository.getEventSummariesPager(filters).flow.cachedIn(viewModelScope)
+    val eventsTimeZone: StateFlow<ZoneId?>
 
-        val defaultLocaleFlow = application.defaultLocaleFlow().stateIn(viewModelScope, SharingStarted.Eagerly, application.defaultLocale)
-        val eventTypesStringsCacheFlow = defaultLocaleFlow.map { ConcurrentHashMap<EventType, String>() }
-        val formattersFlow = combine(
+    init {
+        addCloseable(repository)
+
+        val defaultLocaleFlow =
+            application.defaultLocaleFlow().stateIn(viewModelScope, SharingStarted.Eagerly, application.defaultLocale)
+
+        eventsTimeZone = combine(
             defaultLocaleFlow,
             application.defaultTimeZoneFlow(),
             settings.displayEventsTimeInUTC.flow()
         ) { locale, defaultZone, displayEventsTimeInUTC ->
             Log.d(TAG, "locale = $locale, defaultZone = $defaultZone, displayEventsTimeInUTC = $displayEventsTimeInUTC")
-            Formatters(
-                locale,
-                determineEventTimeZone(defaultZone, displayEventsTimeInUTC)
-            )
-        }
-        val pagingDataCoroutineScope = CoroutineScope(SupervisorJob(viewModelScope.coroutineContext.job) + Dispatchers.Default)
+            determineEventTimeZone(defaultZone, displayEventsTimeInUTC)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+        val basePagingData = repository.getEventSummariesPager(repositoryFilters).flow.cachedIn(viewModelScope)
+        val eventTypesStringsCacheFlow = defaultLocaleFlow.map { ConcurrentHashMap<EventType, String>() }
+        val formattersFlow = combine(defaultLocaleFlow, eventsTimeZone.filterNotNull(), ::Formatters)
+        val pagingDataCoroutineScope =
+            CoroutineScope(SupervisorJob(viewModelScope.coroutineContext.job) + Dispatchers.Default)
         pagingData = combine(
             basePagingData,
             eventTypesStringsCacheFlow,
@@ -87,10 +113,12 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
         ) { pagingData, eventTypesStringsCache, formatters ->
             pagingData.toListItems(eventTypesStringsCache, formatters)
         }.cachedIn(pagingDataCoroutineScope)
-        addCloseable(repository)
     }
 
-    private fun PagingData<EventSummary>.toListItems(eventTypesStringsCache: ConcurrentHashMap<EventType, String>, formatters: Formatters): PagingData<ListItem> {
+    private fun PagingData<EventSummary>.toListItems(
+        eventTypesStringsCache: ConcurrentHashMap<EventType, String>,
+        formatters: Formatters,
+    ): PagingData<ListItem> {
         return map {
             EventSummaryWithDayOfMonth(it, it.time.atZone(formatters.zone).dayOfMonth)
         }
@@ -103,12 +131,17 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
                             formatters.eventDateFormatter.format(after.eventSummary.time)
                         )
                     }
+
                     else -> null
                 }
             }
             .map {
                 when (it) {
-                    is EventSummaryWithDayOfMonth -> it.eventSummary.toPresentation(eventTypesStringsCache, formatters.eventTimeFormatter)
+                    is EventSummaryWithDayOfMonth -> it.eventSummary.toPresentation(
+                        eventTypesStringsCache,
+                        formatters.eventTimeFormatter
+                    )
+
                     else -> it as DateSeparator
                 }
             }
@@ -119,7 +152,10 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
         val dayOfMonth: Int,
     )
 
-    private fun EventSummary.toPresentation(eventTypesStringsCache: ConcurrentHashMap<EventType, String>, eventTimeFormatter: DateTimeFormatter): EventPresentation {
+    private fun EventSummary.toPresentation(
+        eventTypesStringsCache: ConcurrentHashMap<EventType, String>,
+        eventTimeFormatter: DateTimeFormatter,
+    ): EventPresentation {
         return EventPresentation(
             id = id,
             type = getTypeDisplayString(eventTypesStringsCache),
@@ -159,4 +195,8 @@ class DonkiEventsScreenViewModel(application: Application) : AndroidViewModel(ap
         val time: String,
         val detailsSummary: String?,
     ) : ListItem
+
+    private companion object {
+        const val FILTERS_KEY = "filters"
+    }
 }

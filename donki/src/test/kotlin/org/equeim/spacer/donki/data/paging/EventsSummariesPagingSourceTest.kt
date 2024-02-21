@@ -51,7 +51,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
         pagingSource = EventsSummariesPagingSource(
             repository,
             emptyFlow(),
-            DonkiRepository.EventFilters(EventType.entries.toSet()),
+            DonkiRepository.EventFilters(types = EventType.entries.toSet(), dateRange = null),
             coroutineDispatchers,
             clock
         )
