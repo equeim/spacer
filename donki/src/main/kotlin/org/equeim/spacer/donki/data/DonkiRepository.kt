@@ -13,6 +13,7 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.merge
@@ -84,7 +85,7 @@ interface DonkiRepository : Closeable {
     }
 }
 
-fun DonkiRepository(context: Context): DonkiRepository = DonkiRepositoryImpl(context)
+fun DonkiRepository(nasaApiKey: Flow<String>, context: Context): DonkiRepository = DonkiRepositoryImpl(nasaApiKey, context)
 
 internal interface DonkiRepositoryInternal : DonkiRepository {
     suspend fun getEventSummariesForWeek(
@@ -101,10 +102,11 @@ internal interface DonkiRepositoryInternal : DonkiRepository {
 }
 
 private class DonkiRepositoryImpl(
+    nasaApiKey: Flow<String>,
     context: Context,
     private val clock: Clock = Clock.systemDefaultZone(),
 ) : DonkiRepositoryInternal {
-    private val networkDataSource = DonkiDataSourceNetwork()
+    private val networkDataSource = DonkiDataSourceNetwork(nasaApiKey)
     private val cacheDataSource = DonkiDataSourceCache(context)
 
     override fun close() {
