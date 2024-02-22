@@ -254,6 +254,7 @@ private fun DonkiEventsScreenContentErrorPlaceholder(modifier: Modifier, content
         Text(
             text = error,
             modifier = Modifier.align(Alignment.Center),
+            textAlign = TextAlign.Center,
             style = MaterialTheme.typography.titleLarge
         )
     }
