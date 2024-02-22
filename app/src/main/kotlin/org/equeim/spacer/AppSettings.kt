@@ -7,7 +7,6 @@ package org.equeim.spacer
 import android.content.Context
 import android.os.Build
 import android.util.Log
-import androidx.datastore.core.DataMigration
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -24,26 +23,7 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "Settings"
 
-private val Context.dataStore by preferencesDataStore(name = "settings", produceMigrations = {
-    listOf(
-        object : DataMigration<Preferences> {
-            override suspend fun cleanUp() {
-                Log.d(TAG, "cleanUp() called")
-            }
-
-            override suspend fun migrate(currentData: Preferences): Preferences {
-                Log.d(TAG, "migrate() called with: currentData = $currentData")
-                return currentData
-            }
-
-            override suspend fun shouldMigrate(currentData: Preferences): Boolean {
-                Log.d(TAG, "shouldMigrate() called with: currentData = $currentData")
-                return true
-            }
-
-        }
-    )
-})
+private val Context.dataStore by preferencesDataStore(name = "settings")
 
 class AppSettings(private val context: Context) {
     enum class DarkThemeMode {
