@@ -8,11 +8,13 @@ import android.util.Log
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okio.Buffer
+import org.equeim.spacer.donki.data.NASA_API_DEMO_KEY
 import org.equeim.spacer.donki.data.model.*
 import org.equeim.spacer.donki.data.Week
 import org.equeim.spacer.donki.data.model.units.Angle
@@ -43,7 +45,7 @@ class DonkiDataSourceNetworkTest {
             0
         }
         server.start()
-        dataSource = DonkiDataSourceNetwork(server.url("/"))
+        dataSource = DonkiDataSourceNetwork(flowOf(NASA_API_DEMO_KEY), server.url("/"))
     }
 
     @AfterTest

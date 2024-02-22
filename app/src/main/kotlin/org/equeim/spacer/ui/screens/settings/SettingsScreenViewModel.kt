@@ -30,6 +30,7 @@ class SettingsScreenViewModel(application: Application) : AndroidViewModel(appli
     val darkThemeMode: StateFlow<AppSettings.DarkThemeMode> by PreferenceStateFlow(settings.darkThemeMode)
     val useSystemColors: StateFlow<Boolean> by PreferenceStateFlow(settings.useSystemColors)
     val displayEventsTimeInUTC: StateFlow<Boolean> by PreferenceStateFlow(settings.displayEventsTimeInUTC)
+    val nasaApiKey: StateFlow<String> by PreferenceStateFlow(settings.nasaApiKey)
     val rateLimit: Int? = DonkiNetworkStats.rateLimit
     val remainingRequests: Int? = DonkiNetworkStats.remainingRequests
 

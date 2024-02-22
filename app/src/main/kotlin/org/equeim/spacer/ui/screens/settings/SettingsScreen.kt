@@ -10,17 +10,24 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -131,12 +138,40 @@ private fun SettingsScreen() {
                     .padding(horizontal = listItemHorizontalPadding)
             )
 
+            SectionHeader(
+                stringResource(R.string.connection),
+                Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
+            )
+
+            var nasaApiKey by remember { mutableStateOf(model.nasaApiKey.value) }
+            OutlinedTextField(
+                value = nasaApiKey,
+                onValueChange = {
+                    nasaApiKey = it
+                    model.settings.nasaApiKey.set(it)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Dimens.ScreenContentPaddingHorizontal()),
+                label = { Text(stringResource(R.string.nasa_api_key)) }
+            )
+
+            val uriHandler = LocalUriHandler.current
+            Button(
+                onClick = { uriHandler.openUri(GENERATE_NASA_API_KEY_URL) },
+                modifier = Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
+            ) {
+                Text(stringResource(R.string.generate_nasa_api_key))
+            }
+
             HorizontalDivider()
 
             Text(
                 text = model.rateLimit?.let { stringResource(R.string.rate_limit, it) }
                     ?: stringResource(R.string.rate_limit_unknown),
-                modifier = Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal()).padding(top = Dimens.SpacingSmall)
+                modifier = Modifier
+                    .padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
+                    .padding(top = Dimens.SpacingSmall)
             )
 
             Text(
@@ -197,3 +232,5 @@ private fun DarkThemeModeChoice(
 
 // Horizontal padding that ListItem hardcodes
 private val LIST_ITEM_HORIZONTAL_PADDING = 16.dp
+
+private const val GENERATE_NASA_API_KEY_URL = "https://api.nasa.gov/#signUp"
