@@ -372,10 +372,6 @@ private fun EventTypeChip(@StringRes label: Int, selected: Boolean, onClick: () 
         selected = selected,
         onClick = onClick,
         label = { Text(stringResource(label)) },
-        colors = FilterChipDefaults.filterChipColors(
-            iconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-            selectedLeadingIconColor = MaterialTheme.colorScheme.onSurface
-        )
     )
 }
 
