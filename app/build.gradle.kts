@@ -26,7 +26,10 @@ android {
         signingConfig = signingConfigs.getByName("debug")
     }
 
-    buildFeatures.compose = true
+    buildFeatures {
+        buildConfig = true
+        compose = true
+    }
     composeOptions.kotlinCompilerExtensionVersion = libs.versions.androidx.compose.compiler.get()
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()

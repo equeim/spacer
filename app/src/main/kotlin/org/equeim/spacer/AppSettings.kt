@@ -16,10 +16,12 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 private const val TAG = "Settings"
 
@@ -73,18 +75,37 @@ class AppSettings(private val context: Context) {
 private class PreferenceImpl<T : Any>(
     private val dataStore: DataStore<Preferences>,
     private val key: Preferences.Key<T>,
-    private val defaultValueProducer: () -> T
+    private val defaultValueProducer: () -> T,
 ) : AppSettings.Preference<T> {
     override suspend fun get(): T {
-        return dataStore.data.first()[key] ?: defaultValueProducer()
+        return try {
+            dataStore.data.first()[key]
+        } catch (e: IOException) {
+            val msg = "Failed to get value for key $key"
+            if (BuildConfig.DEBUG) {
+                throw RuntimeException(msg, e)
+            } else {
+                Log.e(TAG, msg, e)
+                null
+            }
+        } ?: defaultValueProducer()
     }
 
 
     @OptIn(DelicateCoroutinesApi::class)
     override fun set(value: T) {
         GlobalScope.launch {
-            dataStore.edit {
-                it[key] = value
+            try {
+                dataStore.edit {
+                    it[key] = value
+                }
+            } catch (e: IOException) {
+                val msg = "Failed to set value for key $key"
+                if (BuildConfig.DEBUG) {
+                    throw RuntimeException(msg, e)
+                } else {
+                    Log.e(TAG, msg, e)
+                }
             }
         }
     }
@@ -93,14 +114,24 @@ private class PreferenceImpl<T : Any>(
         return dataStore.data
             .map { prefs ->
                 prefs[key] ?: defaultValueProducer()
-            }.distinctUntilChanged()
+            }
+            .catch { e ->
+                val msg = "Failed to get value for key $key"
+                if (BuildConfig.DEBUG) {
+                    throw RuntimeException(msg, e)
+                } else {
+                    Log.e(TAG, msg, e)
+                    emit(defaultValueProducer())
+                }
+            }
+            .distinctUntilChanged()
     }
 }
 
 private class MappedPreferenceImpl<Original : Any, Mapped : Any>(
     private val original: AppSettings.Preference<Original>,
     private val fromOriginalToMapped: (Original) -> Mapped,
-    private val fromMappedToOriginal: (Mapped) -> Original
+    private val fromMappedToOriginal: (Mapped) -> Original,
 ) : AppSettings.Preference<Mapped> {
     override suspend fun get(): Mapped = fromOriginalToMapped(original.get())
     override fun flow(): Flow<Mapped> = original.flow().map(fromOriginalToMapped)
@@ -109,5 +140,5 @@ private class MappedPreferenceImpl<Original : Any, Mapped : Any>(
 
 private fun <Original : Any, Mapped : Any> AppSettings.Preference<Original>.map(
     fromOriginalToMapped: (Original) -> Mapped,
-    fromMappedToOriginal: (Mapped) -> Original
+    fromMappedToOriginal: (Mapped) -> Original,
 ): AppSettings.Preference<Mapped> = MappedPreferenceImpl(this, fromOriginalToMapped, fromMappedToOriginal)
