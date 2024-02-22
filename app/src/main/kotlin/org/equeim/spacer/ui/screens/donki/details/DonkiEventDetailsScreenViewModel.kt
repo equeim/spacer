@@ -53,7 +53,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
     AndroidViewModel(application) {
 
     private val settings = AppSettings(application)
-    private val repository = DonkiRepository(application)
+    private val repository = DonkiRepository(settings.nasaApiKey.flow(), application)
 
     private enum class LoadingType {
         Automatic, Manual
