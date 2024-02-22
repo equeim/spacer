@@ -6,13 +6,13 @@ package org.equeim.spacer.ui.screens.donki
 
 import android.util.Log
 import androidx.annotation.StringRes
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -31,10 +32,10 @@ import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDateRangePickerState
@@ -288,19 +289,28 @@ private fun DonkiEventFilters(
             }
         }
         val dateRangeEnabled: Boolean by remember { derivedStateOf { filters.value.dateRangeEnabled } }
-        ListItem(
-            leadingContent = {
-                Checkbox(dateRangeEnabled, onCheckedChange = null)
-            },
-            headlineContent = { Text(stringResource(R.string.date_range_filter)) },
+        Surface(
             modifier = Modifier
-                .clickable {
-                    updateFilters(filters.value.run {
-                        copy(dateRangeEnabled = !dateRangeEnabled)
-                    })
-                }
-                .padding(Dimens.listItemHorizontalPadding(contentPadding))
-        )
+                .fillMaxWidth()
+                .padding(horizontalContentPadding),
+            shape = CircleShape,
+            onClick = {
+                updateFilters(filters.value.run {
+                    copy(dateRangeEnabled = !dateRangeEnabled)
+                })
+            }
+        ) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Checkbox(dateRangeEnabled, onCheckedChange = null)
+                Text(stringResource(R.string.date_range_filter))
+            }
+        }
 
         val lifecycleOwner = LocalLifecycleOwner.current
         LaunchedEffect(lifecycleOwner) {
