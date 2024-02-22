@@ -106,7 +106,7 @@ class DonkiEventsListStateHolder(
                     source.append,
                     source.prepend
                 )
-            }?.error?.toString() ?: run {
+            }?.error?.donkiErrorToString(context) ?: run {
                 val filters = filters.value
                 when {
                     filters.types.isEmpty() -> context.getString(R.string.all_event_types_are_disabled)
@@ -121,7 +121,7 @@ class DonkiEventsListStateHolder(
 
     val snackbarError: String? by derivedStateOf {
         with(items.loadState) {
-            firstErrorOrNull(source.refresh, mediator?.refresh, source.append, source.prepend)?.error?.toString()
+            firstErrorOrNull(source.refresh, mediator?.refresh, source.append, source.prepend)?.error?.donkiErrorToString(context)
         }
     }
 

@@ -18,6 +18,7 @@ import okhttp3.Interceptor
 import okhttp3.Response
 import okhttp3.ResponseBody
 import org.equeim.spacer.donki.data.DonkiJson
+import org.equeim.spacer.donki.data.NASA_API_DEMO_KEY
 import org.equeim.spacer.donki.data.Week
 import org.equeim.spacer.donki.data.eventSerializer
 import org.equeim.spacer.donki.data.model.Event
@@ -25,8 +26,10 @@ import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.retrofit.JsonConverterFactory
 import org.equeim.spacer.retrofit.createRetrofit
 import retrofit2.Converter
+import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.create
+import java.io.IOException
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import kotlin.concurrent.Volatile
@@ -107,14 +110,22 @@ internal class DonkiDataSourceNetwork(private val nasaApiKey: Flow<String>, base
                     )
                 }
         } catch (e: Exception) {
-            if (e !is CancellationException) {
-                Log.e(
-                    TAG,
-                    "getEvents: failed to get events summaries for week = $week, eventType = $eventType",
-                    e
-                )
+            if (e is CancellationException) throw e
+            val error = if (e is HttpException) {
+                when (e.code()) {
+                    403 -> InvalidApiKeyError(e)
+                    429 -> TooManyRequestsError(usingDemoKey = apiKey == NASA_API_DEMO_KEY, cause = e)
+                    else -> HttpErrorResponse(e)
+                }
+            } else {
+                e
             }
-            throw e
+            Log.e(
+                TAG,
+                "getEvents: failed to get events summaries for week = $week, eventType = $eventType",
+                error
+            )
+            throw error
         }
     }.first()
 
@@ -139,6 +150,18 @@ private class DonkiJsonConverterFactory(json: Json) : JsonConverterFactory(json)
             }
         }
     }
+}
+
+class InvalidApiKeyError(cause: HttpException) : RuntimeException("Invalid API key", cause)
+class TooManyRequestsError(val usingDemoKey: Boolean, cause: HttpException) : RuntimeException("Too many requests. Using DEMO_KEY: $usingDemoKey", cause)
+class HttpErrorResponse private constructor(val status: String, cause: HttpException) : RuntimeException(status, cause) {
+    constructor(cause: HttpException) : this(cause.message().let {
+        if (it.isEmpty()) {
+            cause.code().toString()
+        } else {
+            "${cause.code()} $it"
+        }
+    }, cause)
 }
 
 object DonkiNetworkStats {
