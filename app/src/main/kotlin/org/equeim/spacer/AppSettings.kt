@@ -8,6 +8,7 @@ import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.datastore.core.DataMigration
+import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -70,8 +71,8 @@ class AppSettings(private val context: Context) {
     val darkThemeMode: Preference<DarkThemeMode> =
         preference(stringPreferencesKey("darkTheme")) { DarkThemeMode.enumToString[DarkThemeMode.Default]!! }
             .map(
-                transformFromBase = { DarkThemeMode.stringToEnum[it] ?: DarkThemeMode.Default },
-                transformToBase = { DarkThemeMode.enumToString[it]!! }
+                fromOriginalToMapped = { DarkThemeMode.stringToEnum[it] ?: DarkThemeMode.Default },
+                fromMappedToOriginal = { DarkThemeMode.enumToString[it]!! }
             )
 
     val useSystemColors: Preference<Boolean> =
@@ -81,58 +82,52 @@ class AppSettings(private val context: Context) {
 
     interface Preference<T : Any> {
         suspend fun get(): T
-        fun getLatestValueOrDefault(): T
         fun set(value: T)
         fun flow(): Flow<T>
     }
 
     private fun <T : Any> preference(key: Preferences.Key<T>, defaultValueProducer: () -> T): Preference<T> =
-        PreferenceImpl(key, defaultValueProducer)
+        PreferenceImpl(context.dataStore, key, defaultValueProducer)
+}
 
-    private inner class PreferenceImpl<T : Any>(
-        private val key: Preferences.Key<T>,
-        private val defaultValueProducer: () -> T
-    ) : Preference<T> {
-        @Volatile
-        private var latestValue: T? = null
+private class PreferenceImpl<T : Any>(
+    private val dataStore: DataStore<Preferences>,
+    private val key: Preferences.Key<T>,
+    private val defaultValueProducer: () -> T
+) : AppSettings.Preference<T> {
+    override suspend fun get(): T {
+        return dataStore.data.first()[key] ?: defaultValueProducer()
+    }
 
-        override suspend fun get(): T {
-            return context.dataStore.data.first()[key].also {
-                latestValue = it
-            } ?: defaultValueProducer()
-        }
 
-        override fun getLatestValueOrDefault(): T = latestValue ?: defaultValueProducer()
-
-        @OptIn(DelicateCoroutinesApi::class)
-        override fun set(value: T) {
-            latestValue = value
-            GlobalScope.launch {
-                context.dataStore.edit {
-                    it[key] = value
-                }
+    @OptIn(DelicateCoroutinesApi::class)
+    override fun set(value: T) {
+        GlobalScope.launch {
+            dataStore.edit {
+                it[key] = value
             }
         }
+    }
 
-        override fun flow(): Flow<T> {
-            return context.dataStore.data
-                .map { prefs ->
-                    prefs[key].also {
-                        latestValue = it
-                    } ?: defaultValueProducer()
-                }.distinctUntilChanged()
-        }
+    override fun flow(): Flow<T> {
+        return dataStore.data
+            .map { prefs ->
+                prefs[key] ?: defaultValueProducer()
+            }.distinctUntilChanged()
     }
 }
 
-private fun <T : Any, V : Any> AppSettings.Preference<T>.map(
-    transformFromBase: (T) -> V,
-    transformToBase: (V) -> T
-): AppSettings.Preference<V> {
-    return object : AppSettings.Preference<V> {
-        override suspend fun get(): V = transformFromBase(this@map.get())
-        override fun getLatestValueOrDefault(): V = transformFromBase(this@map.getLatestValueOrDefault())
-        override fun set(value: V) = this@map.set(transformToBase(value))
-        override fun flow(): Flow<V> = this@map.flow().map(transformFromBase)
-    }
+private class MappedPreferenceImpl<Original : Any, Mapped : Any>(
+    private val original: AppSettings.Preference<Original>,
+    private val fromOriginalToMapped: (Original) -> Mapped,
+    private val fromMappedToOriginal: (Mapped) -> Original
+) : AppSettings.Preference<Mapped> {
+    override suspend fun get(): Mapped = fromOriginalToMapped(original.get())
+    override fun flow(): Flow<Mapped> = original.flow().map(fromOriginalToMapped)
+    override fun set(value: Mapped) = original.set(fromMappedToOriginal(value))
 }
+
+private fun <Original : Any, Mapped : Any> AppSettings.Preference<Original>.map(
+    fromOriginalToMapped: (Original) -> Mapped,
+    fromMappedToOriginal: (Mapped) -> Original
+): AppSettings.Preference<Mapped> = MappedPreferenceImpl(this, fromOriginalToMapped, fromMappedToOriginal)
