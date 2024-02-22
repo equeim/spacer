@@ -36,6 +36,11 @@ SPDX-License-Identifier: MIT
     <string name="remaining_requests">Remaining requests before reaching rate limit: %d</string>
     <string name="remaining_requests_unknown">Remaining requests before reaching rate limit: unknown</string>
 
+    <string name="invalid_nasa_api_key">Invalid NASA API key</string>
+    <string name="too_many_requests">Too many requests\nWait an hour before retrying</string>
+    <string name="too_many_requests_demo_key">Too many requests\nWait an hour before retrying or generate NASA API key</string>
+    <string name="http_error_response">Server returned HTTP status %s</string>
+
     <string name="event_details">Event details</string>
     <string name="go_to_donki_website">Go to DONKI website</string>
     <string name="linked_events">Linked events</string>

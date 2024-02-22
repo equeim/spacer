@@ -45,6 +45,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -189,6 +190,7 @@ private fun BoxScope.ScreenContentErrorPlaceholder(error: String) {
     Text(
         text = error,
         modifier = Modifier.align(Alignment.Center),
+        textAlign = TextAlign.Center,
         style = MaterialTheme.typography.titleLarge
     )
 }

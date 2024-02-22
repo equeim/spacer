@@ -8,32 +8,60 @@ import android.util.Log
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import okhttp3.HttpUrl
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import okio.Buffer
 import org.equeim.spacer.donki.data.NASA_API_DEMO_KEY
-import org.equeim.spacer.donki.data.model.*
 import org.equeim.spacer.donki.data.Week
+import org.equeim.spacer.donki.data.model.CoronalMassEjection
+import org.equeim.spacer.donki.data.model.Event
+import org.equeim.spacer.donki.data.model.EventId
+import org.equeim.spacer.donki.data.model.EventType
+import org.equeim.spacer.donki.data.model.GeomagneticStorm
+import org.equeim.spacer.donki.data.model.HighSpeedStream
+import org.equeim.spacer.donki.data.model.InterplanetaryShock
+import org.equeim.spacer.donki.data.model.MagnetopauseCrossing
+import org.equeim.spacer.donki.data.model.RadiationBeltEnhancement
+import org.equeim.spacer.donki.data.model.SolarEnergeticParticle
+import org.equeim.spacer.donki.data.model.SolarFlare
 import org.equeim.spacer.donki.data.model.units.Angle
 import org.equeim.spacer.donki.data.model.units.Coordinates
 import org.equeim.spacer.donki.data.model.units.Speed
 import org.equeim.spacer.donki.instantOf
+import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.util.concurrent.TimeUnit
 import kotlin.io.path.inputStream
 import kotlin.streams.asSequence
-import kotlin.test.*
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 @Suppress("BlockingMethodInNonBlockingContext")
 class DonkiDataSourceNetworkTest {
     private val server = MockWebServer()
     private lateinit var dataSource: DonkiDataSourceNetwork
+    private val nasaApiKey = MutableStateFlow(NASA_API_DEMO_KEY)
 
     @BeforeTest
     fun before() {
@@ -45,7 +73,7 @@ class DonkiDataSourceNetworkTest {
             0
         }
         server.start()
-        dataSource = DonkiDataSourceNetwork(flowOf(NASA_API_DEMO_KEY), server.url("/"))
+        dataSource = DonkiDataSourceNetwork(nasaApiKey, server.url("/"))
     }
 
     @AfterTest
@@ -55,7 +83,6 @@ class DonkiDataSourceNetworkTest {
 
     @Test
     fun `Validate urls`() = runTest {
-        println(LocalDate.of(2016, 8, 29).dayOfWeek)
         val week = Week(LocalDate.of(2016, 8, 29))
         for (eventType in EventType.entries) {
             server.enqueue(MockResponse().setBody(""))
@@ -63,23 +90,66 @@ class DonkiDataSourceNetworkTest {
             dataSource.getEvents(week, eventType)
 
             val request = server.takeRequest()
-            val url = checkNotNull(request.requestUrl)
+            val url = assertNotNull(request.requestUrl)
 
             val path = url.pathSegments.single()
             assertNotNull(EventType.entries.find { it.stringValue == path })
 
-            val startDateQuery = checkNotNull(url.queryParameter("startDate"))
+            val startDateQuery = assertNotNull(url.queryParameter("startDate"))
             assertEquals("2016-08-29", startDateQuery)
-            val endDateQuery = checkNotNull(url.queryParameter("endDate"))
+            val endDateQuery = assertNotNull(url.queryParameter("endDate"))
             assertEquals("2016-09-04", endDateQuery)
+            assertEquals(NASA_API_DEMO_KEY, url.apiKey)
         }
+    }
+
+    @Test
+    fun `Validate 403 error handling`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(403))
+        assertFailsWith<InvalidApiKeyError> {
+            dataSource.getEvents(Week(LocalDate.of(2016, 8, 29)), EventType.GeomagneticStorm)
+        }
+    }
+
+    @Test
+    fun `Validate 429 error handling`() = runTest {
+        server.enqueue(MockResponse().setResponseCode(429))
+        var error = assertFailsWith<TooManyRequestsError> {
+            dataSource.getEvents(Week(LocalDate.of(2016, 8, 29)), EventType.GeomagneticStorm)
+        }
+        assertTrue(error.usingDemoKey)
+
+        nasaApiKey.value = "lol"
+        server.enqueue(MockResponse().setResponseCode(429))
+        error = assertFailsWith<TooManyRequestsError> {
+            dataSource.getEvents(Week(LocalDate.of(2016, 8, 29)), EventType.GeomagneticStorm)
+        }
+        assertFalse(error.usingDemoKey)
+    }
+
+    @Test
+    fun `Validate request interrupton on API key change`() = runTest {
+        server.enqueue(MockResponse().setHeadersDelay(2, TimeUnit.SECONDS))
+        server.enqueue(MockResponse().setResponseCode(HttpURLConnection.HTTP_OK).setBody(""))
+        val requestJob = launch {
+            dataSource.getEvents(Week(LocalDate.of(2016, 8, 29)), EventType.GeomagneticStorm)
+        }
+        withContext(Dispatchers.Default) {
+            delay(500.milliseconds)
+            println("Changing API key")
+            nasaApiKey.value = "lol"
+        }
+        requestJob.join()
+        assertEquals(2, server.requestCount)
+        assertEquals(NASA_API_DEMO_KEY, server.takeRequest().apiKey)
+        assertEquals("lol", server.takeRequest().apiKey)
     }
 
     @Test
     fun `Validate that dataset parses without exceptions`() = runBlocking {
         val cl = DonkiDataSourceNetworkTest::class.java
         val datasetsUrl =
-            checkNotNull(cl.getResource("/${cl.packageName.replace('.', '/')}/datasets"))
+            assertNotNull(cl.getResource("/${cl.packageName.replace('.', '/')}/datasets"))
         Files.list(Paths.get(datasetsUrl.toURI())).asSequence().forEach { datasetPath ->
             val urlPath = datasetPath.fileName.toString().split('_').first()
             val eventType = EventType.entries.first { it.stringValue == urlPath }
@@ -363,7 +433,7 @@ class DonkiDataSourceNetworkTest {
                 )
             }/${eventType.stringValue}${suffix}.json"
         )
-        return checkNotNull(url).readToBuffer()
+        return assertNotNull(url).readToBuffer()
     }
 }
 
@@ -374,3 +444,9 @@ private fun Path.readToBuffer() = Buffer().apply {
 private fun URL.readToBuffer() = Buffer().apply {
     this@readToBuffer.openStream().use { readFrom(it) }
 }
+
+private val RecordedRequest.apiKey: String
+    get() = assertNotNull(requestUrl).apiKey
+
+private val HttpUrl.apiKey: String
+    get() = assertNotNull(queryParameter("api_key"))

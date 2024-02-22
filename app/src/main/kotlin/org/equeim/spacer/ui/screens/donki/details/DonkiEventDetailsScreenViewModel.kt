@@ -33,6 +33,7 @@ import org.equeim.spacer.donki.data.model.Event
 import org.equeim.spacer.donki.data.model.EventId
 import org.equeim.spacer.donki.data.model.EventType
 import org.equeim.spacer.ui.screens.donki.displayStringResId
+import org.equeim.spacer.ui.screens.donki.donkiErrorToString
 import org.equeim.spacer.ui.utils.createEventDateTimeFormatter
 import org.equeim.spacer.ui.utils.createEventTimeFormatter
 import org.equeim.spacer.ui.utils.defaultLocale
@@ -142,7 +143,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
             }.retry {
                 Log.e(TAG, "Failed to load event", it)
                 loadingType.value = null
-                _contentState.value = ContentState.ErrorPlaceholder(it.toString())
+                _contentState.value = ContentState.ErrorPlaceholder(it.donkiErrorToString(getApplication()))
                 true
             }
 
