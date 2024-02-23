@@ -89,6 +89,10 @@ class DonkiEventsListStateHolder(
     private var refreshingManually: Boolean = (saveableStateRegistry.consumeRestored(::refreshingManually.name) as Boolean?) ?: false
     private val registryEntry = saveableStateRegistry.registerProvider(::refreshingManually.name) { refreshingManually }
 
+    val enableRefreshIndicator: Boolean by derivedStateOf {
+        eventFilters.value.types.isNotEmpty()
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val showRefreshIndicator: StateFlow<Boolean> = loading.mapLatest { loading ->
         if (!loading) {
