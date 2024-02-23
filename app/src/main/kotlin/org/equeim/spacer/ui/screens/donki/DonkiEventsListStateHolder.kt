@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.RememberObserver
+import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -40,6 +41,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.DonkiRepository
+import org.equeim.spacer.ui.utils.collectAsStateWhenStarted
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -48,6 +50,7 @@ fun rememberDonkiEventsListStateHolder(
     listState: LazyListState,
     filters: StateFlow<DonkiRepository.EventFilters>,
 ): DonkiEventsListStateHolder {
+    val eventFilters = filters.collectAsStateWhenStarted()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val registry = checkNotNull(LocalSaveableStateRegistry.current)
@@ -55,7 +58,7 @@ fun rememberDonkiEventsListStateHolder(
         DonkiEventsListStateHolder(
             items,
             listState,
-            filters,
+            eventFilters,
             context,
             scope,
             registry
@@ -66,7 +69,7 @@ fun rememberDonkiEventsListStateHolder(
 class DonkiEventsListStateHolder(
     val items: LazyPagingItems<DonkiEventsScreenViewModel.ListItem>,
     val listState: LazyListState,
-    private val filters: StateFlow<DonkiRepository.EventFilters>,
+    private val eventFilters: State<DonkiRepository.EventFilters>,
     context: Context,
     coroutineScope: CoroutineScope,
     saveableStateRegistry: SaveableStateRegistry
@@ -99,17 +102,20 @@ class DonkiEventsListStateHolder(
 
     val fullscreenError: String? by derivedStateOf {
         if (items.itemCount == 0) {
-            with(items.loadState) {
-                firstErrorOrNull(
-                    source.refresh,
-                    mediator?.refresh,
-                    source.append,
-                    source.prepend
-                )
-            }?.error?.donkiErrorToString(context) ?: run {
-                val filters = filters.value
+            val filters = eventFilters.value
+            if (filters.types.isEmpty()) {
+                context.getString(R.string.all_event_types_are_disabled)
+            } else {
+                val loadError = with(items.loadState) {
+                    firstErrorOrNull(
+                        source.refresh,
+                        mediator?.refresh,
+                        source.append,
+                        source.prepend
+                    )
+                }?.error?.donkiErrorToString(context)
                 when {
-                    filters.types.isEmpty() -> context.getString(R.string.all_event_types_are_disabled)
+                    loadError != null -> loadError
                     filters.dateRange != null -> context.getString(R.string.no_events_in_date_range)
                     else -> null
                 }
@@ -120,15 +126,19 @@ class DonkiEventsListStateHolder(
     }
 
     val snackbarError: String? by derivedStateOf {
-        with(items.loadState) {
-            firstErrorOrNull(source.refresh, mediator?.refresh, source.append, source.prepend)?.error?.donkiErrorToString(context)
+        if (eventFilters.value.types.isNotEmpty()) {
+            with(items.loadState) {
+                firstErrorOrNull(source.refresh, mediator?.refresh, source.append, source.prepend)?.error?.donkiErrorToString(context)
+            }
+        } else {
+            null
         }
     }
 
     init {
         scrollToTopAfterSourceRefresh(coroutineScope)
 
-        filters.drop(1).onEach {
+        snapshotFlow { eventFilters }.drop(1).onEach {
             listState.scrollToItem(0)
         }.launchIn(coroutineScope)
     }
