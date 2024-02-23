@@ -66,6 +66,9 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
     private val _contentState = MutableStateFlow<ContentState>(ContentState.Empty)
     val contentState: StateFlow<ContentState> by ::_contentState
 
+    private val _snackbarError = MutableStateFlow<String?>(null)
+    val snackbarError: StateFlow<String?> by ::_snackbarError
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val showRefreshIndicator: StateFlow<Boolean> =
         loadingType.mapLatest { type ->
@@ -107,6 +110,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
         viewModelScope.launch {
             processLoadRequests().mapEventToPresentation().collect {
                 _contentState.value = it
+                _snackbarError.value = null
                 Log.d(TAG, "Finished processing loaded event")
             }
         }
@@ -121,6 +125,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
                         _contentState.compareAndSet(it, ContentState.LoadingPlaceholder)
                     }
                 }
+                _snackbarError.value = null
             }
             .mapLatest { type ->
                 loadingType.value = type
@@ -143,7 +148,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
             }.retry {
                 Log.e(TAG, "Failed to load event", it)
                 loadingType.value = null
-                _contentState.value = ContentState.ErrorPlaceholder(it.donkiErrorToString(getApplication()))
+                setErrorToContentOrSnackbar(it.donkiErrorToString(getApplication()))
                 true
             }
 
@@ -171,7 +176,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
             }
         }.retry {
             Log.e(TAG, "Failed to convert loaded event to presentation", it)
-            _contentState.value = ContentState.ErrorPlaceholder(it.toString())
+            setErrorToContentOrSnackbar(it.toString())
             true
         }
     }
@@ -217,6 +222,14 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
             getString(
                 displayStringResId
             )
+        }
+    }
+
+    private fun setErrorToContentOrSnackbar(error: String) {
+        if (_contentState.value is ContentState.EventData) {
+            _snackbarError.value = error
+        } else {
+            _contentState.value = ContentState.ErrorPlaceholder(error)
         }
     }
 

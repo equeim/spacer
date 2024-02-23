@@ -28,6 +28,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -42,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
@@ -76,6 +81,7 @@ import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreenViewMod
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.theme.SatelliteAlt
+import org.equeim.spacer.ui.utils.collectAsStateWhenStarted
 import org.equeim.spacer.ui.utils.collectWhenStarted
 import java.time.format.DateTimeFormatter
 
@@ -102,7 +108,11 @@ private fun ScreenContent(eventId: EventId) {
 private fun ScreenContent(
     model: DonkiEventDetailsScreenViewModel,
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    ShowSnackbarError(model, snackbarHostState)
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = { SubScreenTopAppBar(stringResource(R.string.event_details)) },
         floatingActionButton = {
             val state = model.contentState.collectAsState()
@@ -172,6 +182,28 @@ private fun ScreenContent(
                     .padding(contentPadding)
                     .consumeWindowInsets(contentPadding)
             )
+        }
+    }
+}
+
+@Composable
+private fun ShowSnackbarError(
+    model: DonkiEventDetailsScreenViewModel,
+    snackbarHostState: SnackbarHostState,
+) {
+    val snackbarError: String? by model.snackbarError.collectAsStateWhenStarted()
+    snackbarError?.let { error ->
+        val context = LocalContext.current
+        LaunchedEffect(snackbarHostState) {
+            val result = snackbarHostState.showSnackbar(
+                message = error,
+                actionLabel = context.getString(R.string.retry),
+                withDismissAction = true,
+                duration = SnackbarDuration.Indefinite
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                model.refreshIfNotAlreadyLoading()
+            }
         }
     }
 }
