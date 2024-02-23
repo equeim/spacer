@@ -146,7 +146,7 @@ private fun DonkiEventsScreen(
             )
         }
     ) { contentPadding ->
-        val pullToRefreshState = rememberPullToRefreshState()
+        val pullToRefreshState = rememberPullToRefreshState(enabled = holder::enableRefreshIndicator)
         val lifecycleOwner = LocalLifecycleOwner.current
         LaunchedEffect(pullToRefreshState, lifecycleOwner) {
             holder.showRefreshIndicator.collectWhenStarted(lifecycleOwner) {
