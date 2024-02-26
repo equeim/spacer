@@ -41,8 +41,10 @@ private const val TAG = "DonkiRepository"
 
 interface DonkiRepository : Closeable {
     fun getEventSummariesPager(filters: StateFlow<EventFilters>): Pager<*, EventSummary>
+    suspend fun isLastWeekNeedsRefreshing(filters: EventFilters): Boolean
 
     suspend fun getEventById(id: EventId, forceRefresh: Boolean): EventById
+    suspend fun isEventNeedsRefreshing(event: Event): Boolean
 
     data class EventById(
         val event: Event,
@@ -184,6 +186,23 @@ private class DonkiRepositoryImpl(
         }
     }
 
+    override suspend fun isLastWeekNeedsRefreshing(filters: DonkiRepository.EventFilters): Boolean {
+        Log.d(TAG, "isLastWeekNeedsRefreshing() called with: filters = $filters")
+        val week = filters.dateRange?.lastWeek ?: Week.getCurrentWeek(clock)
+        return try {
+            filters.types.any {
+                cacheDataSource.isWeekNotCachedOrNeedsRefresh(week, it)
+            }.also {
+                Log.d(TAG, "isLastWeekNeedsRefreshing() returned: $it")
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "isLastWeekNeedsRefreshing: DonkiDataSourceCache error", e)
+            false
+        }
+    }
+
     override suspend fun getEventById(
         id: EventId,
         forceRefresh: Boolean,
@@ -205,6 +224,20 @@ private class DonkiRepositoryImpl(
                 Log.e(TAG, "getEventDetailsById: failed to get event $id", e)
             }
             throw e
+        }
+    }
+
+    override suspend fun isEventNeedsRefreshing(event: Event): Boolean {
+        Log.d(TAG, "isEventNeedsRefreshing() called with: event = $event")
+        return try {
+            cacheDataSource.isWeekNotCachedOrNeedsRefresh(Week.fromInstant(event.time), event.type).also {
+                Log.d(TAG, "isEventNeedsRefreshing() returned: $it")
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "isEventNeedsRefreshing: DonkiDataSourceCache error", e)
+            false
         }
     }
 }

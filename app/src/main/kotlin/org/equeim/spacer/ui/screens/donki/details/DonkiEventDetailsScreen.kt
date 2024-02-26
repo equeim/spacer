@@ -52,7 +52,9 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.olshevski.navigation.reimagined.NavController
 import dev.olshevski.navigation.reimagined.NavHostEntry
@@ -108,6 +110,8 @@ private fun ScreenContent(eventId: EventId) {
 private fun ScreenContent(
     model: DonkiEventDetailsScreenViewModel,
 ) {
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME, onEvent = model::onActivityResumed)
+
     val snackbarHostState = remember { SnackbarHostState() }
     ShowSnackbarError(model, snackbarHostState)
 

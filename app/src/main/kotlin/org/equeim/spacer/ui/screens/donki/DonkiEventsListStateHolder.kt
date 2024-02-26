@@ -49,6 +49,7 @@ fun rememberDonkiEventsListStateHolder(
     items: LazyPagingItems<DonkiEventsScreenViewModel.ListItem>,
     listState: LazyListState,
     eventFilters: StateFlow<DonkiRepository.EventFilters>,
+    isLastWeekNeedsRefreshing: suspend () -> Boolean,
 ): DonkiEventsListStateHolder {
     val eventFiltersState = eventFilters.collectAsStateWhenStarted()
     val context = LocalContext.current
@@ -59,6 +60,7 @@ fun rememberDonkiEventsListStateHolder(
             items,
             listState,
             eventFiltersState,
+            isLastWeekNeedsRefreshing,
             context,
             scope,
             registry
@@ -70,8 +72,9 @@ class DonkiEventsListStateHolder(
     val items: LazyPagingItems<DonkiEventsScreenViewModel.ListItem>,
     val listState: LazyListState,
     private val eventFilters: State<DonkiRepository.EventFilters>,
+    private val isLastWeekNeedsRefreshing: suspend () -> Boolean,
     context: Context,
-    coroutineScope: CoroutineScope,
+    private val coroutineScope: CoroutineScope,
     saveableStateRegistry: SaveableStateRegistry
 ): RememberObserver {
     private val loading: StateFlow<Boolean> = snapshotFlow {
@@ -158,13 +161,27 @@ class DonkiEventsListStateHolder(
     }
 
     fun refreshIfNotAlreadyLoading() {
+        Log.d(TAG, "refreshIfNotAlreadyLoading() called")
         if (!loading.value) {
+            Log.d(TAG, "refreshIfNotAlreadyLoading: refreshing")
             items.refresh()
             refreshingManually = true
+        } else {
+            Log.d(TAG, "refreshIfNotAlreadyLoading: already loading")
+        }
+    }
+
+    fun onActivityResumed() {
+        Log.d(TAG, "onActivityResumed() called")
+        coroutineScope.launch {
+            if (isLastWeekNeedsRefreshing()) {
+                refreshIfNotAlreadyLoading()
+            }
         }
     }
 
     fun retry() {
+        Log.d(TAG, "retry() called")
         items.retry()
         refreshingManually = true
     }

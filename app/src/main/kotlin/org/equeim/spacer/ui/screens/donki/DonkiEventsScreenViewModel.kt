@@ -178,6 +178,10 @@ class DonkiEventsScreenViewModel(application: Application, private val savedStat
         }
     }
 
+    suspend fun isLastWeekNeedsRefreshing(): Boolean {
+        return repository.isLastWeekNeedsRefreshing(eventFilters.value)
+    }
+
     private fun getString(@StringRes resId: Int): String = getApplication<Application>().getString(resId)
     private fun getString(@StringRes resId: Int, vararg formatArgs: Any): String =
         getApplication<Application>().getString(resId, *formatArgs)
