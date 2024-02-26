@@ -88,9 +88,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
 
     init {
         addCloseable(repository)
-        viewModelScope.launch {
-            loadEvent()
-        }
+        loadEvent()
         viewModelScope.launch {
             loadRequests.send(LoadingType.Initial)
             delay(LOADING_PLACEHOLDER_DELAY)
@@ -121,7 +119,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
         }
     }
 
-    private suspend fun loadEvent() {
+    private fun loadEvent() {
         viewModelScope.launch {
             processLoadRequests().mapEventToPresentation().collect {
                 _contentState.value = it
