@@ -31,7 +31,6 @@ import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SelectableDates
@@ -156,10 +155,10 @@ object DonkiEventFiltersDialog : Destination {
     @Composable
     override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) {
         val model: DonkiEventsScreenViewModel = viewModel(viewModelStoreOwner = checkNotNull(parentNavHostEntry))
-        val filters = model.filters.collectAsStateWhenStarted()
+        val filters = model.filtersUiState.collectAsStateWhenStarted()
         val eventsTimeZone = model.eventsTimeZone.collectAsStateWhenStarted()
         DonkiEventFiltersDialogContent(
-            filters = filters,
+            filtersUiState = filters,
             updateFilters = model::updateFilters,
             eventsTimeZone = eventsTimeZone,
             hideDialog = navController::pop,
@@ -170,8 +169,8 @@ object DonkiEventFiltersDialog : Destination {
 
 @Composable
 private fun DonkiEventFiltersDialogContent(
-    filters: State<DonkiEventsScreenViewModel.Filters>,
-    updateFilters: (DonkiEventsScreenViewModel.Filters) -> Unit,
+    filtersUiState: State<DonkiEventsScreenViewModel.FiltersUiState>,
+    updateFilters: (DonkiEventsScreenViewModel.FiltersUiState) -> Unit,
     eventsTimeZone: State<ZoneId?>,
     hideDialog: () -> Unit,
     showDateRangeDialog: () -> Unit,
@@ -183,7 +182,7 @@ private fun DonkiEventFiltersDialogContent(
     ) {
         DonkiEventFilters(
             contentPadding = PaddingValues(horizontal = Dimens.DialogContentPadding),
-            filters = filters,
+            filtersUiState = filtersUiState,
             updateFilters = updateFilters,
             eventsTimeZone = eventsTimeZone,
             showDateRangeDialog = showDateRangeDialog,
@@ -194,8 +193,8 @@ private fun DonkiEventFiltersDialogContent(
 @Composable
 fun DonkiEventFiltersSideSheet(
     contentPadding: PaddingValues = PaddingValues(),
-    filters: State<DonkiEventsScreenViewModel.Filters>,
-    updateFilters: (DonkiEventsScreenViewModel.Filters) -> Unit,
+    filtersUiState: State<DonkiEventsScreenViewModel.FiltersUiState>,
+    updateFilters: (DonkiEventsScreenViewModel.FiltersUiState) -> Unit,
     eventsTimeZone: State<ZoneId?>,
     dialogNavController: () -> NavController<Destination>,
 ) {
@@ -212,7 +211,7 @@ fun DonkiEventFiltersSideSheet(
                 style = MaterialTheme.typography.titleLarge
             )
         },
-        filters = filters,
+        filtersUiState = filtersUiState,
         updateFilters = updateFilters,
         eventsTimeZone = eventsTimeZone,
         showDateRangeDialog = { dialogNavController().navigate(DateRangePickerDialog) }
@@ -225,8 +224,8 @@ private fun DonkiEventFilters(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
     title: @Composable ColumnScope.() -> Unit = {},
-    filters: State<DonkiEventsScreenViewModel.Filters>,
-    updateFilters: (DonkiEventsScreenViewModel.Filters) -> Unit,
+    filtersUiState: State<DonkiEventsScreenViewModel.FiltersUiState>,
+    updateFilters: (DonkiEventsScreenViewModel.FiltersUiState) -> Unit,
     eventsTimeZone: State<ZoneId?>,
     showDateRangeDialog: () -> Unit,
 ) {
@@ -266,7 +265,7 @@ private fun DonkiEventFilters(
             ) {
                 val allTypesSelected: Boolean by remember {
                     derivedStateOf {
-                        filters.value.types.containsAll(EventType.entries)
+                        filtersUiState.value.types.containsAll(EventType.entries)
                     }
                 }
                 EventTypeChip(R.string.all_event_types, allTypesSelected) {
@@ -275,12 +274,12 @@ private fun DonkiEventFilters(
                     } else {
                         EventType.entries.toSet()
                     }
-                    updateFilters(filters.value.copy(types = newTypes))
+                    updateFilters(filtersUiState.value.copy(types = newTypes))
                 }
                 for (type in EventType.entries) {
-                    val typeSelected: Boolean by remember { derivedStateOf { filters.value.types.contains(type) } }
+                    val typeSelected: Boolean by remember { derivedStateOf { filtersUiState.value.types.contains(type) } }
                     EventTypeChip(type.displayStringResId, typeSelected) {
-                        updateFilters(filters.value.run {
+                        updateFilters(filtersUiState.value.run {
                             val newTypes = if (typeSelected) types - type else types + type
                             copy(types = newTypes)
                         })
@@ -288,14 +287,14 @@ private fun DonkiEventFilters(
                 }
             }
         }
-        val dateRangeEnabled: Boolean by remember { derivedStateOf { filters.value.dateRangeEnabled } }
+        val dateRangeEnabled: Boolean by remember { derivedStateOf { filtersUiState.value.dateRangeEnabled } }
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontalContentPadding),
             shape = CircleShape,
             onClick = {
-                updateFilters(filters.value.run {
+                updateFilters(filtersUiState.value.run {
                     copy(dateRangeEnabled = !dateRangeEnabled)
                 })
             }
@@ -337,7 +336,7 @@ private fun DonkiEventFilters(
 
         if (dateRangeEnabled) {
             eventsTimeZone.value?.let { zone ->
-                val dateRange: DonkiRepository.DateRange? by remember { derivedStateOf { filters.value.dateRange } }
+                val dateRange: DonkiRepository.DateRange? by remember { derivedStateOf { filtersUiState.value.dateRange } }
                 OutlinedButton(
                     onClick = showDateRangeDialog,
                     modifier = Modifier
@@ -380,11 +379,11 @@ private object DateRangePickerDialog : Destination {
     @Composable
     override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) {
         val model: DonkiEventsScreenViewModel = viewModel(viewModelStoreOwner = checkNotNull(parentNavHostEntry))
-        val filters: DonkiEventsScreenViewModel.Filters by model.filters.collectAsStateWhenStarted()
+        val filtersUiState: DonkiEventsScreenViewModel.FiltersUiState by model.filtersUiState.collectAsStateWhenStarted()
         val eventsTimeZone: ZoneId? by model.eventsTimeZone.collectAsStateWhenStarted()
         eventsTimeZone?.let { zone ->
             DateRangePickerDialogContent(
-                initialDateRange = filters.dateRange,
+                initialDateRange = filtersUiState.dateRange,
                 eventsTimeZone = zone,
                 hideDialog = {
                     navController.pop()
@@ -392,7 +391,7 @@ private object DateRangePickerDialog : Destination {
                         navController.navigate()
                     }*/
                 },
-                onAccepted = { model.updateFilters(model.filters.value.copy(dateRange = it)) }
+                onAccepted = { model.updateFilters(model.filtersUiState.value.copy(dateRange = it)) }
             )
         }
     }
@@ -518,9 +517,9 @@ private fun DonkiEventFiltersDateRangePickerDialogPreview() {
 private fun DonkiEventFiltersSideSheetPreview() {
     CompositionLocalProvider(LocalDefaultLocale provides Locale.getDefault()) {
         DonkiEventFiltersSideSheet(
-            filters = remember {
+            filtersUiState = remember {
                 mutableStateOf(
-                    DonkiEventsScreenViewModel.Filters(
+                    DonkiEventsScreenViewModel.FiltersUiState(
                         types = EventType.entries.toSet() - EventType.GeomagneticStorm,
                         dateRangeEnabled = true
                     )
@@ -538,9 +537,9 @@ private fun DonkiEventFiltersSideSheetPreview() {
 private fun DonkiEventFiltersDialogPreview() {
     CompositionLocalProvider(LocalDefaultLocale provides Locale.getDefault()) {
         DonkiEventFiltersDialogContent(
-            filters = remember {
+            filtersUiState = remember {
                 mutableStateOf(
-                    DonkiEventsScreenViewModel.Filters(
+                    DonkiEventsScreenViewModel.FiltersUiState(
                         types = EventType.entries.toSet() - EventType.GeomagneticStorm,
                         dateRange = DonkiRepository.DateRange(
                             firstDayInstant = LocalDate.now().minusDays(5).atStartOfDay(ZoneId.systemDefault())

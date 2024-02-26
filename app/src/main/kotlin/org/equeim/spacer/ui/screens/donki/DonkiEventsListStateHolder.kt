@@ -48,17 +48,17 @@ import kotlin.time.Duration.Companion.milliseconds
 fun rememberDonkiEventsListStateHolder(
     items: LazyPagingItems<DonkiEventsScreenViewModel.ListItem>,
     listState: LazyListState,
-    filters: StateFlow<DonkiRepository.EventFilters>,
+    eventFilters: StateFlow<DonkiRepository.EventFilters>,
 ): DonkiEventsListStateHolder {
-    val eventFilters = filters.collectAsStateWhenStarted()
+    val eventFiltersState = eventFilters.collectAsStateWhenStarted()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val registry = checkNotNull(LocalSaveableStateRegistry.current)
-    return remember(items, listState, filters, context, scope, registry) {
+    return remember(items, listState, eventFilters, context, scope, registry) {
         DonkiEventsListStateHolder(
             items,
             listState,
-            eventFilters,
+            eventFiltersState,
             context,
             scope,
             registry
