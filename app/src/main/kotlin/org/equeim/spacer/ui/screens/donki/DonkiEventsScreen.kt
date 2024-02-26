@@ -93,9 +93,9 @@ private fun DonkiEventsScreen() {
     val holder = rememberDonkiEventsListStateHolder(
         model.pagingData.collectAsLazyPagingItems(),
         rememberLazyListState(),
-        model.repositoryFilters,
+        model.eventFilters,
     )
-    val filters = model.filters.collectAsStateWhenStarted()
+    val filters = model.filtersUiState.collectAsStateWhenStarted()
     val eventsTimeZone = model.eventsTimeZone.collectAsStateWhenStarted()
     DonkiEventsScreen(holder, filters, model::updateFilters, eventsTimeZone)
 }
@@ -104,8 +104,8 @@ private fun DonkiEventsScreen() {
 @Composable
 private fun DonkiEventsScreen(
     holder: DonkiEventsListStateHolder,
-    filters: State<DonkiEventsScreenViewModel.Filters>,
-    updateFilters: (DonkiEventsScreenViewModel.Filters) -> Unit,
+    filtersUiState: State<DonkiEventsScreenViewModel.FiltersUiState>,
+    updateFilters: (DonkiEventsScreenViewModel.FiltersUiState) -> Unit,
     eventsTimeZone: State<ZoneId?>,
 ) {
     val listIsEmpty by remember(holder) { derivedStateOf { holder.items.itemCount == 0 } }
@@ -188,7 +188,7 @@ private fun DonkiEventsScreen(
                 if (!showFiltersAsDialog.value) {
                     DonkiEventFiltersSideSheet(
                         contentPadding = contentPadding,
-                        filters = filters,
+                        filtersUiState = filtersUiState,
                         updateFilters = updateFilters,
                         eventsTimeZone = eventsTimeZone,
                         dialogNavController = { dialogNavController },

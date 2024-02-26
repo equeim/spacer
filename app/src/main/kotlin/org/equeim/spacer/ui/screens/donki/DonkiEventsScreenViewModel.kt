@@ -66,21 +66,21 @@ class DonkiEventsScreenViewModel(application: Application, private val savedStat
     }
 
     @Parcelize
-    data class Filters(
+    data class FiltersUiState(
         val types: Set<EventType> = EventType.entries.toSet(),
         val dateRange: DonkiRepository.DateRange? = null,
         val dateRangeEnabled: Boolean = false,
     ) : Parcelable {
-        fun toRepositoryFilters() = DonkiRepository.EventFilters(types, if (dateRangeEnabled) dateRange else null)
+        fun toEventFilters() = DonkiRepository.EventFilters(types, if (dateRangeEnabled) dateRange else null)
     }
 
-    val filters: StateFlow<Filters> = savedStateHandle.getStateFlow(FILTERS_KEY, Filters())
-    fun updateFilters(filters: Filters) {
-        savedStateHandle[FILTERS_KEY] = filters
+    val filtersUiState: StateFlow<FiltersUiState> = savedStateHandle.getStateFlow(FILTERS_KEY, FiltersUiState())
+    fun updateFilters(filtersUiState: FiltersUiState) {
+        savedStateHandle[FILTERS_KEY] = filtersUiState
     }
 
-    val repositoryFilters: StateFlow<DonkiRepository.EventFilters> = filters.map(Filters::toRepositoryFilters)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, Filters().toRepositoryFilters())
+    val eventFilters: StateFlow<DonkiRepository.EventFilters> = filtersUiState.map(FiltersUiState::toEventFilters)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, FiltersUiState().toEventFilters())
 
     val pagingData: Flow<PagingData<ListItem>>
 
@@ -101,7 +101,7 @@ class DonkiEventsScreenViewModel(application: Application, private val savedStat
             determineEventTimeZone(defaultZone, displayEventsTimeInUTC)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-        val basePagingData = repository.getEventSummariesPager(repositoryFilters).flow.cachedIn(viewModelScope)
+        val basePagingData = repository.getEventSummariesPager(eventFilters).flow.cachedIn(viewModelScope)
         val eventTypesStringsCacheFlow = defaultLocaleFlow.map { ConcurrentHashMap<EventType, String>() }
         val formattersFlow = combine(defaultLocaleFlow, eventsTimeZone.filterNotNull(), ::Formatters)
         val pagingDataCoroutineScope =
