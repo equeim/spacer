@@ -57,7 +57,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
     private val repository = DonkiRepository(settings.nasaApiKey.flow(), application)
 
     private enum class LoadingType {
-        Automatic, Manual
+        Initial, Refresh
     }
 
     private val loadingType = MutableStateFlow<LoadingType?>(null)
@@ -73,12 +73,12 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
     val showRefreshIndicator: StateFlow<Boolean> =
         loadingType.mapLatest { type ->
             when (type) {
-                LoadingType.Automatic -> {
+                LoadingType.Initial -> {
                     delay(REFRESH_INDICATOR_DELAY)
                     true
                 }
 
-                LoadingType.Manual -> true
+                LoadingType.Refresh -> true
                 null -> false
             }
         }
@@ -92,16 +92,31 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
             loadEvent()
         }
         viewModelScope.launch {
-            loadRequests.send(LoadingType.Automatic)
+            loadRequests.send(LoadingType.Initial)
             delay(LOADING_PLACEHOLDER_DELAY)
             _contentState.compareAndSet(ContentState.Empty, ContentState.LoadingPlaceholder)
         }
     }
 
     fun refreshIfNotAlreadyLoading() {
+        Log.d(TAG, "refreshIfNotAlreadyLoading() called")
         viewModelScope.launch {
             if (loadingType.value == null) {
-                loadRequests.send(LoadingType.Manual)
+                Log.d(TAG, "refreshIfNotAlreadyLoading: refreshing")
+                loadRequests.send(LoadingType.Refresh)
+            } else {
+                Log.d(TAG, "refreshIfNotAlreadyLoading: already loading")
+            }
+        }
+    }
+
+    fun onActivityResumed() {
+        Log.d(TAG, "onActivityResumed() called")
+        viewModelScope.launch {
+            val event = (_contentState.value as? ContentState.EventData)?.event
+            if (event != null && loadingType.value == null && repository.isEventNeedsRefreshing(event)) {
+                Log.d(TAG, "onActivityResumed: refreshing")
+                loadRequests.send(LoadingType.Refresh)
             }
         }
     }
@@ -133,8 +148,8 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
                 repository.getEventById(
                     eventId,
                     forceRefresh = when (type) {
-                        LoadingType.Automatic -> false
-                        LoadingType.Manual -> true
+                        LoadingType.Initial -> false
+                        LoadingType.Refresh -> true
                     }
                 ).also {
                     Log.d(TAG, "Loaded event with id $eventId")
@@ -143,7 +158,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
             }.onEach {
                 if (it.needsRefreshing) {
                     Log.d(TAG, "Event needs refreshing, schedule load request")
-                    loadRequests.send(LoadingType.Manual)
+                    loadRequests.send(LoadingType.Refresh)
                 }
             }.retry {
                 Log.e(TAG, "Failed to load event", it)

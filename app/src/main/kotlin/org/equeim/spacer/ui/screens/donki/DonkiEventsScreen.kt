@@ -53,6 +53,8 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
@@ -94,6 +96,7 @@ private fun DonkiEventsScreen() {
         model.pagingData.collectAsLazyPagingItems(),
         rememberLazyListState(),
         model.eventFilters,
+        model::isLastWeekNeedsRefreshing,
     )
     val filters = model.filtersUiState.collectAsStateWhenStarted()
     val eventsTimeZone = model.eventsTimeZone.collectAsStateWhenStarted()
@@ -108,12 +111,13 @@ private fun DonkiEventsScreen(
     updateFilters: (DonkiEventsScreenViewModel.FiltersUiState) -> Unit,
     eventsTimeZone: State<ZoneId?>,
 ) {
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME, onEvent = holder::onActivityResumed)
+
     val listIsEmpty by remember(holder) { derivedStateOf { holder.items.itemCount == 0 } }
     val initialLazyListState = rememberLazyListState()
     val lazyListState = if (listIsEmpty) initialLazyListState else holder.listState
 
     val snackbarHostState = remember { SnackbarHostState() }
-
     ShowSnackbarError(holder, snackbarHostState)
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()

@@ -158,6 +158,15 @@ internal class DonkiDataSourceCache(
         return cacheLoadTime != null && week.needsRefresh(cacheLoadTime, refreshIfRecentlyLoaded)
     }
 
+    suspend fun isWeekNotCachedOrNeedsRefresh(
+        week: Week,
+        eventType: EventType,
+    ): Boolean {
+        val cacheLoadTime = awaitDb().cachedWeeks()
+            .getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear, eventType)
+        return cacheLoadTime == null || week.needsRefresh(cacheLoadTime, refreshIfRecentlyLoaded = false)
+    }
+
     suspend fun getEventSummariesForWeek(
         week: Week,
         eventType: EventType,
