@@ -18,6 +18,7 @@ import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.saveable.SaveableStateRegistry
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import kotlinx.coroutines.CoroutineScope
@@ -41,7 +42,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.DonkiRepository
-import org.equeim.spacer.ui.utils.collectAsStateWhenStarted
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -51,7 +51,7 @@ fun rememberDonkiEventsListStateHolder(
     eventFilters: StateFlow<DonkiRepository.EventFilters>,
     isLastWeekNeedsRefreshing: suspend () -> Boolean,
 ): DonkiEventsListStateHolder {
-    val eventFiltersState = eventFilters.collectAsStateWhenStarted()
+    val eventFiltersState = eventFilters.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val registry = checkNotNull(LocalSaveableStateRegistry.current)

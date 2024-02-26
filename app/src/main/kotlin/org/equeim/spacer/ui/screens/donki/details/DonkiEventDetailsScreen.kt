@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.olshevski.navigation.reimagined.NavController
 import dev.olshevski.navigation.reimagined.NavHostEntry
@@ -83,8 +84,7 @@ import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreenViewMod
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.theme.SatelliteAlt
-import org.equeim.spacer.ui.utils.collectAsStateWhenStarted
-import org.equeim.spacer.ui.utils.collectWhenStarted
+import org.equeim.spacer.ui.utils.collectWithLifecycle
 import java.time.format.DateTimeFormatter
 
 @Parcelize
@@ -143,7 +143,7 @@ private fun ScreenContent(
         val pullToRefreshState = rememberPullToRefreshState()
         val lifecycleOwner = LocalLifecycleOwner.current
         LaunchedEffect(pullToRefreshState, lifecycleOwner) {
-            model.showRefreshIndicator.collectWhenStarted(lifecycleOwner) {
+            model.showRefreshIndicator.collectWithLifecycle(lifecycleOwner) {
                 if (pullToRefreshState.isRefreshing != it) {
                     if (it) pullToRefreshState.startRefresh() else pullToRefreshState.endRefresh()
                 }
@@ -195,7 +195,7 @@ private fun ShowSnackbarError(
     model: DonkiEventDetailsScreenViewModel,
     snackbarHostState: SnackbarHostState,
 ) {
-    val snackbarError: String? by model.snackbarError.collectAsStateWhenStarted()
+    val snackbarError: String? by model.snackbarError.collectAsStateWithLifecycle()
     snackbarError?.let { error ->
         val context = LocalContext.current
         LaunchedEffect(snackbarHostState) {

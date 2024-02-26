@@ -55,6 +55,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
@@ -77,8 +78,7 @@ import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreen
 import org.equeim.spacer.ui.screens.settings.SettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.FilterList
-import org.equeim.spacer.ui.utils.collectAsStateWhenStarted
-import org.equeim.spacer.ui.utils.collectWhenStarted
+import org.equeim.spacer.ui.utils.collectWithLifecycle
 import org.equeim.spacer.ui.utils.plus
 import java.time.ZoneId
 
@@ -98,8 +98,8 @@ private fun DonkiEventsScreen() {
         model.eventFilters,
         model::isLastWeekNeedsRefreshing,
     )
-    val filters = model.filtersUiState.collectAsStateWhenStarted()
-    val eventsTimeZone = model.eventsTimeZone.collectAsStateWhenStarted()
+    val filters = model.filtersUiState.collectAsStateWithLifecycle()
+    val eventsTimeZone = model.eventsTimeZone.collectAsStateWithLifecycle()
     DonkiEventsScreen(holder, filters, model::updateFilters, eventsTimeZone)
 }
 
@@ -153,7 +153,7 @@ private fun DonkiEventsScreen(
         val pullToRefreshState = rememberPullToRefreshState(enabled = holder::enableRefreshIndicator)
         val lifecycleOwner = LocalLifecycleOwner.current
         LaunchedEffect(pullToRefreshState, lifecycleOwner) {
-            holder.showRefreshIndicator.collectWhenStarted(lifecycleOwner) {
+            holder.showRefreshIndicator.collectWithLifecycle(lifecycleOwner) {
                 if (pullToRefreshState.isRefreshing != it) {
                     if (it) pullToRefreshState.startRefresh() else pullToRefreshState.endRefresh()
                 }

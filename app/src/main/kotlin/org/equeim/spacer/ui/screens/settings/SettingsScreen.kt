@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.olshevski.navigation.reimagined.NavController
 import dev.olshevski.navigation.reimagined.NavHostEntry
@@ -48,7 +49,6 @@ import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.DialogDestinationNavHost
 import org.equeim.spacer.ui.screens.LocalNavController
 import org.equeim.spacer.ui.theme.Dimens
-import org.equeim.spacer.ui.utils.collectAsStateWhenStarted
 
 @Parcelize
 object SettingsScreen : Destination {
@@ -88,7 +88,7 @@ private fun SettingsScreen() {
             val listItemHorizontalPadding = (Dimens.ScreenContentPaddingHorizontal() - LIST_ITEM_HORIZONTAL_PADDING)
                 .coerceAtLeast(0.dp)
 
-            val darkThemeMode by model.darkThemeMode.collectAsStateWhenStarted()
+            val darkThemeMode by model.darkThemeMode.collectAsStateWithLifecycle()
             ListItem(
                 headlineContent = { Text(stringResource(R.string.dark_theme)) },
                 supportingContent = {
@@ -110,7 +110,7 @@ private fun SettingsScreen() {
             )
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val useSystemColors by model.useSystemColors.collectAsStateWhenStarted()
+                val useSystemColors by model.useSystemColors.collectAsStateWithLifecycle()
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.use_system_colors)) },
                     trailingContent = { Switch(useSystemColors, onCheckedChange = null) },
@@ -127,7 +127,7 @@ private fun SettingsScreen() {
                 Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
             )
 
-            val displayEventsTimeInUTC by model.displayEventsTimeInUTC.collectAsStateWhenStarted()
+            val displayEventsTimeInUTC by model.displayEventsTimeInUTC.collectAsStateWithLifecycle()
             ListItem(
                 headlineContent = { Text(stringResource(R.string.display_events_in_utc)) },
                 trailingContent = { Switch(displayEventsTimeInUTC, onCheckedChange = null) },

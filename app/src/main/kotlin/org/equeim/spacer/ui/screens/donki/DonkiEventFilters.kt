@@ -60,6 +60,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.olshevski.navigation.reimagined.NavController
@@ -85,7 +86,6 @@ import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.components.Dialog
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.theme.Dimens
-import org.equeim.spacer.ui.utils.collectAsStateWhenStarted
 import org.equeim.spacer.ui.utils.isUTC
 import org.equeim.spacer.ui.utils.plus
 import java.time.Duration
@@ -155,8 +155,8 @@ object DonkiEventFiltersDialog : Destination {
     @Composable
     override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) {
         val model: DonkiEventsScreenViewModel = viewModel(viewModelStoreOwner = checkNotNull(parentNavHostEntry))
-        val filters = model.filtersUiState.collectAsStateWhenStarted()
-        val eventsTimeZone = model.eventsTimeZone.collectAsStateWhenStarted()
+        val filters = model.filtersUiState.collectAsStateWithLifecycle()
+        val eventsTimeZone = model.eventsTimeZone.collectAsStateWithLifecycle()
         DonkiEventFiltersDialogContent(
             filtersUiState = filters,
             updateFilters = model::updateFilters,
@@ -379,8 +379,8 @@ private object DateRangePickerDialog : Destination {
     @Composable
     override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) {
         val model: DonkiEventsScreenViewModel = viewModel(viewModelStoreOwner = checkNotNull(parentNavHostEntry))
-        val filtersUiState: DonkiEventsScreenViewModel.FiltersUiState by model.filtersUiState.collectAsStateWhenStarted()
-        val eventsTimeZone: ZoneId? by model.eventsTimeZone.collectAsStateWhenStarted()
+        val filtersUiState: DonkiEventsScreenViewModel.FiltersUiState by model.filtersUiState.collectAsStateWithLifecycle()
+        val eventsTimeZone: ZoneId? by model.eventsTimeZone.collectAsStateWithLifecycle()
         eventsTimeZone?.let { zone ->
             DateRangePickerDialogContent(
                 initialDateRange = filtersUiState.dateRange,
