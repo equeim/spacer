@@ -29,6 +29,7 @@ import org.equeim.spacer.ui.utils.rememberIntegerFormatter
 import java.text.NumberFormat
 import java.time.Duration
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun CoronalMassEjectionDetails(event: CoronalMassEjection, eventTimeFormatter: () -> DateTimeFormatter) =
@@ -88,7 +89,8 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, eventTimeFormatter: (
             if (analysis.enlilSimulations.isNotEmpty()) {
                 SectionHeader(stringResource(R.string.enlil_models))
                 analysis.enlilSimulations.forEach { simulation ->
-                    EnlilModelCard(simulation, integerFormatter, eventTimeFormatter())
+                    val num = NumberFormat.getInstance(Locale.CHINESE)
+                    EnlilModelCard(simulation, num, eventTimeFormatter())
                 }
             } else {
                 SectionPlaceholder(stringResource(R.string.enlil_no_models))
