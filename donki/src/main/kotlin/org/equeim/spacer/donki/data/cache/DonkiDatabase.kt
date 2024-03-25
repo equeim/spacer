@@ -7,7 +7,18 @@ package org.equeim.spacer.donki.data.cache
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import org.equeim.spacer.donki.data.cache.entities.*
+import org.equeim.spacer.donki.data.cache.entities.CachedEvent
+import org.equeim.spacer.donki.data.cache.entities.CachedEventsDao
+import org.equeim.spacer.donki.data.cache.entities.CachedWeek
+import org.equeim.spacer.donki.data.cache.entities.CachedWeeksDao
+import org.equeim.spacer.donki.data.cache.entities.CoronalMassEjectionDao
+import org.equeim.spacer.donki.data.cache.entities.CoronalMassEjectionExtras
+import org.equeim.spacer.donki.data.cache.entities.GeomagneticStormDao
+import org.equeim.spacer.donki.data.cache.entities.GeomagneticStormExtras
+import org.equeim.spacer.donki.data.cache.entities.InterplanetaryShockDao
+import org.equeim.spacer.donki.data.cache.entities.InterplanetaryShockExtras
+import org.equeim.spacer.donki.data.cache.entities.SolarFlareDao
+import org.equeim.spacer.donki.data.cache.entities.SolarFlareExtras
 
 @Database(
     entities = [

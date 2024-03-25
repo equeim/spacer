@@ -4,8 +4,12 @@
 
 package org.equeim.spacer.donki.data.cache.entities
 
-import androidx.room.*
+import androidx.room.ColumnInfo
+import androidx.room.Dao
+import androidx.room.Entity
+import androidx.room.Insert
 import androidx.room.OnConflictStrategy.Companion.REPLACE
+import androidx.room.Query
 import org.equeim.spacer.donki.data.model.EventType
 import java.time.Instant
 
