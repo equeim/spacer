@@ -9,7 +9,11 @@ package org.equeim.spacer.donki.data.paging
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.RemoteMediator
-import io.mockk.*
+import io.mockk.clearMocks
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.confirmVerified
+import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.toCollection
@@ -27,7 +31,11 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import java.time.Clock
 import java.time.ZoneId
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 @RunWith(Parameterized::class)
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalPagingApi::class)

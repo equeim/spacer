@@ -6,7 +6,16 @@ package org.equeim.spacer.donki.data
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
-import org.equeim.spacer.donki.data.model.*
+import org.equeim.spacer.donki.data.model.CoronalMassEjection
+import org.equeim.spacer.donki.data.model.Event
+import org.equeim.spacer.donki.data.model.EventType
+import org.equeim.spacer.donki.data.model.GeomagneticStorm
+import org.equeim.spacer.donki.data.model.HighSpeedStream
+import org.equeim.spacer.donki.data.model.InterplanetaryShock
+import org.equeim.spacer.donki.data.model.MagnetopauseCrossing
+import org.equeim.spacer.donki.data.model.RadiationBeltEnhancement
+import org.equeim.spacer.donki.data.model.SolarEnergeticParticle
+import org.equeim.spacer.donki.data.model.SolarFlare
 
 internal val DonkiJson = Json {
     ignoreUnknownKeys = true

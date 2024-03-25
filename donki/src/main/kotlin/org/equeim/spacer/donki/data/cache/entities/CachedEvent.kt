@@ -6,7 +6,13 @@
 
 package org.equeim.spacer.donki.data.cache.entities
 
-import androidx.room.*
+import androidx.room.ColumnInfo
+import androidx.room.Dao
+import androidx.room.Entity
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.PrimaryKey
+import androidx.room.Query
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import org.equeim.spacer.donki.data.DonkiJson
