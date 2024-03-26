@@ -4,4 +4,4 @@
 
 package org.equeim.spacer.donki.data
 
-const val NASA_API_DEMO_KEY = "DEMO_KEY"
+const val DEFAULT_NASA_API_KEY = "JUAuF07fvb3YqScCB9l96bqfRRVECizMFUlmsbSF"

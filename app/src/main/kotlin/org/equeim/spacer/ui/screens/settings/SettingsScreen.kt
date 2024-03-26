@@ -14,18 +14,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
@@ -40,20 +41,21 @@ import dev.olshevski.navigation.reimagined.rememberNavController
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
-import org.equeim.spacer.ui.LocalAppSettings
 import org.equeim.spacer.ui.components.Dialog
 import org.equeim.spacer.ui.components.RadioButtonListItem
 import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.DialogDestinationNavHost
-import org.equeim.spacer.ui.screens.LocalNavController
 import org.equeim.spacer.ui.theme.Dimens
 
 @Parcelize
 object SettingsScreen : Destination {
     @Composable
-    override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) =
+    override fun Content(
+        navController: NavController<Destination>,
+        parentNavHostEntry: NavHostEntry<Destination>?
+    ) =
         SettingsScreen()
 }
 
@@ -85,8 +87,9 @@ private fun SettingsScreen() {
                 topPadding = 0.dp
             )
 
-            val listItemHorizontalPadding = (Dimens.ScreenContentPaddingHorizontal() - LIST_ITEM_HORIZONTAL_PADDING)
-                .coerceAtLeast(0.dp)
+            val listItemHorizontalPadding =
+                (Dimens.ScreenContentPaddingHorizontal() - LIST_ITEM_HORIZONTAL_PADDING)
+                    .coerceAtLeast(0.dp)
 
             val darkThemeMode by model.darkThemeMode.collectAsStateWithLifecycle()
             ListItem(
@@ -143,13 +146,9 @@ private fun SettingsScreen() {
                 Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
             )
 
-            var nasaApiKey by remember { mutableStateOf(model.nasaApiKey.value) }
             OutlinedTextField(
-                value = nasaApiKey,
-                onValueChange = {
-                    nasaApiKey = it
-                    model.settings.nasaApiKey.set(it)
-                },
+                value = model.apiKeyTextFieldContent,
+                onValueChange = model::setNasaApiKey,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = Dimens.ScreenContentPaddingHorizontal()),
@@ -164,6 +163,16 @@ private fun SettingsScreen() {
                 Text(stringResource(R.string.generate_nasa_api_key))
             }
 
+            val shouldEnableResetApiKeyButton: Boolean by model.shouldEnableResetApiKeyButton.collectAsStateWithLifecycle()
+            OutlinedButton(
+                onClick = { dialogNavController.navigate(ResetApiKeyConfirmationDialog) },
+                modifier = Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal()),
+                enabled = shouldEnableResetApiKeyButton,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text(stringResource(R.string.reset_nasa_api_key))
+            }
+
             HorizontalDivider()
 
             Text(
@@ -175,7 +184,12 @@ private fun SettingsScreen() {
             )
 
             Text(
-                text = model.remainingRequests?.let { stringResource(R.string.remaining_requests, it) }
+                text = model.remainingRequests?.let {
+                    stringResource(
+                        R.string.remaining_requests,
+                        it
+                    )
+                }
                     ?: stringResource(R.string.remaining_requests_unknown),
                 modifier = Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
             )
@@ -186,22 +200,40 @@ private fun SettingsScreen() {
 @Parcelize
 private data class DarkThemeDialog(val darkThemeMode: AppSettings.DarkThemeMode) : Destination {
     @Composable
-    override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) =
-        DarkThemeDialogContent(darkThemeMode, navController)
+    override fun Content(
+        navController: NavController<Destination>,
+        parentNavHostEntry: NavHostEntry<Destination>?
+    ) {
+        val model =
+            viewModel<SettingsScreenViewModel>(viewModelStoreOwner = checkNotNull(parentNavHostEntry))
+        DarkThemeDialogContent(
+            darkThemeMode,
+            onDismissRequest = navController::pop,
+            setDarkThemeMode = {
+                model.settings.darkThemeMode.set(it)
+                navController.pop()
+            }
+        )
+    }
 }
 
 @Composable
 private fun DarkThemeDialogContent(
     darkThemeMode: AppSettings.DarkThemeMode,
-    navController: NavController<Destination>,
+    onDismissRequest: () -> Unit,
+    setDarkThemeMode: (AppSettings.DarkThemeMode) -> Unit,
 ) {
-    Dialog(title = stringResource(R.string.dark_theme), onDismissRequest = navController::pop) {
+    Dialog(title = stringResource(R.string.dark_theme), onDismissRequest = onDismissRequest) {
         Column {
             if (AppSettings.DarkThemeMode.isFollowSystemSupported) {
-                DarkThemeModeChoice(AppSettings.DarkThemeMode.FollowSystem, darkThemeMode)
+                DarkThemeModeChoice(
+                    AppSettings.DarkThemeMode.FollowSystem,
+                    darkThemeMode,
+                    setDarkThemeMode
+                )
             }
-            DarkThemeModeChoice(AppSettings.DarkThemeMode.On, darkThemeMode)
-            DarkThemeModeChoice(AppSettings.DarkThemeMode.Off, darkThemeMode)
+            DarkThemeModeChoice(AppSettings.DarkThemeMode.On, darkThemeMode, setDarkThemeMode)
+            DarkThemeModeChoice(AppSettings.DarkThemeMode.Off, darkThemeMode, setDarkThemeMode)
         }
     }
 }
@@ -210,9 +242,8 @@ private fun DarkThemeDialogContent(
 private fun DarkThemeModeChoice(
     darkThemeMode: AppSettings.DarkThemeMode,
     initialDarkThemeMode: AppSettings.DarkThemeMode,
+    setDarkThemeMode: (AppSettings.DarkThemeMode) -> Unit,
 ) {
-    val settings = LocalAppSettings.current
-    val navController = LocalNavController.current
     RadioButtonListItem(
         text = stringResource(
             when (darkThemeMode) {
@@ -222,11 +253,49 @@ private fun DarkThemeModeChoice(
             }
         ),
         selected = initialDarkThemeMode == darkThemeMode,
-        onClick = {
-            settings.darkThemeMode.set(darkThemeMode)
-            navController.pop()
-        },
+        onClick = { setDarkThemeMode(darkThemeMode) },
         Modifier.padding(horizontal = Dimens.listItemHorizontalPadding(Dimens.DialogContentPadding))
+    )
+}
+
+@Parcelize
+private object ResetApiKeyConfirmationDialog : Destination {
+    @Composable
+    override fun Content(
+        navController: NavController<Destination>,
+        parentNavHostEntry: NavHostEntry<Destination>?
+    ) {
+        val model =
+            viewModel<SettingsScreenViewModel>(viewModelStoreOwner = checkNotNull(parentNavHostEntry))
+        ResetApiKeyConfirmationDialogContent(
+            onDismissRequest = navController::pop,
+            resetApiKey = {
+                model.setNasaApiKey(apiKey = null)
+                navController.pop()
+            }
+        )
+    }
+}
+
+@Composable
+private fun ResetApiKeyConfirmationDialogContent(
+    onDismissRequest: () -> Unit,
+    resetApiKey: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        confirmButton = {
+            Button(onClick = resetApiKey) {
+                Text(stringResource(R.string.reset_nasa_api_key_confirmation_button))
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismissRequest) {
+                Text(stringResource(android.R.string.cancel))
+            }
+        },
+        title = { Text(stringResource(R.string.reset_nasa_api_key_question)) },
+        text = { Text(stringResource(R.string.reset_nasa_api_key_message)) }
     )
 }
 

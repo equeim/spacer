@@ -20,7 +20,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import okio.Buffer
-import org.equeim.spacer.donki.data.NASA_API_DEMO_KEY
+import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
 import org.equeim.spacer.donki.data.Week
 import org.equeim.spacer.donki.data.model.CoronalMassEjection
 import org.equeim.spacer.donki.data.model.Event
@@ -61,7 +61,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class DonkiDataSourceNetworkTest {
     private val server = MockWebServer()
     private lateinit var dataSource: DonkiDataSourceNetwork
-    private val nasaApiKey = MutableStateFlow(NASA_API_DEMO_KEY)
+    private val nasaApiKey = MutableStateFlow(DEFAULT_NASA_API_KEY)
 
     @BeforeTest
     fun before() {
@@ -99,7 +99,7 @@ class DonkiDataSourceNetworkTest {
             assertEquals("2016-08-29", startDateQuery)
             val endDateQuery = assertNotNull(url.queryParameter("endDate"))
             assertEquals("2016-09-04", endDateQuery)
-            assertEquals(NASA_API_DEMO_KEY, url.apiKey)
+            assertEquals(DEFAULT_NASA_API_KEY, url.apiKey)
         }
     }
 
@@ -114,17 +114,9 @@ class DonkiDataSourceNetworkTest {
     @Test
     fun `Validate 429 error handling`() = runTest {
         server.enqueue(MockResponse().setResponseCode(429))
-        var error = assertFailsWith<TooManyRequestsError> {
+        assertFailsWith<TooManyRequestsError> {
             dataSource.getEvents(Week(LocalDate.of(2016, 8, 29)), EventType.GeomagneticStorm)
         }
-        assertTrue(error.usingDemoKey)
-
-        nasaApiKey.value = "lol"
-        server.enqueue(MockResponse().setResponseCode(429))
-        error = assertFailsWith<TooManyRequestsError> {
-            dataSource.getEvents(Week(LocalDate.of(2016, 8, 29)), EventType.GeomagneticStorm)
-        }
-        assertFalse(error.usingDemoKey)
     }
 
     @Test
@@ -141,7 +133,7 @@ class DonkiDataSourceNetworkTest {
         }
         requestJob.join()
         assertEquals(2, server.requestCount)
-        assertEquals(NASA_API_DEMO_KEY, server.takeRequest().apiKey)
+        assertEquals(DEFAULT_NASA_API_KEY, server.takeRequest().apiKey)
         assertEquals("lol", server.takeRequest().apiKey)
     }
 
