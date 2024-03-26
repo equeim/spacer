@@ -18,7 +18,6 @@ import okhttp3.Interceptor
 import okhttp3.Response
 import okhttp3.ResponseBody
 import org.equeim.spacer.donki.data.DonkiJson
-import org.equeim.spacer.donki.data.NASA_API_DEMO_KEY
 import org.equeim.spacer.donki.data.Week
 import org.equeim.spacer.donki.data.eventSerializer
 import org.equeim.spacer.donki.data.model.Event
@@ -113,7 +112,7 @@ internal class DonkiDataSourceNetwork(private val nasaApiKey: Flow<String>, base
             val error = if (e is HttpException) {
                 when (e.code()) {
                     403 -> InvalidApiKeyError(e)
-                    429 -> TooManyRequestsError(usingDemoKey = apiKey == NASA_API_DEMO_KEY, cause = e)
+                    429 -> TooManyRequestsError(e)
                     else -> HttpErrorResponse(e)
                 }
             } else {
@@ -152,7 +151,7 @@ private class DonkiJsonConverterFactory(json: Json) : JsonConverterFactory(json)
 }
 
 class InvalidApiKeyError(cause: HttpException) : RuntimeException("Invalid API key", cause)
-class TooManyRequestsError(val usingDemoKey: Boolean, cause: HttpException) : RuntimeException("Too many requests. Using DEMO_KEY: $usingDemoKey", cause)
+class TooManyRequestsError(cause: HttpException) : RuntimeException("Too many requests", cause)
 class HttpErrorResponse private constructor(val status: String, cause: HttpException) : RuntimeException(status, cause) {
     constructor(cause: HttpException) : this(cause.message().let {
         if (it.isEmpty()) {

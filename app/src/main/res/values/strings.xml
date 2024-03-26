@@ -31,6 +31,10 @@ SPDX-License-Identifier: MIT
     <string name="connection">Connection</string>
     <string name="nasa_api_key">NASA API key</string>
     <string name="generate_nasa_api_key">Generate NASA API key</string>
+    <string name="reset_nasa_api_key">Reset NASA API key</string>
+    <string name="reset_nasa_api_key_question">Reset NASA API key?</string>
+    <string name="reset_nasa_api_key_message">This will reset NASA API key to its default value, erasing user-supplied API key</string>
+    <string name="reset_nasa_api_key_confirmation_button">Reset</string>
     <string name="rate_limit">Rate limit: %d</string>
     <string name="rate_limit_unknown">Rate limit: unknown</string>
     <string name="remaining_requests">Remaining requests before reaching rate limit: %d</string>
@@ -38,7 +42,6 @@ SPDX-License-Identifier: MIT
 
     <string name="invalid_nasa_api_key">Invalid NASA API key</string>
     <string name="too_many_requests">Too many requests\nWait an hour before retrying</string>
-    <string name="too_many_requests_demo_key">Too many requests\nWait an hour before retrying or generate NASA API key</string>
     <string name="http_error_response">Server returned HTTP status %s</string>
 
     <string name="event_details">Event details</string>

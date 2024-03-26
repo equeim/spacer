@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import org.equeim.spacer.donki.data.NASA_API_DEMO_KEY
+import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
 import java.io.IOException
 
 private const val TAG = "Settings"
@@ -64,10 +64,11 @@ class AppSettings(private val context: Context) {
     val displayEventsTimeInUTC: Preference<Boolean> =
         preference(booleanPreferencesKey("displayEventsTimeInUTC")) { false }
 
-    val nasaApiKey: Preference<String> = preference(stringPreferencesKey("nasaApiKey")) { NASA_API_DEMO_KEY }
+    val nasaApiKey: Preference<String> = preference(stringPreferencesKey("nasaApiKey")) { DEFAULT_NASA_API_KEY }
         .map(
-            fromOriginalToMapped = { it.ifBlank { NASA_API_DEMO_KEY } },
-            fromMappedToOriginal = { it.ifBlank { NASA_API_DEMO_KEY } },
+            fromOriginalToMapped = { it.ifBlank { DEFAULT_NASA_API_KEY } },
+            // Save default key as empty string
+            fromMappedToOriginal = { it.takeUnless { it == DEFAULT_NASA_API_KEY } ?: "" },
         )
 
     interface Preference<T : Any> {
