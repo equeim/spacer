@@ -293,6 +293,7 @@ private fun DonkiEventFilters(
                 .fillMaxWidth()
                 .padding(horizontalContentPadding),
             shape = CircleShape,
+            color = Color.Transparent,
             onClick = {
                 updateFilters(filtersUiState.value.run {
                     copy(dateRangeEnabled = !dateRangeEnabled)
