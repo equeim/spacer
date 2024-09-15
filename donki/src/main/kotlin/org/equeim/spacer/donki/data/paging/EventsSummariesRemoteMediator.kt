@@ -47,8 +47,8 @@ internal class EventsSummariesRemoteMediator(
             Log.e(TAG, "initialize: failed to check what weeks need to be refreshed", e)
             emptyList()
         }
-        pendingInitialRefreshWeeks.set(weeks)
         return if (weeks.isNotEmpty()) {
+            pendingInitialRefreshWeeks.set(weeks)
             InitializeAction.LAUNCH_INITIAL_REFRESH
         } else {
             InitializeAction.SKIP_INITIAL_REFRESH
