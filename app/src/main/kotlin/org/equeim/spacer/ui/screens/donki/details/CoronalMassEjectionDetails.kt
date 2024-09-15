@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import org.equeim.spacer.R
-import org.equeim.spacer.donki.data.model.CoronalMassEjection
+import org.equeim.spacer.donki.data.events.network.json.CoronalMassEjection
 import org.equeim.spacer.ui.components.ExpandableCard
 import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SectionPlaceholder

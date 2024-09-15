@@ -41,14 +41,14 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.equeim.spacer.R
-import org.equeim.spacer.donki.data.DonkiRepository
+import org.equeim.spacer.donki.data.events.DonkiEventsRepository
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun rememberDonkiEventsListStateHolder(
     items: LazyPagingItems<DonkiEventsScreenViewModel.ListItem>,
     listState: LazyListState,
-    eventFilters: StateFlow<DonkiRepository.EventFilters>,
+    eventFilters: StateFlow<DonkiEventsRepository.Filters>,
     isLastWeekNeedsRefreshing: suspend () -> Boolean,
 ): DonkiEventsListStateHolder {
     val eventFiltersState = eventFilters.collectAsStateWithLifecycle()
@@ -71,7 +71,7 @@ fun rememberDonkiEventsListStateHolder(
 class DonkiEventsListStateHolder(
     val items: LazyPagingItems<DonkiEventsScreenViewModel.ListItem>,
     val listState: LazyListState,
-    private val eventFilters: State<DonkiRepository.EventFilters>,
+    private val eventFilters: State<DonkiEventsRepository.Filters>,
     private val isLastWeekNeedsRefreshing: suspend () -> Boolean,
     context: Context,
     private val coroutineScope: CoroutineScope,

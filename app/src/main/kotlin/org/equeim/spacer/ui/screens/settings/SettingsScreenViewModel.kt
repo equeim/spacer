@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import org.equeim.spacer.AppSettings
-import org.equeim.spacer.donki.data.network.DonkiNetworkStats
+import org.equeim.spacer.donki.data.common.DonkiNetworkStats
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 

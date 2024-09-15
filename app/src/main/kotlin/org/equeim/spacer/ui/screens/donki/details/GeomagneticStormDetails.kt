@@ -16,7 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.equeim.spacer.R
-import org.equeim.spacer.donki.data.model.GeomagneticStorm
+import org.equeim.spacer.donki.data.events.network.json.GeomagneticStorm
 import org.equeim.spacer.ui.components.OutlinedCardWithPadding
 import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SectionPlaceholder

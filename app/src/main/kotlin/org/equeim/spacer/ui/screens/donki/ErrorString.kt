@@ -6,9 +6,9 @@ package org.equeim.spacer.ui.screens.donki
 
 import android.content.Context
 import org.equeim.spacer.R
-import org.equeim.spacer.donki.data.network.HttpErrorResponse
-import org.equeim.spacer.donki.data.network.InvalidApiKeyError
-import org.equeim.spacer.donki.data.network.TooManyRequestsError
+import org.equeim.spacer.donki.data.common.HttpErrorResponse
+import org.equeim.spacer.donki.data.common.InvalidApiKeyError
+import org.equeim.spacer.donki.data.common.TooManyRequestsError
 
 fun Throwable.donkiErrorToString(context: Context): String = when (this) {
     is InvalidApiKeyError -> context.getString(R.string.invalid_nasa_api_key)

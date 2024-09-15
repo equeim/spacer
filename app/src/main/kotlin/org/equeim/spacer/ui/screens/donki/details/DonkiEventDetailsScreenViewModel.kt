@@ -28,10 +28,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.equeim.spacer.AppSettings
-import org.equeim.spacer.donki.data.DonkiRepository
-import org.equeim.spacer.donki.data.model.Event
-import org.equeim.spacer.donki.data.model.EventId
-import org.equeim.spacer.donki.data.model.EventType
+import org.equeim.spacer.donki.data.events.network.json.Event
+import org.equeim.spacer.donki.data.events.EventId
+import org.equeim.spacer.donki.data.events.EventType
+import org.equeim.spacer.donki.data.events.DonkiEventsRepository
 import org.equeim.spacer.ui.screens.donki.displayStringResId
 import org.equeim.spacer.ui.screens.donki.donkiErrorToString
 import org.equeim.spacer.ui.utils.createEventDateTimeFormatter
@@ -54,7 +54,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
     AndroidViewModel(application) {
 
     private val settings = AppSettings(application)
-    private val repository = DonkiRepository(settings.customNasaApiKeyOrNull(), application)
+    private val repository = DonkiEventsRepository(settings.customNasaApiKeyOrNull(), application)
 
     private enum class LoadingType {
         Initial, Refresh
@@ -130,7 +130,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun processLoadRequests(): Flow<DonkiRepository.EventById> =
+    private fun processLoadRequests(): Flow<DonkiEventsRepository.EventById> =
         loadRequests.receiveAsFlow()
             .onEach {
                 _contentState.value.let {
@@ -165,7 +165,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
                 true
             }
 
-    private fun Flow<DonkiRepository.EventById>.mapEventToPresentation(): Flow<ContentState.EventData> {
+    private fun Flow<DonkiEventsRepository.EventById>.mapEventToPresentation(): Flow<ContentState.EventData> {
         val application = getApplication<Application>()
         val defaultLocaleFlow =
             application.defaultLocaleFlow().stateIn(viewModelScope, SharingStarted.Eagerly, application.defaultLocale)
@@ -199,7 +199,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
         val eventTimeFormatter = createEventTimeFormatter(locale, eventTimeZone)
     }
 
-    private fun DonkiRepository.EventById.toContentState(
+    private fun DonkiEventsRepository.EventById.toContentState(
         eventTypesStringsCache: ConcurrentHashMap<EventType, String>,
         formatters: Formatters,
     ) = ContentState.EventData(
