@@ -6,7 +6,7 @@ package org.equeim.spacer.ui.utils
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import org.equeim.spacer.donki.data.model.units.Angle
+import org.equeim.spacer.donki.data.events.network.json.units.Angle
 import org.equeim.spacer.ui.LocalDefaultLocale
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols

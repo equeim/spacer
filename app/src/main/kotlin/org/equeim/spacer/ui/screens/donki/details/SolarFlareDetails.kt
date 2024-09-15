@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import org.equeim.spacer.R
-import org.equeim.spacer.donki.data.model.SolarFlare
+import org.equeim.spacer.donki.data.events.network.json.SolarFlare
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.utils.rememberCoordinatesFormatter
 import java.time.format.DateTimeFormatter

@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 # SPDX-FileCopyrightText: 2022-2024 Alexey Rochev
 #
 # SPDX-License-Identifier: MIT
@@ -15,6 +17,7 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import PurePath
 from typing import Iterator
+from traceback import print_exception
 
 import aiofiles
 import aiohttp
@@ -23,7 +26,8 @@ from termcolor import cprint
 base_url = "https://kauai.ccmc.gsfc.nasa.gov/DONKI/WS/get/"
 # base_url = "https://api.nasa.gov/DONKI/"
 api_key = None
-datasets_dir = PurePath(__file__).parent / "resources/org/equeim/spacer/donki/data/network/datasets"
+events_datasets_dir = PurePath(__file__).parent / "resources/org/equeim/spacer/donki/data/events/network/datasets"
+notifications_datasets_dir = PurePath(__file__).parent / "resources/org/equeim/spacer/donki/data/notifications/network/datasets"
 
 years = [
     2016,
@@ -33,10 +37,11 @@ years = [
     2020,
     2021,
     2022,
-    2023
+    2023,
+    2024
 ]
 
-events = [
+endpoints = [
     "CME",
     "IPS",
     "RBE",
@@ -44,7 +49,8 @@ events = [
     "GST",
     "FLR",
     "SEP",
-    "MPC"
+    "MPC",
+    "notifications"
 ]
 
 parallel_downloads_semaphore = Semaphore(5)
@@ -52,24 +58,17 @@ request_timeout_seconds = 30
 rate_limit_remaining_header = "X-RateLimit-Remaining"
 
 
-def exception_to_string(e: Exception) -> str:
-    message = str(e)
-    if message:
-        return f"{e.__class__.__name__}: {message}"
-    return e.__class__.__name__
-
-
 @dataclass
 class DownloadParameters:
     year: int
     month: int
-    event: str
+    endpoint: str
 
 
 async def download(params: DownloadParameters, session: aiohttp.ClientSession):
     start_date = date(params.year, params.month, 1)
     end_date = date(params.year, params.month, calendar.monthrange(params.year, params.month)[1])
-    url = f"{base_url}{params.event}?startDate={start_date}&endDate={end_date}"
+    url = f"{base_url}{params.endpoint}?startDate={start_date}&endDate={end_date}"
     if api_key:
         url += f"&api_key={api_key}"
     async with parallel_downloads_semaphore:
@@ -83,24 +82,29 @@ async def download(params: DownloadParameters, session: aiohttp.ClientSession):
                     pass
                 data = await response.read()
         except (aiohttp.ClientError, asyncio.TimeoutError) as e:
-            cprint(f"Nope for {url}: {exception_to_string(e)}", "red", attrs=["bold"], file=sys.stderr)
+            cprint(f"Failed to request {url}:", "red", attrs=["bold"], file=sys.stderr)
+            print_exception(e, file=sys.stderr)
             return
     if not data:
         return
-    file_name = "{}_{}_{}.json".format(params.event, start_date, end_date)
-    file_path = datasets_dir / file_name
+
+    if params.endpoint == "notifications":
+        file_path = notifications_datasets_dir / f"{start_date}_{end_date}.json"
+    else:
+        file_path = events_datasets_dir / f"{params.endpoint}_{start_date}_{end_date}.json"
     try:
         async with aiofiles.open(file_path, "wb") as f:
             await f.write(data)
     except OSError as e:
-        cprint(f"Nope for {file_path}: {exception_to_string(e)}", "red", attrs=["bold"], file=sys.stderr)
+        cprint(f"Failed to write {file_path}:", "red", attrs=["bold"], file=sys.stderr)
+        print_exception(e, file=sys.stderr)
 
 
 def download_parameters() -> Iterator[DownloadParameters]:
     for year in years:
         for month in range(1, 13):
-            for event in events:
-                yield DownloadParameters(year, month, event)
+            for endpoint in endpoints:
+                yield DownloadParameters(year, month, endpoint)
 
 
 async def main():

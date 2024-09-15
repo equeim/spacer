@@ -80,8 +80,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
-import org.equeim.spacer.donki.data.DonkiRepository
-import org.equeim.spacer.donki.data.model.EventType
+import org.equeim.spacer.donki.data.common.DateRange
+import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.components.Dialog
 import org.equeim.spacer.ui.screens.Destination
@@ -270,9 +270,9 @@ private fun DonkiEventFilters(
                 }
                 EventTypeChip(R.string.all_event_types, allTypesSelected) {
                     val newTypes = if (allTypesSelected) {
-                        emptySet()
+                        emptyList()
                     } else {
-                        EventType.entries.toSet()
+                        EventType.entries
                     }
                     updateFilters(filtersUiState.value.copy(types = newTypes))
                 }
@@ -337,7 +337,7 @@ private fun DonkiEventFilters(
 
         if (dateRangeEnabled) {
             eventsTimeZone.value?.let { zone ->
-                val dateRange: DonkiRepository.DateRange? by remember { derivedStateOf { filtersUiState.value.dateRange } }
+                val dateRange: DateRange? by remember { derivedStateOf { filtersUiState.value.dateRange } }
                 OutlinedButton(
                     onClick = showDateRangeDialog,
                     modifier = Modifier
@@ -401,10 +401,10 @@ private object DateRangePickerDialog : Destination {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DateRangePickerDialogContent(
-    initialDateRange: DonkiRepository.DateRange?,
+    initialDateRange: DateRange?,
     eventsTimeZone: ZoneId,
     hideDialog: () -> Unit,
-    onAccepted: (DonkiRepository.DateRange) -> Unit,
+    onAccepted: (DateRange) -> Unit,
 ) {
     val heightSizeClass = Dimens.calculateWindowSizeClass().heightSizeClass
     val initialDisplayMode: DisplayMode by remember {
@@ -440,7 +440,7 @@ private fun DateRangePickerDialogContent(
                             ?.plus(Duration.ofDays(1))
                     if (firstDayInstant != null && instantAfterLastDay != null) {
                         hideDialog()
-                        onAccepted(DonkiRepository.DateRange(firstDayInstant, instantAfterLastDay))
+                        onAccepted(DateRange(firstDayInstant, instantAfterLastDay))
                     }
                 },
                 enabled = confirmButtonEnabled
@@ -541,8 +541,8 @@ private fun DonkiEventFiltersDialogPreview() {
             filtersUiState = remember {
                 mutableStateOf(
                     DonkiEventsScreenViewModel.FiltersUiState(
-                        types = EventType.entries.toSet() - EventType.GeomagneticStorm,
-                        dateRange = DonkiRepository.DateRange(
+                        types = EventType.entries - EventType.GeomagneticStorm,
+                        dateRange = DateRange(
                             firstDayInstant = LocalDate.now().minusDays(5).atStartOfDay(ZoneId.systemDefault())
                                 .toInstant(),
                             instantAfterLastDay = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant(),

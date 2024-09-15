@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import org.equeim.spacer.R
-import org.equeim.spacer.donki.data.model.InterplanetaryShock
+import org.equeim.spacer.donki.data.events.network.json.InterplanetaryShock
 import org.equeim.spacer.ui.theme.Dimens
 
 @Composable

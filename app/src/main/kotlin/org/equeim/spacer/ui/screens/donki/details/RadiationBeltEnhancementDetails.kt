@@ -5,7 +5,7 @@
 package org.equeim.spacer.ui.screens.donki.details
 
 import androidx.compose.runtime.Composable
-import org.equeim.spacer.donki.data.model.RadiationBeltEnhancement
+import org.equeim.spacer.donki.data.events.network.json.RadiationBeltEnhancement
 
 @Composable
 fun RadiationBeltEnhancementDetails(event: RadiationBeltEnhancement) =
