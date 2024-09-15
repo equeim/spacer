@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [versions]
-android-gradle-plugin = "8.3.1"
+android-gradle-plugin = "8.6.0"
 kotlin = "1.9.23"
 ksp = "1.9.23-1.0.19"
 gradle-versions-plugin = "0.51.0"
