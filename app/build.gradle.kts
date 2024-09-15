@@ -31,21 +31,18 @@ android {
         buildConfig = true
         compose = true
     }
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8.toString()
-        freeCompilerArgs += buildList {
-            add("-P")
-            add("plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=${layout.projectDirectory.file("compose_compiler_config.conf").asFile.absolutePath}")
-            val composeReportsDir: String by lazy { layout.buildDirectory.dir("compose_compiler").get().asFile.absolutePath }
-            if (project.findProperty("composeCompilerReports") == "true") {
-                add("-P")
-                add("plugin:androidx.compose.compiler.plugins.kotlin:reportsDestination=$composeReportsDir")
-            }
-            if (project.findProperty("composeCompilerMetrics") == "true") {
-                add("-P")
-                add("plugin:androidx.compose.compiler.plugins.kotlin:metricsDestination=$composeReportsDir")
-            }
-        }
+
+    kotlinOptions.jvmTarget = JavaVersion.VERSION_1_8.toString()
+}
+
+composeCompiler {
+    stabilityConfigurationFile.set(layout.projectDirectory.file("compose_compiler_config.conf"))
+    val composeReportsDir = layout.buildDirectory.dir("compose_compiler")
+    if (project.findProperty("composeCompilerReports") == "true") {
+        reportsDestination.set(composeReportsDir)
+    }
+    if (project.findProperty("composeCompilerMetrics") == "true") {
+        metricsDestination.set(composeReportsDir)
     }
 }
 
