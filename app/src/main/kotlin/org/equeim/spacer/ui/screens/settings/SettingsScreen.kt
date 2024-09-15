@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -254,7 +255,8 @@ private fun DarkThemeModeChoice(
         ),
         selected = initialDarkThemeMode == darkThemeMode,
         onClick = { setDarkThemeMode(darkThemeMode) },
-        Modifier.padding(horizontal = Dimens.listItemHorizontalPadding(Dimens.DialogContentPadding))
+        modifier = Modifier.padding(horizontal = Dimens.listItemHorizontalPadding(Dimens.DialogContentPadding)),
+        containerColor = Color.Transparent
     )
 }
 
