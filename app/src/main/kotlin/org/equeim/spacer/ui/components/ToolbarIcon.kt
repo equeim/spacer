@@ -21,11 +21,16 @@ import androidx.compose.ui.res.stringResource
 @Composable
 fun ToolbarIcon(icon: ImageVector, @StringRes textId: Int, onClick: () -> Unit) {
     val text = stringResource(textId)
-    TooltipBox(positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(), tooltip = {
-        PlainTooltip {
-            Text(text)
-        }
-    }, state = rememberTooltipState()) {
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        tooltip = {
+            PlainTooltip {
+                Text(text)
+            }
+        },
+        state = rememberTooltipState(),
+        focusable = false
+    ) {
         IconButton(onClick) {
             Icon(icon, text)
         }
