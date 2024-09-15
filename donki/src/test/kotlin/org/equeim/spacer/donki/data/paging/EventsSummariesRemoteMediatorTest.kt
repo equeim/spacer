@@ -70,18 +70,6 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         }
 
     @Test
-    fun `Initial week does not require refresh ## validate load() when refresh is initial`() =
-        base {
-            `Initial week does not require refresh`()
-            mediator.initialize()
-            clearMocks(cacheDataSource)
-            val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
-            assertIs<RemoteMediator.MediatorResult.Success>(result)
-            assertFalse(result.endOfPaginationReached)
-            assertEquals(emptyList(), actualRefreshedEvents)
-        }
-
-    @Test
     fun `Initial week does not require refresh ## validate load() when refresh is not initial`() =
         base {
             `Initial week does not require refresh`()
