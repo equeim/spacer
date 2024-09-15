@@ -9,6 +9,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -17,6 +18,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Interceptor
 import okhttp3.Response
 import okhttp3.ResponseBody
+import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
 import org.equeim.spacer.donki.data.DonkiJson
 import org.equeim.spacer.donki.data.Week
 import org.equeim.spacer.donki.data.eventSerializer
@@ -34,7 +36,7 @@ import kotlin.concurrent.Volatile
 
 private const val TAG = "DonkiDataSourceNetwork"
 
-internal class DonkiDataSourceNetwork(private val nasaApiKey: Flow<String>, baseUrl: HttpUrl = BASE_URL) {
+internal class DonkiDataSourceNetwork(private val customNasaApiKey: Flow<String?>, baseUrl: HttpUrl = BASE_URL) {
     private val api = createRetrofit(
         baseUrl = baseUrl,
         logTag = TAG,
@@ -50,7 +52,7 @@ internal class DonkiDataSourceNetwork(private val nasaApiKey: Flow<String>, base
     suspend fun getEvents(
         week: Week,
         eventType: EventType,
-    ): List<Pair<Event, JsonObject>> = nasaApiKey.mapLatest { apiKey ->
+    ): List<Pair<Event, JsonObject>> = customNasaApiKey.map { it ?: DEFAULT_NASA_API_KEY }.mapLatest { apiKey ->
         try {
             Log.d(TAG, "getEvents() called with: week = $week, eventType = $eventType")
             val startDate = week.firstDay

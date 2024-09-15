@@ -87,7 +87,7 @@ interface DonkiRepository : Closeable {
     }
 }
 
-fun DonkiRepository(nasaApiKey: Flow<String>, context: Context): DonkiRepository = DonkiRepositoryImpl(nasaApiKey, context)
+fun DonkiRepository(customNasaApiKey: Flow<String?>, context: Context): DonkiRepository = DonkiRepositoryImpl(customNasaApiKey, context)
 
 internal interface DonkiRepositoryInternal : DonkiRepository {
     suspend fun getEventSummariesForWeek(
@@ -104,11 +104,11 @@ internal interface DonkiRepositoryInternal : DonkiRepository {
 }
 
 private class DonkiRepositoryImpl(
-    nasaApiKey: Flow<String>,
+    customNasaApiKey: Flow<String?>,
     context: Context,
     private val clock: Clock = Clock.systemDefaultZone(),
 ) : DonkiRepositoryInternal {
-    private val networkDataSource = DonkiDataSourceNetwork(nasaApiKey)
+    private val networkDataSource = DonkiDataSourceNetwork(customNasaApiKey)
     private val cacheDataSource = DonkiDataSourceCache(context)
 
     override fun close() {

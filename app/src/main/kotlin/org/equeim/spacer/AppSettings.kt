@@ -14,14 +14,16 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
-import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
 import java.io.IOException
 
 private const val TAG = "Settings"
@@ -64,12 +66,16 @@ class AppSettings(private val context: Context) {
     val displayEventsTimeInUTC: Preference<Boolean> =
         preference(booleanPreferencesKey("displayEventsTimeInUTC")) { false }
 
-    val nasaApiKey: Preference<String> = preference(stringPreferencesKey("nasaApiKey")) { DEFAULT_NASA_API_KEY }
-        .map(
-            fromOriginalToMapped = { it.ifBlank { DEFAULT_NASA_API_KEY } },
-            // Save default key as empty string
-            fromMappedToOriginal = { it.takeUnless { it == DEFAULT_NASA_API_KEY } ?: "" },
-        )
+    val useCustomNasaApiKey: Preference<Boolean> =
+        preference(booleanPreferencesKey("useCustomNasaApiKey")) { false }
+
+    val customNasaApiKey: Preference<String> = preference(stringPreferencesKey("customNasaApiKey")) { "" }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun customNasaApiKeyOrNull(): Flow<String?> = useCustomNasaApiKey.flow()
+        .transformLatest { useCustomNasaApiKey ->
+            if (useCustomNasaApiKey) emitAll(customNasaApiKey.flow()) else emit(null)
+        }
 
     interface Preference<T : Any> {
         suspend fun get(): T

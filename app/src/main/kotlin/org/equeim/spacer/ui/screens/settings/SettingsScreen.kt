@@ -26,7 +26,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
@@ -92,7 +94,7 @@ private fun SettingsScreen() {
                 (Dimens.ScreenContentPaddingHorizontal() - LIST_ITEM_HORIZONTAL_PADDING)
                     .coerceAtLeast(0.dp)
 
-            val darkThemeMode by model.darkThemeMode.collectAsStateWithLifecycle()
+            val darkThemeMode: AppSettings.DarkThemeMode by model.darkThemeMode.collectAsStateWithLifecycle()
             ListItem(
                 headlineContent = { Text(stringResource(R.string.dark_theme)) },
                 supportingContent = {
@@ -114,7 +116,7 @@ private fun SettingsScreen() {
             )
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val useSystemColors by model.useSystemColors.collectAsStateWithLifecycle()
+                val useSystemColors: Boolean by model.useSystemColors.collectAsStateWithLifecycle()
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.use_system_colors)) },
                     trailingContent = { Switch(useSystemColors, onCheckedChange = null) },
@@ -131,7 +133,7 @@ private fun SettingsScreen() {
                 Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
             )
 
-            val displayEventsTimeInUTC by model.displayEventsTimeInUTC.collectAsStateWithLifecycle()
+            val displayEventsTimeInUTC: Boolean by model.displayEventsTimeInUTC.collectAsStateWithLifecycle()
             ListItem(
                 headlineContent = { Text(stringResource(R.string.display_events_in_utc)) },
                 trailingContent = { Switch(displayEventsTimeInUTC, onCheckedChange = null) },
@@ -147,31 +149,36 @@ private fun SettingsScreen() {
                 Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
             )
 
+            val useCustomApiKey: Boolean by model.useCustomApiKey.collectAsStateWithLifecycle()
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.custom_nasa_api_key)) },
+                trailingContent = { Switch(useCustomApiKey, onCheckedChange = null) },
+                modifier = Modifier
+                    .clickable {
+                        model.settings.useCustomNasaApiKey.set(!useCustomApiKey)
+                    }
+                    .padding(horizontal = listItemHorizontalPadding)
+            )
+
+            val apiKeyIsBlank: Boolean by remember { derivedStateOf { model.apiKeyTextFieldContent.isBlank() } }
             OutlinedTextField(
                 value = model.apiKeyTextFieldContent,
                 onValueChange = model::setNasaApiKey,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = Dimens.ScreenContentPaddingHorizontal()),
-                label = { Text(stringResource(R.string.nasa_api_key)) }
+                enabled = useCustomApiKey,
+                label = { Text(stringResource(R.string.nasa_api_key)) },
+                isError = apiKeyIsBlank
             )
 
             val uriHandler = LocalUriHandler.current
             Button(
                 onClick = { uriHandler.openUri(GENERATE_NASA_API_KEY_URL) },
-                modifier = Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
+                modifier = Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal()),
+                enabled = useCustomApiKey
             ) {
                 Text(stringResource(R.string.generate_nasa_api_key))
-            }
-
-            val shouldEnableResetApiKeyButton: Boolean by model.shouldEnableResetApiKeyButton.collectAsStateWithLifecycle()
-            OutlinedButton(
-                onClick = { dialogNavController.navigate(ResetApiKeyConfirmationDialog) },
-                modifier = Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal()),
-                enabled = shouldEnableResetApiKeyButton,
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            ) {
-                Text(stringResource(R.string.reset_nasa_api_key))
             }
 
             HorizontalDivider()
@@ -257,47 +264,6 @@ private fun DarkThemeModeChoice(
         onClick = { setDarkThemeMode(darkThemeMode) },
         modifier = Modifier.padding(horizontal = Dimens.listItemHorizontalPadding(Dimens.DialogContentPadding)),
         containerColor = Color.Transparent
-    )
-}
-
-@Parcelize
-private object ResetApiKeyConfirmationDialog : Destination {
-    @Composable
-    override fun Content(
-        navController: NavController<Destination>,
-        parentNavHostEntry: NavHostEntry<Destination>?
-    ) {
-        val model =
-            viewModel<SettingsScreenViewModel>(viewModelStoreOwner = checkNotNull(parentNavHostEntry))
-        ResetApiKeyConfirmationDialogContent(
-            onDismissRequest = navController::pop,
-            resetApiKey = {
-                model.setNasaApiKey(apiKey = null)
-                navController.pop()
-            }
-        )
-    }
-}
-
-@Composable
-private fun ResetApiKeyConfirmationDialogContent(
-    onDismissRequest: () -> Unit,
-    resetApiKey: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        confirmButton = {
-            Button(onClick = resetApiKey) {
-                Text(stringResource(R.string.reset_nasa_api_key_confirmation_button))
-            }
-        },
-        dismissButton = {
-            Button(onClick = onDismissRequest) {
-                Text(stringResource(android.R.string.cancel))
-            }
-        },
-        title = { Text(stringResource(R.string.reset_nasa_api_key_question)) },
-        text = { Text(stringResource(R.string.reset_nasa_api_key_message)) }
     )
 }
 
