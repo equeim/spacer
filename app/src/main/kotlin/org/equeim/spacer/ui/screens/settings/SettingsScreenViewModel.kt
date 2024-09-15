@@ -13,12 +13,10 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import org.equeim.spacer.AppSettings
-import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
 import org.equeim.spacer.donki.data.network.DonkiNetworkStats
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
@@ -34,17 +32,16 @@ class SettingsScreenViewModel(application: Application) : AndroidViewModel(appli
     val useSystemColors: StateFlow<Boolean> by PreferenceStateFlow(settings.useSystemColors)
     val displayEventsTimeInUTC: StateFlow<Boolean> by PreferenceStateFlow(settings.displayEventsTimeInUTC)
 
+    val useCustomApiKey: StateFlow<Boolean> by PreferenceStateFlow(settings.useCustomNasaApiKey)
     private val _apiKeyTextFieldContent = mutableStateOf("")
     val apiKeyTextFieldContent: String by _apiKeyTextFieldContent
-    val shouldEnableResetApiKeyButton: StateFlow<Boolean> by PreferenceStateFlow(
-        settings.nasaApiKey.flow().map { it != DEFAULT_NASA_API_KEY })
 
     val rateLimit: Int? = DonkiNetworkStats.rateLimit
     val remainingRequests: Int? = DonkiNetworkStats.remainingRequests
 
     init {
         loadJobs.add(viewModelScope.launch {
-            _apiKeyTextFieldContent.value = settings.nasaApiKey.get()
+            _apiKeyTextFieldContent.value = settings.customNasaApiKey.get()
         })
 
         viewModelScope.launch {
@@ -56,9 +53,9 @@ class SettingsScreenViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    fun setNasaApiKey(apiKey: String?) {
-        settings.nasaApiKey.set(apiKey.orEmpty())
-        _apiKeyTextFieldContent.value = apiKey ?: DEFAULT_NASA_API_KEY
+    fun setNasaApiKey(apiKey: String) {
+        _apiKeyTextFieldContent.value = apiKey
+        settings.customNasaApiKey.set(apiKey)
     }
 
     private inner class PreferenceStateFlow<T : Any>(flow: Flow<T>) :

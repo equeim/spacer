@@ -58,7 +58,7 @@ class DonkiEventsScreenViewModel(application: Application, private val savedStat
     }
 
     private val settings = AppSettings(application)
-    private val repository = DonkiRepository(settings.nasaApiKey.flow(), application)
+    private val repository = DonkiRepository(settings.customNasaApiKeyOrNull(), application)
 
     private class Formatters(locale: Locale, val zone: ZoneId) {
         val eventDateFormatter = createEventDateFormatter(locale, zone)

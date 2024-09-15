@@ -29,12 +29,9 @@ SPDX-License-Identifier: MIT
     <string name="behaviour">Behaviour</string>
     <string name="display_events_in_utc">Display event times in UTC</string>
     <string name="connection">Connection</string>
+    <string name="custom_nasa_api_key">Use personal NASA API key</string>
     <string name="nasa_api_key">NASA API key</string>
     <string name="generate_nasa_api_key">Generate NASA API key</string>
-    <string name="reset_nasa_api_key">Reset NASA API key</string>
-    <string name="reset_nasa_api_key_question">Reset NASA API key?</string>
-    <string name="reset_nasa_api_key_message">This will reset NASA API key to its default value, erasing user-supplied API key</string>
-    <string name="reset_nasa_api_key_confirmation_button">Reset</string>
     <string name="rate_limit">Rate limit: %d</string>
     <string name="rate_limit_unknown">Rate limit: unknown</string>
     <string name="remaining_requests">Remaining requests before reaching rate limit: %d</string>
