@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.plugin.parcelize)
+    alias(libs.plugins.kotlin.plugin.compose)
 }
 
 android {
@@ -30,7 +31,6 @@ android {
         buildConfig = true
         compose = true
     }
-    composeOptions.kotlinCompilerExtensionVersion = libs.versions.androidx.compose.compiler.get()
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
         freeCompilerArgs += buildList {
