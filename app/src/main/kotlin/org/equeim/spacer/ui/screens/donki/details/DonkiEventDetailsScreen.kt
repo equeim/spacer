@@ -33,21 +33,19 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -84,7 +82,6 @@ import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreenViewMod
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.theme.SatelliteAlt
-import org.equeim.spacer.ui.utils.collectWithLifecycle
 import java.time.format.DateTimeFormatter
 
 @Parcelize
@@ -141,24 +138,17 @@ private fun ScreenContent(
         }
     ) { contentPadding ->
         val pullToRefreshState = rememberPullToRefreshState()
-        val lifecycleOwner = LocalLifecycleOwner.current
-        LaunchedEffect(pullToRefreshState, lifecycleOwner) {
-            model.showRefreshIndicator.collectWithLifecycle(lifecycleOwner) {
-                if (pullToRefreshState.isRefreshing != it) {
-                    if (it) pullToRefreshState.startRefresh() else pullToRefreshState.endRefresh()
-                }
-            }
-        }
-        if (pullToRefreshState.isRefreshing) {
-            SideEffect {
-                model.refreshIfNotAlreadyLoading()
-            }
-        }
+        val showRefreshIndicator: Boolean by model.showRefreshIndicator.collectAsStateWithLifecycle()
         Box(
-            Modifier
+            modifier = Modifier
                 .fillMaxSize()
-                .nestedScroll(pullToRefreshState.nestedScrollConnection)
-        ) {
+                .consumeWindowInsets(contentPadding)
+                .pullToRefresh(
+                    isRefreshing = showRefreshIndicator,
+                    state = pullToRefreshState,
+                    onRefresh = model::refreshIfNotAlreadyLoading
+                )
+        )  {
             val contentState by model.contentState.collectAsState()
             Crossfade(contentState, label = "Content state crossfade") { state ->
                 Box(
@@ -179,12 +169,12 @@ private fun ScreenContent(
                     }
                 }
             }
-            PullToRefreshContainer(
-                pullToRefreshState,
-                Modifier
+            PullToRefreshDefaults.Indicator(
+                state = pullToRefreshState,
+                isRefreshing = showRefreshIndicator,
+                modifier = Modifier
                     .align(Alignment.TopCenter)
                     .padding(contentPadding)
-                    .consumeWindowInsets(contentPadding)
             )
         }
     }

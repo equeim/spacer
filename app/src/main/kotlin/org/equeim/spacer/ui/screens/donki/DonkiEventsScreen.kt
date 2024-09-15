@@ -35,12 +35,12 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -49,7 +49,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -78,14 +77,16 @@ import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreen
 import org.equeim.spacer.ui.screens.settings.SettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.FilterList
-import org.equeim.spacer.ui.utils.collectWithLifecycle
 import org.equeim.spacer.ui.utils.plus
 import java.time.ZoneId
 
 @Parcelize
 object DonkiEventsScreen : Destination {
     @Composable
-    override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) =
+    override fun Content(
+        navController: NavController<Destination>,
+        parentNavHostEntry: NavHostEntry<Destination>?
+    ) =
         DonkiEventsScreen()
 }
 
@@ -150,20 +151,8 @@ private fun DonkiEventsScreen(
             )
         }
     ) { contentPadding ->
-        val pullToRefreshState = rememberPullToRefreshState(enabled = holder::enableRefreshIndicator)
-        val lifecycleOwner = LocalLifecycleOwner.current
-        LaunchedEffect(pullToRefreshState, lifecycleOwner) {
-            holder.showRefreshIndicator.collectWithLifecycle(lifecycleOwner) {
-                if (pullToRefreshState.isRefreshing != it) {
-                    if (it) pullToRefreshState.startRefresh() else pullToRefreshState.endRefresh()
-                }
-            }
-        }
-        if (pullToRefreshState.isRefreshing) {
-            SideEffect {
-                holder.refreshIfNotAlreadyLoading()
-            }
-        }
+        val pullToRefreshState = rememberPullToRefreshState()
+        val showPullToRefreshIndicator: Boolean by holder.showRefreshIndicator.collectAsStateWithLifecycle()
         Box(Modifier.consumeWindowInsets(contentPadding)) {
             val fullscreenError = holder.fullscreenError
             Row(Modifier.fillMaxWidth()) {
@@ -171,7 +160,12 @@ private fun DonkiEventsScreen(
                     .fillMaxHeight()
                     .weight(1.0f)
                     .nestedScroll(scrollBehavior.nestedScrollConnection)
-                    .nestedScroll(pullToRefreshState.nestedScrollConnection)
+                    .pullToRefresh(
+                        isRefreshing = showPullToRefreshIndicator,
+                        state = pullToRefreshState,
+                        enabled = holder.enableRefreshIndicator,
+                        onRefresh = holder::refreshIfNotAlreadyLoading
+                    )
                 val mainContentPadding = contentPadding + Dimens.ScreenContentPadding()
                 when {
                     fullscreenError != null -> DonkiEventsScreenContentErrorPlaceholder(
@@ -180,7 +174,11 @@ private fun DonkiEventsScreen(
                         fullscreenError,
                     )
 
-                    listIsEmpty -> DonkiEventsScreenContentLoadingPlaceholder(mainContentModifier, contentPadding)
+                    listIsEmpty -> DonkiEventsScreenContentLoadingPlaceholder(
+                        mainContentModifier,
+                        contentPadding
+                    )
+
                     else -> DonkiEventsScreenContentPaging(
                         mainContentModifier,
                         mainContentPadding,
@@ -204,7 +202,11 @@ private fun DonkiEventsScreen(
                     .fillMaxSize()
                     .padding(contentPadding)
             ) {
-                PullToRefreshContainer(pullToRefreshState, Modifier.align(Alignment.TopCenter))
+                PullToRefreshDefaults.Indicator(
+                    state = pullToRefreshState,
+                    isRefreshing = showPullToRefreshIndicator,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
                 if (!listIsEmpty) {
                     if (holder.items.loadState.source.prepend is LoadState.Loading) {
                         LinearProgressIndicator(
@@ -249,7 +251,11 @@ private fun ShowSnackbarError(
 }
 
 @Composable
-private fun DonkiEventsScreenContentErrorPlaceholder(modifier: Modifier, contentPadding: PaddingValues, error: String) {
+private fun DonkiEventsScreenContentErrorPlaceholder(
+    modifier: Modifier,
+    contentPadding: PaddingValues,
+    error: String
+) {
     Box(
         modifier
             .verticalScroll(rememberScrollState())
@@ -265,7 +271,10 @@ private fun DonkiEventsScreenContentErrorPlaceholder(modifier: Modifier, content
 }
 
 @Composable
-private fun DonkiEventsScreenContentLoadingPlaceholder(modifier: Modifier, contentPadding: PaddingValues) {
+private fun DonkiEventsScreenContentLoadingPlaceholder(
+    modifier: Modifier,
+    contentPadding: PaddingValues
+) {
     Box(
         modifier
             .verticalScroll(rememberScrollState())
