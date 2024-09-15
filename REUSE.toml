@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2022-2024 Alexey Rochev
+#
+# SPDX-License-Identifier: CC0-1.0
+
+version = 1
+SPDX-PackageName = "Spacer"
+SPDX-PackageSupplier = "Alexey Rochev <equeim@gmail.com>"
+SPDX-PackageDownloadLocation = "https://github.com/equeim/spacer"
+
+[[annotations]]
+path = ["donki/src/test/resources/**", "app/src/main/res/**/**.webp"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2022 Alexey Rochev"
+SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = ["gradlew", "gradlew.bat", "gradle/wrapper/gradle-wrapper.jar", "gradle/wrapper/gradle-wrapper.properties"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2015-2021 the original authors"
+SPDX-License-Identifier = "Apache-2.0"
