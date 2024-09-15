@@ -20,36 +20,36 @@ tasks.register<Delete>("clean") {
 }
 
 tasks.named<DependencyUpdatesTask>("dependencyUpdates") {
-    val channels = VersionChannelProvider()
-    val blacklist = listOf("org.jacoco" to "org.jacoco.ant")
+    gradleReleaseChannel = "current"
+    val channelProvider = VersionChannelProvider()
     rejectVersionIf {
-        if (blacklist.any { (group, module) -> candidate.group == group && candidate.module == module }) {
-            return@rejectVersionIf true
-        }
-        val currentChannel = channels.getChannel(currentVersion)
-        val candidateChannel = channels.getChannel(candidate.version)
+        val currentChannel = channelProvider.getChannel(currentVersion)
+        val candidateChannel = channelProvider.getChannel(candidate.version)
         candidateChannel < currentChannel
     }
 }
 
 class VersionChannelProvider {
-    enum class Channel(val keywords: List<String>) {
-        Alpha(listOf("ALPHA")),
-        Beta(listOf("BETA")),
-        RC(listOf("RC")),
-        Stable(listOf("RELEASE", "FINAL", "GA"))
+    enum class Channel(private val keywords: List<String>) {
+        Alpha("alpha"),
+        Beta("beta"),
+        RC("rc"),
+        Stable("release", "final", "ga");
+
+        constructor(vararg keywords: String) : this(keywords.asList())
+
+        fun matches(versionLowercase: String): Boolean = keywords.any { versionLowercase.contains(it) }
     }
     private val channels = Channel.values()
-    private val stableRegex = "^[0-9,.v-]+(-r)?$".toRegex()
+    private val stableVersionRegex = "^[0-9.]+$".toRegex()
 
     fun getChannel(version: String): Channel {
-        val versionUppercase = version.uppercase(Locale.ROOT)
-        return channels.find {
-            it.keywords.any(versionUppercase::contains)
-        } ?: if (stableRegex.matches(version)) {
-            Channel.Stable
-        } else {
-            Channel.Alpha
+        val versionLowercase = version.lowercase(Locale.ROOT)
+        if (versionLowercase.matches(stableVersionRegex)) {
+            return Channel.Stable
         }
+        val channelFromKeyword = channels.find { it.matches(versionLowercase) }
+        if (channelFromKeyword != null) return channelFromKeyword
+        throw RuntimeException("Failed to determine channel for version '$version'")
     }
 }
