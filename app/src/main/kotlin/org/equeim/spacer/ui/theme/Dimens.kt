@@ -14,8 +14,9 @@ import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
@@ -27,7 +28,6 @@ object Dimens {
     private val SmallScreenContentPadding = 16.dp
     private val BigScreenContentPadding = 24.dp
 
-    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     @SuppressLint("ComposableNaming")
     @Composable
     fun ScreenContentPadding(
@@ -48,12 +48,10 @@ object Dimens {
     }
 
     @SuppressLint("ComposableNaming")
-    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     @Composable
     fun ScreenContentPaddingHorizontal(): Dp = ScreenContentPaddingHorizontal(calculateWindowSizeClass())
 
     @SuppressLint("ComposableNaming")
-    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     @Composable
     fun ScreenContentPaddingVertical(): Dp = ScreenContentPaddingVertical(calculateWindowSizeClass())
 
@@ -96,13 +94,11 @@ object Dimens {
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     @Composable
     fun calculateWindowSizeClass(): WindowSizeClass {
-        // getActivityOrThrow() will fail in previews
-        val isRealAndroid = remember {
-            System.getProperty("java.vm.name") == "Dalvik"
+        return if (LocalInspectionMode.current) {
+            val config = LocalConfiguration.current
+            return WindowSizeClass.calculateFromSize(DpSize(config.screenWidthDp.dp, config.screenHeightDp.dp))
+        } else {
+            calculateWindowSizeClass(LocalContext.current.getActivityOrThrow())
         }
-        if (isRealAndroid) {
-            return calculateWindowSizeClass(LocalContext.current.getActivityOrThrow())
-        }
-        return WindowSizeClass.calculateFromSize(DpSize(width = 400.dp, height = 900.dp))
     }
 }
