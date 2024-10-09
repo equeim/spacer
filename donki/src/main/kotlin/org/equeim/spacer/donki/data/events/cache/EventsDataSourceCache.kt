@@ -295,8 +295,8 @@ internal class EventsDataSourceCache(
             db.withTransaction {
                 Log.d(TAG, "cacheWeek: starting transaction for $week")
                 updateCachedWeek(week, eventType, loadTime)
+                db.events().updateEvents(events.asSequence().map { it.toCachedEvent() }.asIterable())
                 for (event in events) {
-                    db.events().updateEvent(event.toCachedEvent())
                     when (eventType) {
                         EventType.CoronalMassEjection ->
                             db.coronalMassEjection()

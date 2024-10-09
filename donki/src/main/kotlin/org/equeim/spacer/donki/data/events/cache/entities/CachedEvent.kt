@@ -56,7 +56,7 @@ internal data class CachedEventSummary(
 @Dao
 internal abstract class CachedEventsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun updateEvent(event: CachedEvent)
+    abstract suspend fun updateEvents(events: Iterable<CachedEvent>)
 
     @Query(
         """
