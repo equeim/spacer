@@ -146,7 +146,6 @@ class DonkiNotificationsScreenViewModel(
                     after == null -> null
                     before == null || before.dayOfMonth != after.dayOfMonth -> {
                         DateSeparator(
-                            after.eventSummary.time.epochSecond,
                             formatters.notificationDateFormatter.format(after.eventSummary.time)
                         )
                     }

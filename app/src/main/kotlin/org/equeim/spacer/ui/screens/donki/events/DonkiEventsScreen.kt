@@ -208,8 +208,8 @@ private fun DonkiEventsScreen(
 
 private val ListItem.lazyListKey: Any
     get() = when (this) {
-        is DateSeparator -> nextEventEpochSecond
-        else -> (this as DonkiEventsScreenViewModel.EventPresentation).id
+        is DateSeparator -> date
+        else -> (this as DonkiEventsScreenViewModel.EventPresentation).id.stringValue
     }
 
 private enum class ContentType {
@@ -244,10 +244,7 @@ fun DonkiEventsScreenPreview() {
         val items = flowOf(
             PagingData.from(
                 listOf(
-                    DateSeparator(
-                        666,
-                        LocalDate.now().toString()
-                    ),
+                    DateSeparator(LocalDate.now().toString()),
                     DonkiEventsScreenViewModel.EventPresentation(
                         id = EventId(""),
                         type = stringResource(EventType.SolarEnergeticParticle.displayStringResId),
