@@ -138,7 +138,6 @@ class DonkiEventsScreenViewModel(
                     after == null -> null
                     before == null || before.dayOfMonth != after.dayOfMonth -> {
                         DateSeparator(
-                            after.eventSummary.time.epochSecond,
                             formatters.eventDateFormatter.format(after.eventSummary.time)
                         )
                     }

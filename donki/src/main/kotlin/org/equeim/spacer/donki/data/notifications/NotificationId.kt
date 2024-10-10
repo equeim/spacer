@@ -11,4 +11,4 @@ import kotlinx.serialization.Serializable
 @Parcelize
 @Serializable
 @JvmInline
-value class NotificationId(internal val stringValue: String) : Parcelable
+value class NotificationId(val stringValue: String) : Parcelable

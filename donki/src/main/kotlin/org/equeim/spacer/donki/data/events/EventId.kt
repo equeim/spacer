@@ -15,7 +15,7 @@ import java.time.format.DateTimeFormatter
 @JvmInline
 @Parcelize
 @Serializable
-value class EventId(internal val stringValue: String) : Parcelable {
+value class EventId(val stringValue: String) : Parcelable {
     data class Parsed(
         val type: EventType,
         val time: Instant

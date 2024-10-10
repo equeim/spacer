@@ -181,8 +181,8 @@ private fun DonkiNotificationsScreen(
 
 private val ListItem.lazyListKey: Any
     get() = when (this) {
-        is DateSeparator -> nextEventEpochSecond
-        else -> (this as DonkiNotificationsScreenViewModel.NotificationPresentation).id
+        is DateSeparator -> date
+        else -> (this as DonkiNotificationsScreenViewModel.NotificationPresentation).id.stringValue
     }
 
 private enum class ContentType {
@@ -212,10 +212,7 @@ fun DonkiNotificationsScreenPreview() {
         val items = flowOf(
             PagingData.from(
                 listOf(
-                    DateSeparator(
-                        666,
-                        LocalDate.now().toString()
-                    ),
+                    DateSeparator(LocalDate.now().toString()),
                     DonkiNotificationsScreenViewModel.NotificationPresentation(
                         id = NotificationId("0"),
                         time = LocalDateTime.now().toString(),

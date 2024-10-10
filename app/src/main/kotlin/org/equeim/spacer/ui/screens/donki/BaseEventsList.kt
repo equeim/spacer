@@ -295,7 +295,4 @@ private fun EventsList(
 
 interface ListItem
 
-data class DateSeparator(
-    val nextEventEpochSecond: Long,
-    val date: String,
-) : ListItem
+data class DateSeparator(val date: String) : ListItem
