@@ -2,10 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-package org.equeim.spacer.ui.screens.donki
+package org.equeim.spacer.ui.screens.donki.events
 
 import android.app.Application
-import android.os.Parcelable
 import android.util.Log
 import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
@@ -27,24 +26,26 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.job
-import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
-import org.equeim.spacer.donki.data.common.DateRange
+import org.equeim.spacer.donki.data.events.DonkiEventsRepository
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
-import org.equeim.spacer.donki.data.events.DonkiEventsRepository
 import org.equeim.spacer.donki.data.events.network.json.CoronalMassEjectionSummary
 import org.equeim.spacer.donki.data.events.network.json.EventSummary
 import org.equeim.spacer.donki.data.events.network.json.GeomagneticStormSummary
 import org.equeim.spacer.donki.data.events.network.json.InterplanetaryShockSummary
 import org.equeim.spacer.donki.data.events.network.json.SolarFlareSummary
+import org.equeim.spacer.ui.screens.donki.DateSeparator
+import org.equeim.spacer.ui.screens.donki.FiltersUiState
+import org.equeim.spacer.ui.screens.donki.ListItem
 import org.equeim.spacer.ui.utils.createEventDateFormatter
 import org.equeim.spacer.ui.utils.createEventTimeFormatter
 import org.equeim.spacer.ui.utils.defaultLocale
 import org.equeim.spacer.ui.utils.defaultLocaleFlow
 import org.equeim.spacer.ui.utils.defaultTimeZoneFlow
 import org.equeim.spacer.ui.utils.determineEventTimeZone
+import org.equeim.spacer.ui.utils.getString
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -52,7 +53,10 @@ import java.util.concurrent.ConcurrentHashMap
 
 private const val TAG = "DonkiEventsScreenViewModel"
 
-class DonkiEventsScreenViewModel(application: Application, private val savedStateHandle: SavedStateHandle) :
+class DonkiEventsScreenViewModel(
+    application: Application,
+    private val savedStateHandle: SavedStateHandle
+) :
     AndroidViewModel(application) {
     init {
         Log.d(TAG, "DonkiEventsScreenViewModel() called")
@@ -66,22 +70,21 @@ class DonkiEventsScreenViewModel(application: Application, private val savedStat
         val eventTimeFormatter = createEventTimeFormatter(locale, zone)
     }
 
-    @Parcelize
-    data class FiltersUiState(
-        val types: List<EventType> = EventType.entries,
-        val dateRange: DateRange? = null,
-        val dateRangeEnabled: Boolean = false,
-    ) : Parcelable {
-        fun toEventFilters() = DonkiEventsRepository.Filters(types, if (dateRangeEnabled) dateRange else null)
-    }
+    val filtersUiState: StateFlow<FiltersUiState<EventType>> = savedStateHandle.getStateFlow(
+        FILTERS_KEY,
+        FiltersUiState(types = EventType.entries, dateRange = null, dateRangeEnabled = false)
+    )
 
-    val filtersUiState: StateFlow<FiltersUiState> = savedStateHandle.getStateFlow(FILTERS_KEY, FiltersUiState())
-    fun updateFilters(filtersUiState: FiltersUiState) {
+    fun updateFilters(filtersUiState: FiltersUiState<EventType>) {
         savedStateHandle[FILTERS_KEY] = filtersUiState
     }
 
-    val eventFilters: StateFlow<DonkiEventsRepository.Filters> = filtersUiState.map(FiltersUiState::toEventFilters)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, FiltersUiState().toEventFilters())
+    private val eventFilters: StateFlow<DonkiEventsRepository.Filters> =
+        filtersUiState.map { it.toEventFilters() }.stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            DonkiEventsRepository.Filters(types = EventType.entries, dateRange = null)
+        )
 
     val pagingData: Flow<PagingData<ListItem>>
 
@@ -91,20 +94,27 @@ class DonkiEventsScreenViewModel(application: Application, private val savedStat
         addCloseable(repository)
 
         val defaultLocaleFlow =
-            application.defaultLocaleFlow().stateIn(viewModelScope, SharingStarted.Eagerly, application.defaultLocale)
+            application.defaultLocaleFlow()
+                .stateIn(viewModelScope, SharingStarted.Eagerly, application.defaultLocale)
 
         eventsTimeZone = combine(
             defaultLocaleFlow,
             application.defaultTimeZoneFlow(),
             settings.displayEventsTimeInUTC.flow()
         ) { locale, defaultZone, displayEventsTimeInUTC ->
-            Log.d(TAG, "locale = $locale, defaultZone = $defaultZone, displayEventsTimeInUTC = $displayEventsTimeInUTC")
+            Log.d(
+                TAG,
+                "locale = $locale, defaultZone = $defaultZone, displayEventsTimeInUTC = $displayEventsTimeInUTC"
+            )
             determineEventTimeZone(defaultZone, displayEventsTimeInUTC)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-        val basePagingData = repository.getEventSummariesPager(eventFilters).flow.cachedIn(viewModelScope)
-        val eventTypesStringsCacheFlow = defaultLocaleFlow.map { ConcurrentHashMap<EventType, String>() }
-        val formattersFlow = combine(defaultLocaleFlow, eventsTimeZone.filterNotNull(), ::Formatters)
+        val basePagingData =
+            repository.getEventSummariesPager(eventFilters).flow.cachedIn(viewModelScope)
+        val eventTypesStringsCacheFlow =
+            defaultLocaleFlow.map { ConcurrentHashMap<EventType, String>() }
+        val formattersFlow =
+            combine(defaultLocaleFlow, eventsTimeZone.filterNotNull(), ::Formatters)
         val pagingDataCoroutineScope =
             CoroutineScope(SupervisorJob(viewModelScope.coroutineContext.job) + Dispatchers.Default)
         pagingData = combine(
@@ -183,17 +193,6 @@ class DonkiEventsScreenViewModel(application: Application, private val savedStat
         return repository.isLastWeekNeedsRefreshing(eventFilters.value)
     }
 
-    private fun getString(@StringRes resId: Int): String = getApplication<Application>().getString(resId)
-    private fun getString(@StringRes resId: Int, vararg formatArgs: Any): String =
-        getApplication<Application>().getString(resId, *formatArgs)
-
-    sealed interface ListItem
-
-    data class DateSeparator(
-        val nextEventEpochSecond: Long,
-        val date: String,
-    ) : ListItem
-
     data class EventPresentation(
         val id: EventId,
         val type: String,
@@ -201,7 +200,22 @@ class DonkiEventsScreenViewModel(application: Application, private val savedStat
         val detailsSummary: String?,
     ) : ListItem
 
-    private companion object {
-        const val FILTERS_KEY = "filters"
+    companion object {
+        private const val FILTERS_KEY = "filters"
+
+        val EventType.displayStringResId: Int
+            @StringRes get() = when (this) {
+                EventType.CoronalMassEjection -> R.string.coronal_mass_ejection
+                EventType.GeomagneticStorm -> R.string.geomagnetic_storm
+                EventType.InterplanetaryShock -> R.string.interplanetary_shock
+                EventType.SolarFlare -> R.string.solar_flare
+                EventType.SolarEnergeticParticle -> R.string.solar_energetic_particle
+                EventType.MagnetopauseCrossing -> R.string.magnetopause_crossing
+                EventType.RadiationBeltEnhancement -> R.string.radiation_belt_enhancement
+                EventType.HighSpeedStream -> R.string.high_speed_stream
+            }
+
+        private fun FiltersUiState<EventType>.toEventFilters() =
+            DonkiEventsRepository.Filters(types, if (dateRangeEnabled) dateRange else null)
     }
 }

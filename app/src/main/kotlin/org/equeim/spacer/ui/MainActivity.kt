@@ -37,7 +37,7 @@ import kotlinx.coroutines.flow.onEach
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
 import org.equeim.spacer.ui.screens.ScreenDestinationNavHost
-import org.equeim.spacer.ui.screens.donki.DonkiEventsScreen
+import org.equeim.spacer.ui.screens.donki.events.DonkiEventsScreen
 import org.equeim.spacer.ui.theme.ApplicationTheme
 import org.equeim.spacer.ui.utils.defaultLocale
 import org.equeim.spacer.ui.utils.defaultLocaleFlow

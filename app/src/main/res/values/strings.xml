@@ -18,6 +18,8 @@ SPDX-License-Identifier: MIT
     <string name="magnetopause_crossing">Magnetopause crossing</string>
     <string name="radiation_belt_enhancement">Radiation belt enhancement</string>
     <string name="high_speed_stream">High speed stream</string>
+    <string name="notification_report">Report</string>
+    <string name="notifications">Notifications</string>
     <string name="settings">Settings</string>
     <string name="navigate_up">Navigate up</string>
     <string name="appearance">Appearance</string>
@@ -42,6 +44,7 @@ SPDX-License-Identifier: MIT
     <string name="http_error_response">Server returned HTTP status %s</string>
 
     <string name="event_details">Event details</string>
+    <string name="notification_details">Notification details</string>
     <string name="go_to_donki_website">Go to DONKI website</string>
     <string name="linked_events">Linked events</string>
     <string name="instruments">Instruments</string>
@@ -82,9 +85,11 @@ SPDX-License-Identifier: MIT
     <string name="flr_source_location">Source location</string>
 
     <string name="filters">Filters</string>
-    <string name="event_types">Event types</string>
+    <string name="filter_types">Types</string>
     <string name="all_event_types_are_disabled">All event types are disabled</string>
     <string name="no_events_in_date_range">No events in this date range</string>
+    <string name="all_notification_types_are_disabled">All notification types are disabled</string>
+    <string name="no_notifications_in_date_range">No notifications in this date range</string>
     <string name="date_range_filter">Filter by date range</string>
     <string name="select_date_range">Select date range</string>
     <string name="date_range_string">%1$s - %2$s %3$s</string>

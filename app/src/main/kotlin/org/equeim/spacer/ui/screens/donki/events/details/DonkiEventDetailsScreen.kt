@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package org.equeim.spacer.ui.screens.donki.details
+package org.equeim.spacer.ui.screens.donki.events.details
 
 import androidx.annotation.StringRes
 import androidx.compose.animation.Crossfade
@@ -58,11 +58,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.olshevski.navigation.reimagined.NavController
 import dev.olshevski.navigation.reimagined.NavHostEntry
 import dev.olshevski.navigation.reimagined.navigate
+import dev.olshevski.navigation.reimagined.pop
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
+import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.network.json.CoronalMassEjection
 import org.equeim.spacer.donki.data.events.network.json.Event
-import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.network.json.GeomagneticStorm
 import org.equeim.spacer.donki.data.events.network.json.HighSpeedStream
 import org.equeim.spacer.donki.data.events.network.json.InterplanetaryShock
@@ -70,15 +71,14 @@ import org.equeim.spacer.donki.data.events.network.json.MagnetopauseCrossing
 import org.equeim.spacer.donki.data.events.network.json.RadiationBeltEnhancement
 import org.equeim.spacer.donki.data.events.network.json.SolarEnergeticParticle
 import org.equeim.spacer.donki.data.events.network.json.SolarFlare
-import org.equeim.spacer.ui.components.OutlinedCardWithPadding
 import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
-import org.equeim.spacer.ui.screens.LocalNavController
-import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreenViewModel.ContentState.Empty
-import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreenViewModel.ContentState.ErrorPlaceholder
-import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreenViewModel.ContentState.EventData
-import org.equeim.spacer.ui.screens.donki.details.DonkiEventDetailsScreenViewModel.ContentState.LoadingPlaceholder
+import org.equeim.spacer.ui.screens.donki.LinkedEventsList
+import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreenViewModel.ContentState.Empty
+import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreenViewModel.ContentState.ErrorPlaceholder
+import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreenViewModel.ContentState.EventData
+import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreenViewModel.ContentState.LoadingPlaceholder
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.theme.SatelliteAlt
@@ -88,24 +88,25 @@ import java.time.format.DateTimeFormatter
 data class DonkiEventDetailsScreen(val eventId: EventId) : Destination {
     @Composable
     override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) =
-        ScreenContent(eventId)
+        ScreenContent(eventId, navController)
 }
 
 @Composable
-private fun ScreenContent(eventId: EventId) {
+private fun ScreenContent(eventId: EventId, navController: NavController<Destination>) {
     val model = viewModel {
         DonkiEventDetailsScreenViewModel(
             eventId,
             checkNotNull(get(ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY))
         )
     }
-    ScreenContent(model)
+    ScreenContent(model, navController)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ScreenContent(
     model: DonkiEventDetailsScreenViewModel,
+    navController: NavController<Destination>,
 ) {
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME, onEvent = model::onActivityResumed)
 
@@ -114,7 +115,7 @@ private fun ScreenContent(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = { SubScreenTopAppBar(stringResource(R.string.event_details)) },
+        topBar = { SubScreenTopAppBar(stringResource(R.string.event_details), navController::pop) },
         floatingActionButton = {
             val state = model.contentState.collectAsState()
             val eventLink by remember(model) {
@@ -164,7 +165,9 @@ private fun ScreenContent(
                         is LoadingPlaceholder -> ScreenContentLoadingPlaceholder()
                         is ErrorPlaceholder -> ScreenContentErrorPlaceholder(state.error)
                         is EventData -> {
-                            ScreenContentEventData(state)
+                            ScreenContentEventData(state) {
+                                navController.navigate(DonkiEventDetailsScreen(it))
+                            }
                         }
                     }
                 }
@@ -222,7 +225,7 @@ private fun BoxScope.ScreenContentErrorPlaceholder(error: String) {
 }
 
 @Composable
-private fun ScreenContentEventData(state: EventData) {
+private fun ScreenContentEventData(state: EventData, showEventDetailsScreen: (EventId) -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -243,28 +246,7 @@ private fun ScreenContentEventData(state: EventData) {
         Spacer(Modifier.height(Dimens.SpacingMedium - Dimens.SpacingSmall))
         SpecificEventDetails(state.event, state::eventTimeFormatter)
         if (state.linkedEvents.isNotEmpty()) {
-            SectionHeader(stringResource(R.string.linked_events))
-            Column(
-                Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(Dimens.SpacingBetweenCards)
-            ) {
-                val navController = LocalNavController.current
-                state.linkedEvents.forEach { linkedEvent ->
-                    OutlinedCardWithPadding(
-                        { navController.navigate(DonkiEventDetailsScreen(linkedEvent.id)) },
-                        Modifier.fillMaxWidth(),
-                    ) {
-                        Column {
-                            Text(text = linkedEvent.dateTime)
-                            Text(
-                                text = linkedEvent.type,
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(top = Dimens.SpacingSmall)
-                            )
-                        }
-                    }
-                }
-            }
+            LinkedEventsList(state.linkedEvents, showEventDetailsScreen)
         }
     }
 }

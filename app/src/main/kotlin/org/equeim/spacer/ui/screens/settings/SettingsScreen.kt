@@ -14,13 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -59,17 +55,17 @@ object SettingsScreen : Destination {
         navController: NavController<Destination>,
         parentNavHostEntry: NavHostEntry<Destination>?
     ) =
-        SettingsScreen()
+        SettingsScreen(navController)
 }
 
 @Composable
-private fun SettingsScreen() {
+private fun SettingsScreen(navController: NavController<Destination>) {
     val dialogNavController =
         rememberNavController<Destination>(initialBackstack = emptyList())
     DialogDestinationNavHost(dialogNavController)
 
     Scaffold(topBar = {
-        SubScreenTopAppBar(stringResource(R.string.settings))
+        SubScreenTopAppBar(stringResource(R.string.settings), navController::pop)
     }) { contentPadding ->
         val model = viewModel<SettingsScreenViewModel>()
         if (!model.loaded) {

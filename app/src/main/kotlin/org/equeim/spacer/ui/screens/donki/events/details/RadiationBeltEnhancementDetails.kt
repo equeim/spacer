@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package org.equeim.spacer.ui.screens.donki.details
+package org.equeim.spacer.ui.screens.donki.events.details
 
 import androidx.compose.runtime.Composable
 import org.equeim.spacer.donki.data.events.network.json.RadiationBeltEnhancement

@@ -11,11 +11,6 @@ import org.equeim.spacer.ui.LocalDefaultLocale
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeFormatterBuilder
-import java.time.format.FormatStyle
-import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.math.abs
 
@@ -29,32 +24,6 @@ fun rememberIntegerFormatter(): NumberFormat {
 fun rememberFloatFormatter(): DecimalFormat {
     val locale = LocalDefaultLocale.current
     return remember(locale) { DecimalFormat("0.##", DecimalFormatSymbols.getInstance(locale)) }
-}
-
-fun createEventDateTimeFormatter(locale: Locale, zone: ZoneId): DateTimeFormatter =
-    DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG)
-        .withLocale(locale)
-        .withZone(zone)
-
-fun createEventTimeFormatter(locale: Locale, zone: ZoneId): DateTimeFormatter =
-    DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-        .withLocale(locale)
-        .withZone(zone)
-
-fun createEventDateFormatter(locale: Locale, zone: ZoneId): DateTimeFormatter =
-    DateTimeFormatterBuilder()
-        .appendLocalized(FormatStyle.LONG, null)
-        .appendLiteral(' ')
-        .appendZoneText(TextStyle.SHORT)
-        .toFormatter(locale)
-        .withZone(zone)
-
-val ZoneId.isUTC: Boolean get() = id == "UTC"
-
-fun determineEventTimeZone(defaultZone: ZoneId, displayEventsTimeInUTC: Boolean): ZoneId = if (displayEventsTimeInUTC) {
-    ZoneId.of("UTC")
-} else {
-    defaultZone
 }
 
 class CoordinatesFormatter(locale: Locale) {
