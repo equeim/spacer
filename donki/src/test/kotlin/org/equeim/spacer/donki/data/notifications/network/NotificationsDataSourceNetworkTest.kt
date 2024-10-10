@@ -4,10 +4,6 @@
 
 package org.equeim.spacer.donki.data.notifications.network
 
-import android.util.Log
-import io.mockk.every
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,13 +13,13 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import org.equeim.spacer.donki.BaseCoroutineTest
 import org.equeim.spacer.donki.apiKey
 import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
 import org.equeim.spacer.donki.data.common.InvalidApiKeyError
 import org.equeim.spacer.donki.data.common.TooManyRequestsError
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.notifications.NotificationType
-import org.equeim.spacer.donki.data.notifications.findLinkedEvents
 import org.equeim.spacer.donki.data.notifications.findTitle
 import org.equeim.spacer.donki.data.notifications.findWebLinks
 import org.equeim.spacer.donki.getTestResource
@@ -44,27 +40,22 @@ import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 
 @Suppress("BlockingMethodInNonBlockingContext")
-class NotificationsDataSourceNetworkTest {
+class NotificationsDataSourceNetworkTest : BaseCoroutineTest() {
     private val server = MockWebServer()
     private lateinit var dataSource: NotificationsDataSourceNetwork
     private val nasaApiKey = MutableStateFlow(DEFAULT_NASA_API_KEY)
 
     @BeforeTest
-    fun before() {
-        mockkStatic(Log::class)
-        every { Log.d(any(), any()) } answers { println("${args[0]}: ${args[1]}"); 0 }
-        every { Log.e(any(), any(), any()) } answers {
-            println("${args[0]}: ${args[1]}")
-            arg<Throwable>(2).printStackTrace(System.out)
-            0
-        }
+    override fun before() {
+        super.before()
         server.start()
         dataSource = NotificationsDataSourceNetwork(nasaApiKey, server.url("/"))
     }
 
     @AfterTest
-    fun after() {
-        unmockkStatic(Log::class)
+    override fun after() {
+        server.shutdown()
+        super.after()
     }
 
     @Test

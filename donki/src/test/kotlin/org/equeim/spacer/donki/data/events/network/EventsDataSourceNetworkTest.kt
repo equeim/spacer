@@ -4,10 +4,6 @@
 
 package org.equeim.spacer.donki.data.events.network
 
-import android.util.Log
-import io.mockk.every
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +14,8 @@ import kotlinx.coroutines.withContext
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okio.Buffer
+import org.equeim.spacer.donki.BaseCoroutineTest
+import org.equeim.spacer.donki.BaseTest
 import org.equeim.spacer.donki.apiKey
 import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
 import org.equeim.spacer.donki.data.common.InvalidApiKeyError
@@ -47,7 +45,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
 import kotlin.streams.asSequence
-import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -56,27 +53,21 @@ import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 
 @Suppress("BlockingMethodInNonBlockingContext")
-class EventsDataSourceNetworkTest {
+class EventsDataSourceNetworkTest : BaseCoroutineTest() {
     private val server = MockWebServer()
     private lateinit var dataSource: EventsDataSourceNetwork
     private val nasaApiKey = MutableStateFlow(DEFAULT_NASA_API_KEY)
 
     @BeforeTest
-    fun before() {
-        mockkStatic(Log::class)
-        every { Log.d(any(), any()) } answers { println("${args[0]}: ${args[1]}"); 0 }
-        every { Log.e(any(), any(), any()) } answers {
-            println("${args[0]}: ${args[1]}")
-            arg<Throwable>(2).printStackTrace(System.out)
-            0
-        }
+    override fun before() {
+        super.before()
         server.start()
         dataSource = EventsDataSourceNetwork(nasaApiKey, server.url("/"))
     }
 
-    @AfterTest
-    fun after() {
-        unmockkStatic(Log::class)
+    override fun after() {
+        server.shutdown()
+        super.after()
     }
 
     @Test
