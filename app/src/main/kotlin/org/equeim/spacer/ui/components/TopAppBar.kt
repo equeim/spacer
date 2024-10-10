@@ -21,9 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import dev.olshevski.navigation.reimagined.pop
 import org.equeim.spacer.R
-import org.equeim.spacer.ui.screens.LocalNavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +51,7 @@ fun RootScreenTopAppBar(
 @Composable
 fun SubScreenTopAppBar(
     title: String,
+    popBackStack: () -> Unit,
     modifier: Modifier = Modifier,
     actions: @Composable (RowScope.() -> Unit) = {},
 ) {
@@ -60,8 +59,7 @@ fun SubScreenTopAppBar(
         title = { Text(text = title) },
         modifier = modifier,
         navigationIcon = {
-            val navController = LocalNavController.current
-            ToolbarIcon(Icons.AutoMirrored.Filled.ArrowBack, R.string.navigate_up, navController::pop)
+            ToolbarIcon(Icons.AutoMirrored.Filled.ArrowBack, R.string.navigate_up, popBackStack)
         },
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(

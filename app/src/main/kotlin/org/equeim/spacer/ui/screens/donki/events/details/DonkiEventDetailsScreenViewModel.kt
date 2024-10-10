@@ -2,11 +2,10 @@
 //
 // SPDX-License-Identifier: MIT
 
-package org.equeim.spacer.ui.screens.donki.details
+package org.equeim.spacer.ui.screens.donki.events.details
 
 import android.app.Application
 import android.util.Log
-import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -28,18 +27,20 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.equeim.spacer.AppSettings
-import org.equeim.spacer.donki.data.events.network.json.Event
+import org.equeim.spacer.donki.data.events.DonkiEventsRepository
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
-import org.equeim.spacer.donki.data.events.DonkiEventsRepository
-import org.equeim.spacer.ui.screens.donki.displayStringResId
+import org.equeim.spacer.donki.data.events.network.json.Event
+import org.equeim.spacer.ui.screens.donki.LinkedEventPresentation
 import org.equeim.spacer.ui.screens.donki.donkiErrorToString
+import org.equeim.spacer.ui.screens.donki.events.DonkiEventsScreenViewModel.Companion.displayStringResId
 import org.equeim.spacer.ui.utils.createEventDateTimeFormatter
 import org.equeim.spacer.ui.utils.createEventTimeFormatter
 import org.equeim.spacer.ui.utils.defaultLocale
 import org.equeim.spacer.ui.utils.defaultLocaleFlow
 import org.equeim.spacer.ui.utils.defaultTimeZoneFlow
 import org.equeim.spacer.ui.utils.determineEventTimeZone
+import org.equeim.spacer.ui.utils.getString
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -231,11 +232,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
     }
 
     private fun EventType.getDisplayString(eventTypesStringsCache: ConcurrentHashMap<EventType, String>): String {
-        return eventTypesStringsCache.computeIfAbsent(this) {
-            getString(
-                displayStringResId
-            )
-        }
+        return eventTypesStringsCache.computeIfAbsent(this) { getString(displayStringResId) }
     }
 
     private fun setErrorToContentOrSnackbar(error: String) {
@@ -245,8 +242,6 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
             _contentState.value = ContentState.ErrorPlaceholder(error)
         }
     }
-
-    private fun getString(@StringRes resId: Int) = getApplication<Application>().getString(resId)
 
     sealed interface ContentState {
         data object Empty : ContentState
@@ -262,10 +257,4 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
         @JvmInline
         value class ErrorPlaceholder(val error: String) : ContentState
     }
-
-    data class LinkedEventPresentation(
-        val id: EventId,
-        val dateTime: String,
-        val type: String,
-    )
 }
