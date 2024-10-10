@@ -25,8 +25,8 @@ abstract class BaseCoroutineTest : BaseTest() {
     }
 
     override fun after() {
-        super.after()
         Dispatchers.resetMain()
+        super.after()
     }
 }
 

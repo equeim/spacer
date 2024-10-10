@@ -49,8 +49,8 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
     private val actualRefreshedEvents = mutableListOf<Unit>()
 
     override fun after() {
-        super.after()
         confirmVerified(repository, cacheDataSource)
+        super.after()
     }
 
     private fun `Initial week does not require refresh`() {

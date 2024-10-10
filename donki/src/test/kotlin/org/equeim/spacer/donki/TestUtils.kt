@@ -4,7 +4,13 @@
 
 package org.equeim.spacer.donki
 
+import android.util.Log
+import io.mockk.Answer
+import io.mockk.Call
 import io.mockk.MockKMatcherScope
+import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import okhttp3.HttpUrl
 import okhttp3.mockwebserver.RecordedRequest
 import okio.Buffer
@@ -58,3 +64,86 @@ internal fun URL.readToBuffer() = Buffer().apply {
 
 internal fun Class<*>.getTestResource(path: String): URL =
     assertNotNull(getResource("/${packageName.replace('.', '/')}/$path"))
+
+internal fun mockkLog() {
+    mockkStatic(Log::class)
+
+    every { Log.v(any(), any()) } answers LogAnswer
+    every { Log.v(any(), any(), any()) } answers LogAnswer
+
+    every { Log.d(any(), any()) } answers LogAnswer
+    every { Log.d(any(), any(), any()) } answers LogAnswer
+
+    every { Log.i(any(), any()) } answers LogAnswer
+    every { Log.i(any(), any(), any()) } answers LogAnswer
+
+    every { Log.w(any(), any<String>()) } answers LogAnswer
+    every { Log.w(any(), any<Throwable>()) } answers LogAnswer
+    every { Log.w(any(), any(), any()) } answers LogAnswer
+
+    every { Log.e(any(), any()) } answers LogAnswer
+    every { Log.e(any(), any(), any()) } answers LogAnswer
+
+    every { Log.wtf(any(), any<String>()) } answers LogAnswer
+    every { Log.wtf(any(), any<Throwable>()) } answers LogAnswer
+    every { Log.wtf(any(), any(), any()) } answers LogAnswer
+
+    every { Log.println(any(), any(), any()) } answers LogAnswer
+}
+
+internal fun unmockkLog() {
+    unmockkStatic(Log::class)
+}
+
+private object LogAnswer : Answer<Int> {
+    override fun answer(call: Call): Int {
+        val args = call.invocation.args.toMutableList()
+
+        val priority: String
+        val tag: String
+
+        when (val arg = args.removeFirst()) {
+            is Int -> {
+                priority = when (args[0] as Int) {
+                    Log.VERBOSE -> "V"
+                    Log.DEBUG -> "D"
+                    Log.INFO -> "I"
+                    Log.WARN -> "W"
+                    Log.ERROR -> "E"
+                    Log.ASSERT -> "ASSERT"
+                    else -> throw IllegalArgumentException()
+                }
+                tag = args.removeFirst() as String
+            }
+            is String -> {
+                priority = call.invocation.method.name.uppercase()
+                tag = arg
+            }
+            else -> throw IllegalArgumentException()
+        }
+
+        val message: String
+        val throwable: Throwable?
+
+        when (val arg = args.removeFirst()) {
+            is String -> {
+                message = arg
+                throwable = args.removeFirstOrNull() as Throwable?
+            }
+            is Throwable -> {
+                message = ""
+                throwable = arg
+            }
+            else -> throw IllegalArgumentException()
+        }
+
+        print(tag)
+        print(" ")
+        print(priority)
+        print(": ")
+        println(message)
+        throwable?.printStackTrace()
+
+        return 0
+    }
+}

@@ -70,8 +70,8 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
     }
 
     override fun after() {
-        super.after()
         confirmVerified(repository)
+        super.after()
     }
 
     @Test
