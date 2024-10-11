@@ -79,3 +79,5 @@ lint/tmp/
 # lint/reports/
 
 .kotlin
+
+.attach_pid*
