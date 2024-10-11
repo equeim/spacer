@@ -135,7 +135,7 @@ class NotificationsDataSourceNetworkTest {
             )
         )
         val notifications =
-            dataSource.getNotifications(Week(LocalDate.MIN))
+            dataSource.getNotifications(Week(LocalDate.of(2024, 9, 30)))
         val notification = notifications.single()
         assertEquals("20241002-AL-002", notification.id.stringValue)
         assertEquals(NotificationType.CoronalMassEjection, notification.type)
