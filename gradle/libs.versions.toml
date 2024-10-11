@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [versions]
-android-gradle-plugin = "8.6.0"
+android-gradle-plugin = "8.7.0"
 kotlin = "2.0.20"
 ksp = "2.0.20-1.0.25"
 gradle-versions-plugin = "0.51.0"
@@ -13,10 +13,10 @@ sdk-platform-min = "27"
 sdk-platform-target = "34"
 
 androidx-activity = "1.9.2"
-androidx-compose = "2024.09.01"
+androidx-compose = "2024.09.03"
 androidx-core = "1.13.1"
 androidx-datastore = "1.1.1"
-androidx-lifecycle = "2.8.5"
+androidx-lifecycle = "2.8.6"
 androidx-paging = "3.3.2"
 androidx-room = "2.6.1"
 androidx-test-core = "1.6.1"
@@ -25,11 +25,11 @@ coroutines = "1.9.0"
 junit = "4.13.2"
 okhttp = "4.12.0"
 leakcanary = "2.14"
-mockk = "1.13.12"
+mockk = "1.13.13"
 navigation-reimagined = "1.5.0"
 retrofit = "2.11.0"
 robolectric = "4.13"
-serialization = "1.7.2"
+serialization = "1.7.3"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
