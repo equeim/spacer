@@ -81,8 +81,11 @@ internal class EventsDataSourceNetwork(private val customNasaApiKey: Flow<String
                     apiKey
                 )
             }
+                .asSequence()
                 .map { DonkiJson.decodeFromJsonElement(serializer, it) to it }
-                .sortedBy { it.first.time }
+                .coerceInWeek(week)
+                .toMutableList()
+                .apply { sortBy { it.first.time } }
                 .also {
                     Log.d(
                         TAG,
@@ -104,5 +107,18 @@ internal class EventsDataSourceNetwork(private val customNasaApiKey: Flow<String
 
     private companion object {
         const val TAG = "DonkiDataSourceNetwork"
+
+        fun Sequence<Pair<Event, JsonObject>>.coerceInWeek(week: Week): Sequence<Pair<Event, JsonObject>> {
+            val startInstant = week.getFirstDayInstant()
+            val endInstant = week.getInstantAfterLastDay()
+            return this.filter { (event, _) ->
+                if (event.time >= startInstant && event.time < endInstant) {
+                    true
+                } else {
+                    Log.e(TAG, "getEvents: event with id ${event.id} and time ${event.time} does not belong in week $week")
+                    false
+                }
+            }
+        }
     }
 }

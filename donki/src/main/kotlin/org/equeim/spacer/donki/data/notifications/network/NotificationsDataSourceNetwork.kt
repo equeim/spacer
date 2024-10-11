@@ -30,7 +30,7 @@ internal class NotificationsDataSourceNetwork(
         customNasaApiKey.map { it ?: DEFAULT_NASA_API_KEY }.mapLatest { apiKey ->
             try {
                 Log.d(TAG, "getNotifications() called with: week = $week")
-                api.getNotifications(week.firstDay, week.lastDay, apiKey).also {
+                api.getNotifications(week.firstDay, week.lastDay, apiKey).coerceInWeek(week).also {
                     Log.d(
                         TAG,
                         "getNotifications: returning ${it.size} notifications for week = $week"
@@ -47,5 +47,18 @@ internal class NotificationsDataSourceNetwork(
 
     private companion object {
         const val TAG = "NotificationsDataSourceNetwork"
+
+        fun List<NotificationJson>.coerceInWeek(week: Week): List<NotificationJson> {
+            val startInstant = week.getFirstDayInstant()
+            val endInstant = week.getInstantAfterLastDay()
+            return this.filter {
+                if (it.time >= startInstant && it.time < endInstant) {
+                    true
+                } else {
+                    Log.e(TAG, "getNotifications: notification with id ${it.id} and time ${it.time} does not belong in week $week")
+                    false
+                }
+            }
+        }
     }
 }
