@@ -62,6 +62,7 @@ jobs:
           retention-days: ${{ env.ARTIFACTS_RETENTION_DAYS }}
 
       - name: Archive test and lint reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: reports
