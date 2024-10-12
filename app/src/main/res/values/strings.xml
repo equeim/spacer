@@ -60,7 +60,7 @@ SPDX-License-Identifier: MIT
     <string name="cme_half_angular_width_value">%1$2.1f°</string>
     <string name="cme_time215">Time at 21.5 R☉</string>
     <string name="cme_website">Show analysis on DONKI website</string>
-    <string name="cme_earth_impact">Earth impact</string>
+    <string name="cme_earth_impact">Earth impact predicted</string>
     <string name="enlil_models">WSA-ENLIL+Cone models</string>
     <string name="enlil_no_models">No WSA-ENLIL+Cone models</string>
     <string name="enlil_description">Completed %1$s for %2$.1f AU</string>
