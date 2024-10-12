@@ -244,7 +244,7 @@ private fun ScreenContentEventData(state: EventData, showEventDetailsScreen: (Ev
             )
         }
         Spacer(Modifier.height(Dimens.SpacingMedium - Dimens.SpacingSmall))
-        SpecificEventDetails(state.event, state::eventTimeFormatter)
+        SpecificEventDetails(state.event, state::eventTimeFormatter, state::eventDateTimeFormatter)
         if (state.linkedEvents.isNotEmpty()) {
             LinkedEventsList(state.linkedEvents, showEventDetailsScreen)
         }
@@ -252,9 +252,9 @@ private fun ScreenContentEventData(state: EventData, showEventDetailsScreen: (Ev
 }
 
 @Composable
-private fun SpecificEventDetails(event: Event, eventTimeFormatter: () -> DateTimeFormatter) {
+private fun SpecificEventDetails(event: Event, eventTimeFormatter: () -> DateTimeFormatter, eventDateTimeFormatter: () -> DateTimeFormatter) {
     when (event) {
-        is CoronalMassEjection -> CoronalMassEjectionDetails(event, eventTimeFormatter)
+        is CoronalMassEjection -> CoronalMassEjectionDetails(event, eventTimeFormatter, eventDateTimeFormatter)
         is GeomagneticStorm -> GeomagneticStormDetails(event, eventTimeFormatter)
         is HighSpeedStream -> HighSpeedStreamDetails(event)
         is InterplanetaryShock -> InterplanetaryShockDetails(event)
