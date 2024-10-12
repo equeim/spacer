@@ -31,7 +31,7 @@ import java.time.Duration
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun CoronalMassEjectionDetails(event: CoronalMassEjection, eventTimeFormatter: () -> DateTimeFormatter) =
+fun CoronalMassEjectionDetails(event: CoronalMassEjection, eventTimeFormatter: () -> DateTimeFormatter, eventDateTimeFormatter: () -> DateTimeFormatter) =
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
         val coordinatesFormatter = rememberCoordinatesFormatter()
 
@@ -88,7 +88,7 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, eventTimeFormatter: (
             if (analysis.enlilSimulations.isNotEmpty()) {
                 SectionHeader(stringResource(R.string.enlil_models))
                 analysis.enlilSimulations.forEach { simulation ->
-                    EnlilModelCard(simulation, integerFormatter, eventTimeFormatter())
+                    EnlilModelCard(simulation, integerFormatter, eventDateTimeFormatter())
                 }
             } else {
                 SectionPlaceholder(stringResource(R.string.enlil_no_models))
@@ -99,12 +99,12 @@ fun CoronalMassEjectionDetails(event: CoronalMassEjection, eventTimeFormatter: (
     }
 
 @Composable
-private fun EnlilModelCard(simulation: CoronalMassEjection.EnlilSimulation, integerFormatter: NumberFormat, eventTimeFormatter: DateTimeFormatter) {
+private fun EnlilModelCard(simulation: CoronalMassEjection.EnlilSimulation, integerFormatter: NumberFormat, eventDateTimeFormatter: DateTimeFormatter) {
     ExpandableCard(
         Modifier.fillMaxWidth(),
         content = {
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
-                Text(stringResource(R.string.enlil_description, eventTimeFormatter.format(simulation.modelCompletionTime), simulation.au))
+                Text(stringResource(R.string.enlil_description, eventDateTimeFormatter.format(simulation.modelCompletionTime), simulation.au))
             }
         },
         expandedContent = {
@@ -114,7 +114,7 @@ private fun EnlilModelCard(simulation: CoronalMassEjection.EnlilSimulation, inte
                 } else {
                     SectionHeader(stringResource(R.string.enlil_earth_impact), style = MaterialTheme.typography.bodyLarge)
                     simulation.estimatedShockArrivalTime?.let {
-                        LabelFieldPair(R.string.enlil_earth_shock_arrival_time, eventTimeFormatter.format(it))
+                        LabelFieldPair(R.string.enlil_earth_shock_arrival_time, eventDateTimeFormatter.format(it))
                     }
                     simulation.estimatedDuration?.let {
                         LabelFieldPair(R.string.enlil_earth_duration, stringResource(R.string.enlil_earth_duration_value, it.seconds.toFloat() / Duration.ofHours(1).seconds.toFloat()))
@@ -132,7 +132,7 @@ private fun EnlilModelCard(simulation: CoronalMassEjection.EnlilSimulation, inte
                 if (simulation.impacts.isNotEmpty()) {
                     SectionHeader(stringResource(R.string.enlil_other_impacts), style = MaterialTheme.typography.bodyLarge)
                     simulation.impacts.forEach { impact ->
-                        LabelFieldPair(impact.location, eventTimeFormatter.format(impact.arrivalTime))
+                        LabelFieldPair(impact.location, eventDateTimeFormatter.format(impact.arrivalTime))
                     }
                 } else {
                     SectionPlaceholder(stringResource(R.string.enlil_no_other_impacts), style = MaterialTheme.typography.bodyLarge)

@@ -213,7 +213,8 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
                 formatters.eventDateTimeFormatter
             )
         },
-        eventTimeFormatter = formatters.eventTimeFormatter
+        eventTimeFormatter = formatters.eventTimeFormatter,
+        eventDateTimeFormatter = formatters.eventDateTimeFormatter
     )
 
     private fun EventId.toPresentation(
@@ -252,6 +253,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
             val event: Event,
             val linkedEvents: List<LinkedEventPresentation>,
             val eventTimeFormatter: DateTimeFormatter,
+            val eventDateTimeFormatter: DateTimeFormatter,
         ) : ContentState
 
         @JvmInline
