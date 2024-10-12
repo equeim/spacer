@@ -25,7 +25,7 @@ data class GeomagneticStorm(
     override val type: EventType
         get() = EventType.GeomagneticStorm
 
-    fun kpIndex(): Float? = kpIndexes.firstOrNull()?.kpIndex
+    fun kpIndex(): Float? = kpIndexes.maxOfOrNull { it.kpIndex }
 
     @Serializable
     @Immutable
