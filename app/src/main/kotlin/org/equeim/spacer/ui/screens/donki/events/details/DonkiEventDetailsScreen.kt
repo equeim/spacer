@@ -79,6 +79,8 @@ import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreen
 import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreenViewModel.ContentState.ErrorPlaceholder
 import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreenViewModel.ContentState.EventData
 import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreenViewModel.ContentState.LoadingPlaceholder
+import org.equeim.spacer.ui.screens.donki.events.details.cme.CmeAnalysisScreen
+import org.equeim.spacer.ui.screens.donki.events.details.cme.CoronalMassEjectionDetails
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.theme.SatelliteAlt
@@ -87,7 +89,11 @@ import java.time.format.DateTimeFormatter
 @Parcelize
 data class DonkiEventDetailsScreen(val eventId: EventId) : Destination {
     @Composable
-    override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) =
+    override fun Content(
+        navController: NavController<Destination>,
+        navHostEntries: List<NavHostEntry<Destination>>,
+        parentNavHostEntry: NavHostEntry<Destination>?
+    ) =
         ScreenContent(eventId, navController)
 }
 
@@ -165,9 +171,15 @@ private fun ScreenContent(
                         is LoadingPlaceholder -> ScreenContentLoadingPlaceholder()
                         is ErrorPlaceholder -> ScreenContentErrorPlaceholder(state.error)
                         is EventData -> {
-                            ScreenContentEventData(state) {
-                                navController.navigate(DonkiEventDetailsScreen(it))
-                            }
+                            ScreenContentEventData(
+                                state = state,
+                                showEventDetailsScreen = {
+                                    navController.navigate(DonkiEventDetailsScreen(it))
+                                },
+                                navigateToCmeAnalysisScreen = {
+                                    navController.navigate(CmeAnalysisScreen(state.event.id, it.link))
+                                }
+                            )
                         }
                     }
                 }
@@ -225,7 +237,7 @@ private fun BoxScope.ScreenContentErrorPlaceholder(error: String) {
 }
 
 @Composable
-private fun ScreenContentEventData(state: EventData, showEventDetailsScreen: (EventId) -> Unit) {
+private fun ScreenContentEventData(state: EventData, showEventDetailsScreen: (EventId) -> Unit, navigateToCmeAnalysisScreen: (CoronalMassEjection.Analysis) -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -244,7 +256,7 @@ private fun ScreenContentEventData(state: EventData, showEventDetailsScreen: (Ev
             )
         }
         Spacer(Modifier.height(Dimens.SpacingMedium - Dimens.SpacingSmall))
-        SpecificEventDetails(state.event, state::eventTimeFormatter, state::eventDateTimeFormatter)
+        SpecificEventDetails(state.event, state::eventTimeFormatter, state::eventDateTimeFormatter, navigateToCmeAnalysisScreen)
         if (state.linkedEvents.isNotEmpty()) {
             LinkedEventsList(state.linkedEvents, showEventDetailsScreen)
         }
@@ -252,9 +264,14 @@ private fun ScreenContentEventData(state: EventData, showEventDetailsScreen: (Ev
 }
 
 @Composable
-private fun SpecificEventDetails(event: Event, eventTimeFormatter: () -> DateTimeFormatter, eventDateTimeFormatter: () -> DateTimeFormatter) {
+private fun SpecificEventDetails(
+    event: Event,
+    eventTimeFormatter: () -> DateTimeFormatter,
+    eventDateTimeFormatter: () -> DateTimeFormatter,
+    navigateToCmeAnalysisScreen: (CoronalMassEjection.Analysis) -> Unit
+) {
     when (event) {
-        is CoronalMassEjection -> CoronalMassEjectionDetails(event, eventTimeFormatter, eventDateTimeFormatter)
+        is CoronalMassEjection -> CoronalMassEjectionDetails(event, eventDateTimeFormatter, navigateToCmeAnalysisScreen)
         is GeomagneticStorm -> GeomagneticStormDetails(event, eventTimeFormatter)
         is HighSpeedStream -> HighSpeedStreamDetails(event)
         is InterplanetaryShock -> InterplanetaryShockDetails(event)

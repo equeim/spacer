@@ -33,7 +33,11 @@ import java.util.Locale
 @Parcelize
 data object EventFiltersDialog : Destination {
     @Composable
-    override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) {
+    override fun Content(
+        navController: NavController<Destination>,
+        navHostEntries: List<NavHostEntry<Destination>>,
+        parentNavHostEntry: NavHostEntry<Destination>?
+    ) {
         val model: DonkiEventsScreenViewModel = viewModel(viewModelStoreOwner = checkNotNull(parentNavHostEntry))
         val filters = model.filtersUiState.collectAsStateWithLifecycle()
         val eventsTimeZone = model.eventsTimeZone.collectAsStateWithLifecycle()
@@ -54,6 +58,7 @@ data object EventsDateRangePickerDialog : Destination {
     @Composable
     override fun Content(
         navController: NavController<Destination>,
+        navHostEntries: List<NavHostEntry<Destination>>,
         parentNavHostEntry: NavHostEntry<Destination>?
     ) {
         val model: DonkiEventsScreenViewModel = viewModel(viewModelStoreOwner = checkNotNull(parentNavHostEntry))

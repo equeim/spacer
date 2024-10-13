@@ -37,7 +37,11 @@ import java.util.Locale
 @Parcelize
 data object NotificationFiltersDialog : Destination {
     @Composable
-    override fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?) {
+    override fun Content(
+        navController: NavController<Destination>,
+        navHostEntries: List<NavHostEntry<Destination>>,
+        parentNavHostEntry: NavHostEntry<Destination>?
+    ) {
         val model: DonkiNotificationsScreenViewModel = viewModel(viewModelStoreOwner = checkNotNull(parentNavHostEntry))
         val filters = model.filtersUiState.collectAsStateWithLifecycle()
         val eventsTimeZone = model.notificationsTimeZone.collectAsStateWithLifecycle()
@@ -58,6 +62,7 @@ data object NotificationsDateRangePickerDialog : Destination {
     @Composable
     override fun Content(
         navController: NavController<Destination>,
+        navHostEntries: List<NavHostEntry<Destination>>,
         parentNavHostEntry: NavHostEntry<Destination>?
     ) {
         val model: DonkiNotificationsScreenViewModel = viewModel(viewModelStoreOwner = checkNotNull(parentNavHostEntry))

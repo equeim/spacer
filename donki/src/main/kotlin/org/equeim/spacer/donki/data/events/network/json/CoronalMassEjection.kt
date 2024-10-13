@@ -46,6 +46,7 @@ data class CoronalMassEjection(
     @Serializable
     @Immutable
     data class Analysis(
+        @SerialName("submissionTime") val submissionTime: Instant,
         @SerialName("time21_5") val time215: Instant?,
         @SerialName("latitude") val latitude: Angle?,
         @SerialName("longitude") val longitude: Angle?,

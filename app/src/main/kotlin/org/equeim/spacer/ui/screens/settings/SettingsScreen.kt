@@ -53,6 +53,7 @@ object SettingsScreen : Destination {
     @Composable
     override fun Content(
         navController: NavController<Destination>,
+        navHostEntries: List<NavHostEntry<Destination>>,
         parentNavHostEntry: NavHostEntry<Destination>?
     ) =
         SettingsScreen(navController)
@@ -206,6 +207,7 @@ private data class DarkThemeDialog(val darkThemeMode: AppSettings.DarkThemeMode)
     @Composable
     override fun Content(
         navController: NavController<Destination>,
+        navHostEntries: List<NavHostEntry<Destination>>,
         parentNavHostEntry: NavHostEntry<Destination>?
     ) {
         val model =

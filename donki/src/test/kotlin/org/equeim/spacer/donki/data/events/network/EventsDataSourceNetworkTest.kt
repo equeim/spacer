@@ -168,6 +168,7 @@ class EventsDataSourceNetworkTest : BaseCoroutineTest() {
         )
         val expectedAnalyses = listOf(
             CoronalMassEjection.Analysis(
+                submissionTime = instantOf(2022, 10, 10, 19, 13),
                 time215 = instantOf(2022, 4, 7, 14, 8),
                 latitude = Angle.ofDegrees(-31.0f),
                 longitude = Angle.ofDegrees(-40.0f),
@@ -202,6 +203,7 @@ class EventsDataSourceNetworkTest : BaseCoroutineTest() {
                 )
             ),
             CoronalMassEjection.Analysis(
+                submissionTime = instantOf(2022, 4, 7, 13, 3),
                 time215 = instantOf(2022, 4, 7, 14, 58),
                 latitude = Angle.ofDegrees(-34.0f),
                 longitude = Angle.ofDegrees(-41.0f),

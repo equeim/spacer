@@ -49,8 +49,9 @@ SPDX-License-Identifier: MIT
     <string name="linked_events">Linked events</string>
     <string name="instruments">Instruments</string>
     <string name="cme_source_location">Source location</string>
-    <string name="cme_analysis">Analysis</string>
-    <string name="cme_no_analysis">No analysis</string>
+    <string name="cme_analyses">Analyses</string>
+    <string name="cme_analysis">CME analysis</string>
+    <string name="cme_no_analyses">No analyses</string>
     <string name="cme_data_level">Data level</string>
     <string name="cme_speed">Speed</string>
     <string name="cme_speed_value">%1$2.1f km/s</string>
