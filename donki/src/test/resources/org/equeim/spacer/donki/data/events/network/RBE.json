@@ -7,6 +7,9 @@
                 "displayName": "GOES-P: SEISS >2MeV"
             }
         ],
+        "submissionTime": "2022-04-02T20:14Z",
+        "versionId": 1,
+        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/RBE/19647/-1",
         "linkedEvents": [
             {
                 "activityID": "2022-03-28T12:09:00-CME-001"
@@ -17,7 +20,6 @@
             {
                 "activityID": "2022-04-02T00:33:00-HSS-001"
             }
-        ],
-        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/RBE/19647/-1"
+        ]
     }
 ]

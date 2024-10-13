@@ -13,6 +13,9 @@
                 "displayName": "ACE: MAG"
             }
         ],
+        "submissionTime": "2022-04-04T20:45Z",
+        "versionId": 1,
+        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/HSS/19661/-1",
         "linkedEvents": [
             {
                 "activityID": "2022-04-02T00:33:00-IPS-001"
@@ -20,7 +23,6 @@
             {
                 "activityID": "2022-04-02T20:05:00-RBE-001"
             }
-        ],
-        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/HSS/19661/-1"
+        ]
     }
 ]
