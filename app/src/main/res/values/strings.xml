@@ -4,7 +4,7 @@ SPDX-FileCopyrightText: 2022-2024 Alexey Rochev
 SPDX-License-Identifier: MIT
 -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name" translatable="false">Spacer</string>
     <string name="space_weather_events">Space weather events</string>
     <string name="loading">Loading…</string>
@@ -50,18 +50,47 @@ SPDX-License-Identifier: MIT
     <string name="instruments">Instruments</string>
     <string name="cme_source_location">Source location</string>
     <string name="cme_analyses">Analyses</string>
-    <string name="cme_analysis">CME analysis</string>
     <string name="cme_no_analyses">No analyses</string>
+    <string name="cme_analysis">CME analysis</string>
+    <string name="cme_measurement_technique">Measurement technique</string>
+    <string name="cme_measurement_type">Measurement type</string>
+    <string name="cme_measurement_type_in_list">Measurement type: %1$s</string>
+    <string name="cme_measurement_type_le">Leading Edge (LE)</string>
+    <string name="cme_measurement_type_sh">Shock Front (SH)</string>
+    <string name="cme_measurement_type_rhb">Right Hand Boundary (RHB)</string>
+    <string name="cme_measurement_type_lhb">Left Hand Boundary (LHB)</string>
+    <string name="cme_measurement_type_bw">Black/White Boundary (BW)</string>
+    <string name="cme_measurement_type_cor">Prominence Core (COR)</string>
+    <string name="cme_measurement_type_dis">Disconnection Front (DIS)</string>
+    <string name="cme_measurement_type_te">Trailing Edge (TE)</string>
+    <string name="cme_prime">Use as primary measurement</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
     <string name="cme_data_level">Data level</string>
+    <string name="cme_data_level_realtime">Real-time (0)</string>
+    <string name="cme_data_level_realtime_checked">Real-time and checked by supervising forecaster (1)</string>
+    <string name="cme_data_level_retrospective">Retrospective science level data analysis (2)</string>
     <string name="cme_speed">Speed</string>
+    <string name="cme_speed_in_list">Speed: %1$2.1f km/s</string>
     <string name="cme_speed_value">%1$2.1f km/s</string>
-    <string name="cme_type">Type</string>
+    <string name="cme_speed_measured_at_height">Speed measured at height</string>
+    <string name="cme_speed_measured_at_height_value">%1$2.1f R☉</string>
+    <string name="cme_type">CME type</string>
+    <string name="cme_type_in_list">CME type: %1$s</string>
+    <string name="cme_type_slowest">Slowest (S)</string>
+    <string name="cme_type_common" tools:ignore="TypographyOther">Common (C)</string>
+    <string name="cme_type_occasional">Occasional (O)</string>
+    <string name="cme_type_rare">Rare (R)</string>
+    <string name="cme_type_extremely_rare">Extremely rare (ER)</string>
     <string name="cme_direction">Direction</string>
     <string name="cme_half_angular_width">Half angular width</string>
-    <string name="cme_half_angular_width_value">%1$2.1f°</string>
+    <string name="cme_minor_half_angular_width">Half of minor angular width</string>
+    <string name="cme_tilt">Tilt</string>
+    <string name="degrees_value">%1$2.1f°</string>
+    <string name="cme_image_type">Image type</string>
     <string name="cme_time215">Time at 21.5 R☉</string>
-    <string name="cme_website">Show analysis on DONKI website</string>
-    <string name="cme_earth_impact">Earth impact predicted</string>
+    <string name="earch_impact_predicted">Earth impact predicted</string>
+    <string name="earch_impact_predicted_glancing">Earth impact predicted (glancing blow)</string>
     <string name="enlil_models">WSA-ENLIL+Cone models</string>
     <string name="enlil_no_models">No WSA-ENLIL+Cone models</string>
     <string name="enlil_description">Completed %1$s for %2$.1f AU</string>
@@ -76,6 +105,7 @@ SPDX-License-Identifier: MIT
     <string name="enlil_kp_90">Predicted Kₚ 90°</string>
     <string name="enlil_kp_135">Predicted Kₚ 135°</string>
     <string name="enlil_kp_180">Predicted Kₚ 180°</string>
+    <string name="glancing_blow">Glancing blow</string>
     <string name="gst_kp_index">Kₚ = %1$.2f</string>
     <string name="gst_kp_indexes">Kₚ-indexes</string>
     <string name="gst_no_kp_indexes">No Kₚ-indexes</string>

@@ -15,7 +15,6 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okio.Buffer
 import org.equeim.spacer.donki.BaseCoroutineTest
-import org.equeim.spacer.donki.BaseTest
 import org.equeim.spacer.donki.apiKey
 import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
 import org.equeim.spacer.donki.data.common.InvalidApiKeyError
@@ -169,15 +168,21 @@ class EventsDataSourceNetworkTest : BaseCoroutineTest() {
         val expectedAnalyses = listOf(
             CoronalMassEjection.Analysis(
                 submissionTime = instantOf(2022, 10, 10, 19, 13),
+                levelOfData = CoronalMassEjection.DataLevel.RealTimeChecked,
+                measurementTechnique = "SWPC_CAT",
+                measurementType = CoronalMassEjection.MeasurementType.LeadingEdge,
+                isMostAccurate = true,
+                imageType = "direct",
+                type = CoronalMassEjection.CmeType.Slowest,
+                speed = Speed.ofKilometersPerSecond(457.0f),
+                speedMeasuredAtHeight = null,
                 time215 = instantOf(2022, 4, 7, 14, 8),
                 latitude = Angle.ofDegrees(-31.0f),
                 longitude = Angle.ofDegrees(-40.0f),
-                halfAngle = Angle.ofDegrees(43.0f),
-                speed = Speed.ofKilometersPerSecond(457.0f),
-                type = "S",
-                isMostAccurate = true,
+                halfWidth = Angle.ofDegrees(43.0f),
+                minorHalfWidth = null,
+                tilt = null,
                 note = "SOHO LASCO C3 imagery was partially blocked by the pylon (which lined up almost perfectly with the leading edge) and the CME boundary became very faint in later STEREO A COR2 imagery. However, this was mostly navigated by adjusting the image brightness and contrast.",
-                levelOfData = 1,
                 link = "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/CMEAnalysis/19700/-1",
                 enlilSimulations = listOf(
                     CoronalMassEjection.EnlilSimulation(
@@ -204,15 +209,21 @@ class EventsDataSourceNetworkTest : BaseCoroutineTest() {
             ),
             CoronalMassEjection.Analysis(
                 submissionTime = instantOf(2022, 4, 7, 13, 3),
+                levelOfData = CoronalMassEjection.DataLevel.RealTime,
+                measurementTechnique = "SWPC_CAT",
+                measurementType = CoronalMassEjection.MeasurementType.RightHandBoundary,
+                isMostAccurate = false,
+                imageType = "running difference",
+                type = CoronalMassEjection.CmeType.Slowest,
+                speed = Speed.ofKilometersPerSecond(418.0f),
+                speedMeasuredAtHeight = null,
                 time215 = instantOf(2022, 4, 7, 14, 58),
                 latitude = Angle.ofDegrees(-34.0f),
                 longitude = Angle.ofDegrees(-41.0f),
-                halfAngle = Angle.ofDegrees(41.0f),
-                speed = Speed.ofKilometersPerSecond(418.0f),
-                type = "S",
-                isMostAccurate = false,
+                halfWidth = Angle.ofDegrees(41.0f),
+                minorHalfWidth = null,
+                tilt = null,
                 note = "SOHO LASCO C3 imagery was partially blocked by the pylon (which lined up almost perfectly with the leading edge) and the CME boundary became very faint in later STEREO A COR2 imagery. However, this was mostly navigated by adjusting the image brightness and contrast.",
-                levelOfData = 0,
                 link = "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/CMEAnalysis/19697/-1",
                 enlilSimulations = emptyList()
             )

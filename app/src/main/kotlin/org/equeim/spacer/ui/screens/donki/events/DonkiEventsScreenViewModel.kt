@@ -31,6 +31,7 @@ import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.events.DonkiEventsRepository
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
+import org.equeim.spacer.donki.data.events.network.json.CoronalMassEjection
 import org.equeim.spacer.donki.data.events.network.json.CoronalMassEjectionSummary
 import org.equeim.spacer.donki.data.events.network.json.EventSummary
 import org.equeim.spacer.donki.data.events.network.json.GeomagneticStormSummary
@@ -183,7 +184,11 @@ class DonkiEventsScreenViewModel(
             is GeomagneticStormSummary -> kpIndex?.let { getString(R.string.gst_kp_index, it) }
             is InterplanetaryShockSummary -> location
             is SolarFlareSummary -> classType
-            is CoronalMassEjectionSummary -> if (isEarthShockPredicted) getString(R.string.cme_earth_impact) else null
+            is CoronalMassEjectionSummary -> when (predictedEarthImpact) {
+                CoronalMassEjection.EarthImpactType.NoImpact -> null
+                CoronalMassEjection.EarthImpactType.Impact -> getString(R.string.earch_impact_predicted)
+                CoronalMassEjection.EarthImpactType.GlancingBlow -> getString(R.string.earch_impact_predicted_glancing)
+            }
             else -> null
         }
     }

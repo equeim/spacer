@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022-2024 Alexey Rochev
+//
+// SPDX-License-Identifier: MIT
+
 package org.equeim.spacer.ui.screens.donki.events.details.cme
 
 import androidx.compose.animation.Crossfade
@@ -90,6 +94,7 @@ data class CmeAnalysisScreen(val eventId: EventId, val cmeLink: String) : Destin
                     } else {
                         null
                     }
+
                     is ContentState.Empty, is ContentState.LoadingPlaceholder -> State.Loading
                     is ContentState.ErrorPlaceholder -> null
                 }
@@ -148,6 +153,7 @@ private fun ScreenContent(
                     .padding(contentPadding)
                     .consumeWindowInsets(contentPadding)
                     .padding(Dimens.ScreenContentPadding())
+                    .padding(bottom = Dimens.FloatingActionButtonPadding)
             ) {
                 when (state) {
                     is State.AnalysisData -> ScreenContentAnalysis(
@@ -155,6 +161,7 @@ private fun ScreenContent(
                         state::eventTimeFormatter,
                         state::eventDateTimeFormatter
                     )
+
                     is State.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 }
             }
@@ -174,39 +181,96 @@ private fun ScreenContentAnalysis(
     ) {
         val coordinatesFormatter = rememberCoordinatesFormatter()
 
+        Text(
+            eventDateTimeFormatter().format(analysis.submissionTime),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
         if (analysis.note.isNotEmpty()) {
             SelectionContainer {
-                Text(analysis.note)
+                Text(
+                    analysis.note,
+                    Modifier.padding(vertical = Dimens.SpacingMedium - Dimens.SpacingSmall)
+                )
             }
         }
-        Spacer(Modifier.height(Dimens.SpacingMedium - Dimens.SpacingSmall))
-        val integerFormatter = rememberIntegerFormatter()
-        LabelFieldPair(R.string.cme_data_level, integerFormatter.format(analysis.levelOfData))
+
+        LabelFieldPair(
+            R.string.cme_data_level,
+            stringResource(analysis.levelOfData.displayStringResId)
+        )
+
+        LabelFieldPair(R.string.cme_measurement_technique, analysis.measurementTechnique)
+
+        analysis.measurementType?.let {
+            LabelFieldPair(R.string.cme_measurement_type, stringResource(it.displayStringResId))
+        }
+
+        LabelFieldPair(
+            R.string.cme_prime,
+            stringResource(if (analysis.isMostAccurate) R.string.yes else R.string.no)
+        )
+
+        analysis.imageType?.let {
+            LabelFieldPair(R.string.cme_image_type, it)
+        }
+
+        analysis.type?.let {
+            LabelFieldPair(R.string.cme_type, stringResource(it.displayStringResId))
+        }
+
         analysis.speed?.let {
             LabelFieldPair(
                 R.string.cme_speed,
                 stringResource(R.string.cme_speed_value, it.toKilometersPerSecond())
             )
         }
-        LabelFieldPair(R.string.cme_type, analysis.type)
+
+        analysis.speedMeasuredAtHeight?.let {
+            LabelFieldPair(
+                R.string.cme_speed_measured_at_height,
+                stringResource(R.string.cme_speed_measured_at_height_value, it)
+            )
+        }
+
+        analysis.time215?.let {
+            LabelFieldPair(R.string.cme_time215, eventTimeFormatter().format(it))
+        }
+
         if (analysis.latitude != null && analysis.longitude != null) {
             LabelFieldPair(
                 R.string.cme_direction,
                 coordinatesFormatter.format(analysis.latitude!!, analysis.longitude!!)
             )
         }
-        analysis.halfAngle?.let {
+
+        analysis.halfWidth?.let {
             LabelFieldPair(
                 R.string.cme_half_angular_width,
-                stringResource(R.string.cme_half_angular_width_value, it.degrees)
+                stringResource(R.string.degrees_value, it.degrees)
             )
         }
-        analysis.time215?.let {
-            LabelFieldPair(R.string.cme_time215, eventTimeFormatter().format(it))
+
+        analysis.minorHalfWidth?.let {
+            LabelFieldPair(
+                R.string.cme_minor_half_angular_width,
+                stringResource(R.string.degrees_value, it.degrees)
+            )
         }
+
+        analysis.tilt?.let {
+            LabelFieldPair(
+                R.string.cme_tilt,
+                stringResource(R.string.degrees_value, it.degrees)
+            )
+        }
+
         Spacer(Modifier.height(Dimens.SpacingMedium - Dimens.SpacingSmall))
+
         if (analysis.enlilSimulations.isNotEmpty()) {
             SectionHeader(stringResource(R.string.enlil_models))
+            val integerFormatter = rememberIntegerFormatter()
             analysis.enlilSimulations.forEach { simulation ->
                 EnlilModelCard(simulation, integerFormatter, eventDateTimeFormatter())
             }
@@ -236,6 +300,19 @@ private fun EnlilModelCard(
                         simulation.au
                     )
                 )
+                if (simulation.estimatedShockArrivalTime != null) {
+                    Text(
+                        stringResource(
+                            if (simulation.isEarthGlancingBlow == true) {
+                                R.string.earch_impact_predicted_glancing
+                            } else {
+                                R.string.earch_impact_predicted
+                            }
+                        ),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         },
         expandedContent = {
@@ -253,6 +330,13 @@ private fun EnlilModelCard(
                         stringResource(R.string.enlil_earth_impact),
                         style = MaterialTheme.typography.bodyLarge
                     )
+                    if (simulation.isEarthGlancingBlow == true) {
+                        Text(
+                            stringResource(R.string.glancing_blow),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     simulation.estimatedShockArrivalTime?.let {
                         LabelFieldPair(
                             R.string.enlil_earth_shock_arrival_time,
@@ -283,11 +367,17 @@ private fun EnlilModelCard(
                         stringResource(R.string.enlil_other_impacts),
                         style = MaterialTheme.typography.bodyLarge
                     )
-                    simulation.impacts.forEach { impact ->
-                        LabelFieldPair(
-                            impact.location,
+                    for (impact in simulation.impacts) {
+                        val field = if (impact.isGlancingBlow) {
+                            "${eventDateTimeFormatter.format(impact.arrivalTime)}\n${
+                                stringResource(
+                                    R.string.glancing_blow
+                                )
+                            }"
+                        } else {
                             eventDateTimeFormatter.format(impact.arrivalTime)
-                        )
+                        }
+                        LabelFieldPair(impact.location, field)
                     }
                 } else {
                     SectionPlaceholder(
