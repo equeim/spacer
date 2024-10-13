@@ -15,10 +15,10 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy.Companion.REPLACE
 import androidx.room.PrimaryKey
 import androidx.room.Query
-import org.equeim.spacer.donki.data.events.network.json.CoronalMassEjection
-import org.equeim.spacer.donki.data.events.network.json.CoronalMassEjectionSummary
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
+import org.equeim.spacer.donki.data.events.network.json.CoronalMassEjection
+import org.equeim.spacer.donki.data.events.network.json.CoronalMassEjectionSummary
 import java.time.Instant
 
 @Entity(
@@ -34,13 +34,13 @@ import java.time.Instant
 internal data class CoronalMassEjectionExtras(
     @ColumnInfo(name = "id") @PrimaryKey
     val id: EventId,
-    @ColumnInfo(name = "is_earth_shock_predicted")
-    val isEarthShockPredicted: Boolean
+    @ColumnInfo(name = "predicted_earth_impact")
+    val predictedEarthImpact: CoronalMassEjection.EarthImpactType
 )
 
 internal fun CoronalMassEjection.toExtras() = CoronalMassEjectionExtras(
     id = id,
-    isEarthShockPredicted = isEarthShockPredicted()
+    predictedEarthImpact = predictedEarthImpact
 )
 
 internal data class CoronalMassEjectionExtrasSummaryCached(
@@ -48,15 +48,15 @@ internal data class CoronalMassEjectionExtrasSummaryCached(
     override val id: EventId,
     @ColumnInfo(name = "time")
     override val time: Instant,
-    @ColumnInfo(name = "is_earth_shock_predicted")
-    override val isEarthShockPredicted: Boolean
+    @ColumnInfo(name = "predicted_earth_impact")
+    override val predictedEarthImpact: CoronalMassEjection.EarthImpactType
 ) : CoronalMassEjectionSummary
 
 @Dao
 internal abstract class CoronalMassEjectionDao {
     @Query(
         """
-            SELECT events.id, events.time, is_earth_shock_predicted FROM events
+            SELECT events.id, events.time, predicted_earth_impact FROM events
             JOIN coronal_mass_ejection_extras ON events.id = coronal_mass_ejection_extras.id
             WHERE events.type = :type AND events.time >= :startTime AND events.time < :endTime
             ORDER BY time DESC

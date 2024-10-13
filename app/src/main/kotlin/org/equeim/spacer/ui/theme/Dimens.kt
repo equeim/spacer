@@ -78,6 +78,11 @@ object Dimens {
 
     val SpacingBetweenCards = 16.dp
 
+    /**
+     * Padding that needs to be applied to the content of scrollable view so that it's not obscured by FAB when scrolled to the bottom
+     */
+    val FloatingActionButtonPadding = 96.dp
+
     fun listItemHorizontalPadding(horizontalPadding: Dp): Dp {
         // 16dp is ListItem's own hardcoded padding
         return (horizontalPadding - 16.dp).coerceAtLeast(0.dp)

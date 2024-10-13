@@ -7,7 +7,6 @@ package org.equeim.spacer.ui.screens.donki.events.details.cme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -58,6 +57,46 @@ fun CoronalMassEjectionDetails(
                 }) {
                     Column(verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
                         Text(eventDateTimeFormatter().format(analysis.submissionTime))
+                        analysis.type?.let {
+                            Text(
+                                stringResource(
+                                    R.string.cme_type_in_list,
+                                    stringResource(it.displayStringResId)
+                                ),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                        analysis.speed?.let {
+                            Text(
+                                stringResource(
+                                    R.string.cme_speed_in_list,
+                                    it.toKilometersPerSecond()
+                                ),
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                        }
+                        analysis.measurementType?.let {
+                            Text(
+                                stringResource(
+                                    R.string.cme_measurement_type_in_list,
+                                    stringResource(it.displayStringResId)
+                                ),
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                        }
+
+                        val earthImpactString = when (analysis.predictedEarthImpact) {
+                            CoronalMassEjection.EarthImpactType.NoImpact -> null
+                            CoronalMassEjection.EarthImpactType.Impact -> R.string.earch_impact_predicted
+                            CoronalMassEjection.EarthImpactType.GlancingBlow -> R.string.earch_impact_predicted_glancing
+                        }
+                        if (earthImpactString != null) {
+                            Text(
+                                stringResource(earthImpactString),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             }
@@ -65,4 +104,3 @@ fun CoronalMassEjectionDetails(
             SectionPlaceholder(stringResource(R.string.cme_no_analyses))
         }
     }
-

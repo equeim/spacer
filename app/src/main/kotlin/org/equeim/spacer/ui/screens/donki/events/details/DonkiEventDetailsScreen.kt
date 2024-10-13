@@ -241,7 +241,7 @@ private fun ScreenContentEventData(state: EventData, showEventDetailsScreen: (Ev
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(bottom = 96.dp),
+            .padding(bottom = Dimens.FloatingActionButtonPadding),
         verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
     ) {
         Text(
