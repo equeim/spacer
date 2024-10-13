@@ -12,11 +12,14 @@
         "classType": "C6.7",
         "sourceLocation": "N27W24",
         "activeRegionNum": 12996,
+        "note": "Associated with CME 2022-04-28T03:09Z.",
+        "submissionTime": "2022-04-28T16:44Z",
+        "versionId": 1,
+        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/FLR/19972/-1",
         "linkedEvents": [
             {
                 "activityID": "2022-04-28T03:09:00-CME-001"
             }
-        ],
-        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/FLR/19972/-1"
+        ]
     }
 ]

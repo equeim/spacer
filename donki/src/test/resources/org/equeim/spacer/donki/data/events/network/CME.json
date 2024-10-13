@@ -3,10 +3,6 @@
         "activityID": "2022-04-07T05:36:00-CME-001",
         "catalog": "M2M_CATALOG",
         "startTime": "2022-04-07T05:36Z",
-        "sourceLocation": "S35W00",
-        "activeRegionNum": null,
-        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/CME/19695/-1",
-        "note": "Partial halo S in COR2A and SE in C2/C3, associated with the large horizontally-stretched filament eruption with the center at around S35W00 which starts erupting around 2022-04-07T05:00Z as seen in AIA 304, other coronal signatures (dimming, rising post-eruptive arcades) also seen in AIA 193 and EUVI A 195.",
         "instruments": [
             {
                 "displayName": "SOHO: LASCO/C2"
@@ -18,17 +14,30 @@
                 "displayName": "STEREO A: SECCHI/COR2"
             }
         ],
+        "sourceLocation": "S35W00",
+        "activeRegionNum": null,
+        "note": "Partial halo S in COR2A and SE in C2/C3, associated with the large horizontally-stretched filament eruption with the center at around S35W00 which starts erupting around 2022-04-07T05:00Z as seen in AIA 304, other coronal signatures (dimming, rising post-eruptive arcades) also seen in AIA 193 and EUVI A 195.",
+        "submissionTime": "2022-04-07T12:39Z",
+        "versionId": 1,
+        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/CME/19695/-1",
         "cmeAnalyses": [
             {
+                "isMostAccurate": true,
                 "time21_5": "2022-04-07T14:08Z",
                 "latitude": -31.0,
                 "longitude": -40.0,
                 "halfAngle": 43.0,
                 "speed": 457.0,
                 "type": "S",
-                "isMostAccurate": true,
+                "featureCode": "LE",
+                "imageType": "direct",
+                "measurementTechnique": "SWPC_CAT",
                 "note": "SOHO LASCO C3 imagery was partially blocked by the pylon (which lined up almost perfectly with the leading edge) and the CME boundary became very faint in later STEREO A COR2 imagery. However, this was mostly navigated by adjusting the image brightness and contrast.",
                 "levelOfData": 1,
+                "tilt": null,
+                "minorHalfWidth": null,
+                "speedMeasuredAtHeight": null,
+                "submissionTime": "2022-10-10T19:13Z",
                 "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/CMEAnalysis/19700/-1",
                 "enlilList": [
                     {
@@ -57,15 +66,22 @@
                 ]
             },
             {
+                "isMostAccurate": false,
                 "time21_5": "2022-04-07T14:58Z",
                 "latitude": -34.0,
                 "longitude": -41.0,
                 "halfAngle": 41.0,
                 "speed": 418.0,
                 "type": "S",
-                "isMostAccurate": false,
+                "featureCode": "RHB",
+                "imageType": "running difference",
+                "measurementTechnique": "SWPC_CAT",
                 "note": "SOHO LASCO C3 imagery was partially blocked by the pylon (which lined up almost perfectly with the leading edge) and the CME boundary became very faint in later STEREO A COR2 imagery. However, this was mostly navigated by adjusting the image brightness and contrast.",
                 "levelOfData": 0,
+                "tilt": null,
+                "minorHalfWidth": null,
+                "speedMeasuredAtHeight": null,
+                "submissionTime": "2022-04-07T13:03Z",
                 "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/CMEAnalysis/19697/-1",
                 "enlilList": null
             }

@@ -5,15 +5,16 @@
         "allKpIndex": [
             {
                 "observedTime": "2022-04-14T18:00Z",
-                "kpIndex": 6,
+                "kpIndex": 6.0,
                 "source": "NOAA"
             },
             {
                 "observedTime": "2022-04-14T18:00Z",
-                "kpIndex": 6,
+                "kpIndex": 6.0,
                 "source": "NOAA"
             }
         ],
+        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/GST/19773/-1",
         "linkedEvents": [
             {
                 "activityID": "2022-04-11T06:00:00-CME-001"
@@ -22,6 +23,7 @@
                 "activityID": "2022-04-14T03:37:00-IPS-001"
             }
         ],
-        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/GST/19773/-1"
+        "submissionTime": "2022-04-14T18:13Z",
+        "versionId": 1
     }
 ]

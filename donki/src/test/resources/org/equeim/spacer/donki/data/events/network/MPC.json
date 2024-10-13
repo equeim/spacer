@@ -7,6 +7,9 @@
                 "displayName": "MODEL: SWMF"
             }
         ],
+        "submissionTime": "2022-04-01T00:11Z",
+        "versionId": 2,
+        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/MPC/19603/-1",
         "linkedEvents": [
             {
                 "activityID": "2022-03-28T12:09:00-CME-001"
@@ -17,7 +20,6 @@
             {
                 "activityID": "2022-03-31T01:41:00-IPS-001"
             }
-        ],
-        "link": "https://kauai.ccmc.gsfc.nasa.gov/DONKI/view/MPC/19603/-1"
+        ]
     }
 ]
