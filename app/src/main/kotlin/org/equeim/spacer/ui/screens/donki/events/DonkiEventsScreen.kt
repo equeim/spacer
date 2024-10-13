@@ -75,6 +75,7 @@ data object DonkiEventsScreen : Destination {
     @Composable
     override fun Content(
         navController: NavController<Destination>,
+        navHostEntries: List<NavHostEntry<Destination>>,
         parentNavHostEntry: NavHostEntry<Destination>?
     ) =
         DonkiEventsScreen(navController)

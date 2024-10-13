@@ -19,7 +19,11 @@ import dev.olshevski.navigation.reimagined.currentHostEntry
 
 interface Destination : Parcelable {
     @Composable
-    fun Content(navController: NavController<Destination>, parentNavHostEntry: NavHostEntry<Destination>?)
+    fun Content(
+        navController: NavController<Destination>,
+        navHostEntries: List<NavHostEntry<Destination>>,
+        parentNavHostEntry: NavHostEntry<Destination>?
+    )
 }
 
 val LocalNavController =
@@ -53,6 +57,6 @@ private fun NavHostScope<Destination>.NavHostContentSelector(
         LocalNavController provides navController,
         LocalNavHostEntry provides currentHostEntry
     ) {
-        destination.Content(navController, parentNavHostEntry)
+        destination.Content(navController, hostEntries, parentNavHostEntry)
     }
 }
