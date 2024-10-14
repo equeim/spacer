@@ -22,6 +22,7 @@ import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.donki.data.notifications.NotificationType
 import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.current
 import org.equeim.spacer.ui.screens.donki.BaseEventFiltersDialogContent
 import org.equeim.spacer.ui.screens.donki.BaseEventFiltersSideSheet
 import org.equeim.spacer.ui.screens.donki.DateRangePickerDialogContent
@@ -40,9 +41,9 @@ data object NotificationFiltersDialog : Destination {
     override fun Content(
         navController: NavController<Destination>,
         navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntry: NavHostEntry<Destination>?
+        parentNavHostEntries: List<NavHostEntry<Destination>>?
     ) {
-        val model: DonkiNotificationsScreenViewModel = viewModel(viewModelStoreOwner = checkNotNull(parentNavHostEntry))
+        val model: DonkiNotificationsScreenViewModel = viewModel(viewModelStoreOwner = parentNavHostEntries!!.current)
         val filters = model.filtersUiState.collectAsStateWithLifecycle()
         val eventsTimeZone = model.notificationsTimeZone.collectAsStateWithLifecycle()
         BaseEventFiltersDialogContent(
@@ -63,9 +64,9 @@ data object NotificationsDateRangePickerDialog : Destination {
     override fun Content(
         navController: NavController<Destination>,
         navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntry: NavHostEntry<Destination>?
+        parentNavHostEntries: List<NavHostEntry<Destination>>?
     ) {
-        val model: DonkiNotificationsScreenViewModel = viewModel(viewModelStoreOwner = checkNotNull(parentNavHostEntry))
+        val model: DonkiNotificationsScreenViewModel = viewModel(viewModelStoreOwner = parentNavHostEntries!!.current)
         val initialFilters: FiltersUiState<NotificationType> by model.filtersUiState.collectAsStateWithLifecycle()
         val eventsTimeZone: ZoneId? by model.notificationsTimeZone.collectAsStateWithLifecycle()
         eventsTimeZone?.let {

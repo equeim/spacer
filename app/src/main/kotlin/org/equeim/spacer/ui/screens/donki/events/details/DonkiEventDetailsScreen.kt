@@ -92,7 +92,7 @@ data class DonkiEventDetailsScreen(val eventId: EventId) : Destination {
     override fun Content(
         navController: NavController<Destination>,
         navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntry: NavHostEntry<Destination>?
+        parentNavHostEntries: List<NavHostEntry<Destination>>?
     ) =
         ScreenContent(eventId, navController)
 }

@@ -48,6 +48,7 @@ import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreenViewModel
 import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreenViewModel.ContentState
 import org.equeim.spacer.ui.screens.donki.events.details.LabelFieldPair
+import org.equeim.spacer.ui.screens.previous
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.utils.rememberCoordinatesFormatter
@@ -62,11 +63,10 @@ data class CmeAnalysisScreen(val eventId: EventId, val cmeLink: String) : Destin
     override fun Content(
         navController: NavController<Destination>,
         navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntry: NavHostEntry<Destination>?
+        parentNavHostEntries: List<NavHostEntry<Destination>>?
     ) {
-        val previousNavHostEntry = navHostEntries[navHostEntries.size - 2]
         val model: DonkiEventDetailsScreenViewModel =
-            viewModel(viewModelStoreOwner = previousNavHostEntry) {
+            viewModel(viewModelStoreOwner = navHostEntries.previous) {
                 DonkiEventDetailsScreenViewModel(
                     eventId,
                     checkNotNull(get(ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY))

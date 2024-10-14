@@ -21,6 +21,7 @@ import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.current
 import org.equeim.spacer.ui.screens.donki.BaseEventFiltersDialogContent
 import org.equeim.spacer.ui.screens.donki.BaseEventFiltersSideSheet
 import org.equeim.spacer.ui.screens.donki.DateRangePickerDialogContent
@@ -36,9 +37,9 @@ data object EventFiltersDialog : Destination {
     override fun Content(
         navController: NavController<Destination>,
         navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntry: NavHostEntry<Destination>?
+        parentNavHostEntries: List<NavHostEntry<Destination>>?
     ) {
-        val model: DonkiEventsScreenViewModel = viewModel(viewModelStoreOwner = checkNotNull(parentNavHostEntry))
+        val model: DonkiEventsScreenViewModel = viewModel(viewModelStoreOwner = parentNavHostEntries!!.current)
         val filters = model.filtersUiState.collectAsStateWithLifecycle()
         val eventsTimeZone = model.eventsTimeZone.collectAsStateWithLifecycle()
         BaseEventFiltersDialogContent(
@@ -59,9 +60,9 @@ data object EventsDateRangePickerDialog : Destination {
     override fun Content(
         navController: NavController<Destination>,
         navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntry: NavHostEntry<Destination>?
+        parentNavHostEntries: List<NavHostEntry<Destination>>?
     ) {
-        val model: DonkiEventsScreenViewModel = viewModel(viewModelStoreOwner = checkNotNull(parentNavHostEntry))
+        val model: DonkiEventsScreenViewModel = viewModel(viewModelStoreOwner = parentNavHostEntries!!.current)
         val initialFilters: FiltersUiState<EventType> by model.filtersUiState.collectAsStateWithLifecycle()
         val eventsTimeZone: ZoneId? by model.eventsTimeZone.collectAsStateWithLifecycle()
         eventsTimeZone?.let {

@@ -76,7 +76,7 @@ data class NotificationDetailsScreen(val notificationId: NotificationId) : Desti
     override fun Content(
         navController: NavController<Destination>,
         navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntry: NavHostEntry<Destination>?
+        parentNavHostEntries: List<NavHostEntry<Destination>>?
     ) {
         val model = viewModel {
             NotificationDetailsScreenViewModel(

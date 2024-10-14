@@ -76,13 +76,13 @@ data object DonkiEventsScreen : Destination {
     override fun Content(
         navController: NavController<Destination>,
         navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntry: NavHostEntry<Destination>?
+        parentNavHostEntries: List<NavHostEntry<Destination>>?
     ) =
-        DonkiEventsScreen(navController)
+        DonkiEventsScreen(navController, navHostEntries)
 }
 
 @Composable
-private fun DonkiEventsScreen(navController: NavController<Destination>) {
+private fun DonkiEventsScreen(navController: NavController<Destination>, navHostEntries: List<NavHostEntry<Destination>>) {
     val model = viewModel<DonkiEventsScreenViewModel>()
     val filters = model.filtersUiState.collectAsStateWithLifecycle()
     val holder = rememberBaseEventsListStateHolder(
@@ -99,6 +99,7 @@ private fun DonkiEventsScreen(navController: NavController<Destination>) {
         filtersUiState = filters,
         updateFilters = model::updateFilters,
         eventsTimeZone = eventsTimeZone,
+        navHostEntries = { navHostEntries },
         navigateToDetailsScreen = { navController.navigate(DonkiEventDetailsScreen(it)) },
         navigateToNotificationsScreen = { navController.navigate(DonkiNotificationsScreen) },
         navigateToSettingsScreen = { navController.navigate(SettingsScreen) }
@@ -112,6 +113,7 @@ private fun DonkiEventsScreen(
     filtersUiState: State<FiltersUiState<EventType>>,
     updateFilters: (FiltersUiState<EventType>) -> Unit,
     eventsTimeZone: State<ZoneId?>,
+    navHostEntries: () -> List<NavHostEntry<Destination>>,
     navigateToDetailsScreen: (EventId) -> Unit,
     navigateToNotificationsScreen: () -> Unit,
     navigateToSettingsScreen: () -> Unit,
@@ -121,7 +123,7 @@ private fun DonkiEventsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     val dialogNavController = rememberNavController<Destination>(initialBackstack = emptyList())
-    DialogDestinationNavHost(dialogNavController)
+    DialogDestinationNavHost(dialogNavController, navHostEntries)
 
     val showFiltersAsDialog = shouldShowFiltersAsDialog()
 
@@ -267,6 +269,7 @@ fun DonkiEventsScreenPreview() {
             filtersUiState = filters,
             updateFilters = {},
             eventsTimeZone = remember { mutableStateOf(ZoneId.systemDefault()) },
+            navHostEntries = { emptyList() },
             navigateToDetailsScreen = {},
             navigateToNotificationsScreen = {},
             navigateToSettingsScreen = {}
