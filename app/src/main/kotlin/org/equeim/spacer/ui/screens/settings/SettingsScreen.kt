@@ -46,6 +46,7 @@ import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.DialogDestinationNavHost
+import org.equeim.spacer.ui.screens.current
 import org.equeim.spacer.ui.theme.Dimens
 
 @Parcelize
@@ -54,16 +55,16 @@ object SettingsScreen : Destination {
     override fun Content(
         navController: NavController<Destination>,
         navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntry: NavHostEntry<Destination>?
+        parentNavHostEntries: List<NavHostEntry<Destination>>?
     ) =
-        SettingsScreen(navController)
+        SettingsScreen(navController, navHostEntries = { navHostEntries })
 }
 
 @Composable
-private fun SettingsScreen(navController: NavController<Destination>) {
+private fun SettingsScreen(navController: NavController<Destination>, navHostEntries: () -> List<NavHostEntry<Destination>>) {
     val dialogNavController =
         rememberNavController<Destination>(initialBackstack = emptyList())
-    DialogDestinationNavHost(dialogNavController)
+    DialogDestinationNavHost(dialogNavController, navHostEntries)
 
     Scaffold(topBar = {
         SubScreenTopAppBar(stringResource(R.string.settings), navController::pop)
@@ -208,10 +209,9 @@ private data class DarkThemeDialog(val darkThemeMode: AppSettings.DarkThemeMode)
     override fun Content(
         navController: NavController<Destination>,
         navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntry: NavHostEntry<Destination>?
+        parentNavHostEntries: List<NavHostEntry<Destination>>?
     ) {
-        val model =
-            viewModel<SettingsScreenViewModel>(viewModelStoreOwner = checkNotNull(parentNavHostEntry))
+        val model = viewModel<SettingsScreenViewModel>(viewModelStoreOwner = parentNavHostEntries!!.current)
         DarkThemeDialogContent(
             darkThemeMode,
             onDismissRequest = navController::pop,

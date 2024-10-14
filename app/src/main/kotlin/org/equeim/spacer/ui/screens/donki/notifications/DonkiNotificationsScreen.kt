@@ -71,13 +71,13 @@ data object DonkiNotificationsScreen : Destination {
     override fun Content(
         navController: NavController<Destination>,
         navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntry: NavHostEntry<Destination>?
+        parentNavHostEntries: List<NavHostEntry<Destination>>?
     ) =
-        DonkiNotificationsScreen(navController)
+        DonkiNotificationsScreen(navController, navHostEntries)
 }
 
 @Composable
-private fun DonkiNotificationsScreen(navController: NavController<Destination>) {
+private fun DonkiNotificationsScreen(navController: NavController<Destination>, navHostEntries: List<NavHostEntry<Destination>>) {
     val model = viewModel<DonkiNotificationsScreenViewModel>()
     val filters = model.filtersUiState.collectAsStateWithLifecycle()
     val holder = rememberBaseEventsListStateHolder(
@@ -95,7 +95,8 @@ private fun DonkiNotificationsScreen(navController: NavController<Destination>) 
         updateFilters = model::updateFilters,
         eventsTimeZone = eventsTimeZone,
         navigateToDetailsScreen = { navController.navigate(NotificationDetailsScreen(it)) },
-        popBackStack = navController::pop
+        popBackStack = navController::pop,
+        navHostEntries = { navHostEntries }
     )
 }
 
@@ -108,11 +109,12 @@ private fun DonkiNotificationsScreen(
     eventsTimeZone: State<ZoneId?>,
     navigateToDetailsScreen: (NotificationId) -> Unit,
     popBackStack: () -> Unit,
+    navHostEntries: () -> List<NavHostEntry<Destination>>,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
     val dialogNavController = rememberNavController<Destination>(initialBackstack = emptyList())
-    DialogDestinationNavHost(dialogNavController)
+    DialogDestinationNavHost(dialogNavController, navHostEntries)
 
     val showFiltersAsDialog = shouldShowFiltersAsDialog()
 
@@ -248,7 +250,8 @@ fun DonkiNotificationsScreenPreview() {
             updateFilters = {},
             eventsTimeZone = remember { mutableStateOf(ZoneId.systemDefault()) },
             navigateToDetailsScreen = { },
-            popBackStack = {}
+            popBackStack = {},
+            navHostEntries = { emptyList() }
         )
     }
 }
