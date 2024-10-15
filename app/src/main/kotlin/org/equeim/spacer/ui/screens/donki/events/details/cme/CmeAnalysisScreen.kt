@@ -271,7 +271,7 @@ private fun ScreenContentAnalysis(
         if (analysis.enlilSimulations.isNotEmpty()) {
             SectionHeader(stringResource(R.string.enlil_models))
             val integerFormatter = rememberIntegerFormatter()
-            analysis.enlilSimulations.forEach { simulation ->
+            for (simulation in analysis.enlilSimulations.sortedByDescending { it.modelCompletionTime }) {
                 EnlilModelCard(simulation, integerFormatter, eventDateTimeFormatter())
             }
         } else {

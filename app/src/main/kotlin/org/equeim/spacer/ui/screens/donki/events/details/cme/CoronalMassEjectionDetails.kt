@@ -51,7 +51,7 @@ fun CoronalMassEjectionDetails(
 
         if (event.cmeAnalyses.isNotEmpty()) {
             SectionHeader(stringResource(R.string.cme_analyses))
-            for (analysis in event.cmeAnalyses) {
+            for (analysis in event.cmeAnalyses.sortedByDescending { it.submissionTime }) {
                 OutlinedCardWithPadding(onClick = {
                     navigateToCmeAnalysisScreen(analysis)
                 }) {
