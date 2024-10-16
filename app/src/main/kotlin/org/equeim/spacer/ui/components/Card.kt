@@ -32,6 +32,20 @@ val CARD_CONTENT_PADDING = PaddingValues(horizontal = Dimens.SpacingLarge, verti
 
 @Composable
 fun ElevatedCardWithPadding(
+    modifier: Modifier = Modifier,
+    elevation: CardElevation = CardDefaults.elevatedCardElevation(),
+    content: @Composable () -> Unit
+) {
+    ElevatedCard(
+        modifier,
+        elevation = elevation
+    ) {
+        CardContent(content)
+    }
+}
+
+@Composable
+fun ElevatedCardWithPadding(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     elevation: CardElevation = CardDefaults.elevatedCardElevation(),
@@ -48,14 +62,31 @@ fun ElevatedCardWithPadding(
 
 @Composable
 fun OutlinedCardWithPadding(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    OutlinedCard(modifier) {
+        CardContent(content)
+    }
+}
+
+@Composable
+fun OutlinedCardWithPadding(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    OutlinedCard(
-        onClick,
-        modifier
-    ) {
+    OutlinedCard(onClick, modifier) {
+        CardContent(content)
+    }
+}
+
+@Composable
+fun FilledCardWithPadding(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Card(modifier) {
         CardContent(content)
     }
 }
@@ -66,10 +97,7 @@ fun FilledCardWithPadding(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    Card(
-        onClick,
-        modifier
-    ) {
+    Card(onClick, modifier) {
         CardContent(content)
     }
 }
