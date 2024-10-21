@@ -55,7 +55,7 @@ internal val EMPTY_PAGING_STATE = PagingState<Week, EventSummary>(
 @RunWith(Parameterized::class)
 class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTest() {
     private val clock = Clock.fixed(CURRENT_INSTANT, systemTimeZone)
-    private val repository = mockk<DonkiEventsRepositoryInternal>()
+    private val repository = mockk<DonkiEventsRepository>()
     private lateinit var pagingSource: EventsSummariesPagingSource
 
     override fun before() {

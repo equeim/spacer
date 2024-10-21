@@ -32,47 +32,11 @@ import java.time.Instant
 
 private const val TAG = "DonkiEventsRepository"
 
-interface DonkiEventsRepository : Closeable {
-    fun getEventSummariesPager(filters: StateFlow<Filters>): Pager<*, EventSummary>
-    suspend fun isLastWeekNeedsRefreshing(filters: Filters): Boolean
-
-    suspend fun getEventById(id: EventId, forceRefresh: Boolean): EventById
-    suspend fun isEventNeedsRefreshing(event: Event): Boolean
-
-    data class EventById(
-        val event: Event,
-        val needsRefreshing: Boolean,
-    )
-
-    @Immutable
-    data class Filters(
-        val types: List<EventType>,
-        val dateRange: DateRange?,
-    )
-}
-
-fun DonkiEventsRepository(customNasaApiKey: Flow<String?>, context: Context): DonkiEventsRepository =
-    DonkiEventsRepositoryImpl(customNasaApiKey, context)
-
-internal interface DonkiEventsRepositoryInternal : DonkiEventsRepository {
-    suspend fun getEventSummariesForWeek(
-        week: Week,
-        eventTypes: List<EventType>,
-        dateRange: DateRange?,
-        refreshCacheIfNeeded: Boolean,
-    ): List<EventSummary>
-
-    suspend fun updateEventsForWeek(
-        week: Week,
-        eventType: EventType,
-    ): List<Pair<Event, JsonObject>>
-}
-
-private class DonkiEventsRepositoryImpl(
+class DonkiEventsRepository(
     customNasaApiKey: Flow<String?>,
     context: Context,
     private val clock: Clock = Clock.systemDefaultZone(),
-) : DonkiEventsRepositoryInternal {
+) : Closeable {
     private val networkDataSource = EventsDataSourceNetwork(customNasaApiKey)
     private val cacheDataSource = EventsDataSourceCache(context)
 
@@ -80,7 +44,7 @@ private class DonkiEventsRepositoryImpl(
         cacheDataSource.close()
     }
 
-    override suspend fun getEventSummariesForWeek(
+    internal suspend fun getEventSummariesForWeek(
         week: Week,
         eventTypes: List<EventType>,
         dateRange: DateRange?,
@@ -127,7 +91,7 @@ private class DonkiEventsRepositoryImpl(
         return allEvents
     }
 
-    override suspend fun updateEventsForWeek(week: Week, eventType: EventType): List<Pair<Event, JsonObject>> {
+    internal suspend fun updateEventsForWeek(week: Week, eventType: EventType): List<Pair<Event, JsonObject>> {
         Log.d(TAG, "updateEventsForWeek() called with: week = $week, eventType = $eventType")
         val loadTime = Instant.now(clock)
         val events = networkDataSource.getEvents(week, eventType)
@@ -136,7 +100,7 @@ private class DonkiEventsRepositoryImpl(
     }
 
     @OptIn(ExperimentalPagingApi::class)
-    override fun getEventSummariesPager(filters: StateFlow<DonkiEventsRepository.Filters>): Pager<*, EventSummary> {
+    fun getEventSummariesPager(filters: StateFlow<Filters>): Pager<*, EventSummary> {
         val mediator = EventsSummariesRemoteMediator(this, cacheDataSource, filters)
         return Pager(
             PagingConfig(pageSize = 20, enablePlaceholders = false),
@@ -151,7 +115,7 @@ private class DonkiEventsRepositoryImpl(
         }
     }
 
-    override suspend fun isLastWeekNeedsRefreshing(filters: DonkiEventsRepository.Filters): Boolean {
+    suspend fun isLastWeekNeedsRefreshing(filters: Filters): Boolean {
         Log.d(TAG, "isLastWeekNeedsRefreshing() called with: filters = $filters")
         val week = filters.dateRange?.lastWeek ?: Week.getCurrentWeek(clock)
         return try {
@@ -168,10 +132,10 @@ private class DonkiEventsRepositoryImpl(
         }
     }
 
-    override suspend fun getEventById(
+    suspend fun getEventById(
         id: EventId,
         forceRefresh: Boolean,
-    ): DonkiEventsRepository.EventById {
+    ): EventById {
         Log.d(TAG, "getEventById() called with: id = $id, forceRefresh = $forceRefresh")
         return try {
             val (eventType, time) = id.parse()
@@ -183,7 +147,7 @@ private class DonkiEventsRepositoryImpl(
                 updateEventsForWeek(week, eventType).find { it.first.id == id } ?: throw RuntimeException(
                     "Did not find event $id in server response"
                 )
-            DonkiEventsRepository.EventById(event.first, needsRefreshing = false)
+            EventById(event.first, needsRefreshing = false)
         } catch (e: Exception) {
             if (e !is CancellationException) {
                 Log.e(TAG, "getEventDetailsById: failed to get event $id", e)
@@ -192,7 +156,7 @@ private class DonkiEventsRepositoryImpl(
         }
     }
 
-    override suspend fun isEventNeedsRefreshing(event: Event): Boolean {
+    suspend fun isEventNeedsRefreshing(event: Event): Boolean {
         Log.d(TAG, "isEventNeedsRefreshing() called with: event = $event")
         return try {
             cacheDataSource.isWeekNotCachedOrNeedsRefresh(Week.fromInstant(event.time), event.type).also {
@@ -205,4 +169,15 @@ private class DonkiEventsRepositoryImpl(
             false
         }
     }
+
+    data class EventById(
+        val event: Event,
+        val needsRefreshing: Boolean,
+    )
+
+    @Immutable
+    data class Filters(
+        val types: List<EventType>,
+        val dateRange: DateRange?,
+    )
 }

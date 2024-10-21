@@ -15,7 +15,7 @@ import org.equeim.spacer.donki.data.events.network.json.EventSummary
 import java.time.Clock
 
 internal class EventsSummariesRemoteMediator(
-    private val repository: DonkiEventsRepositoryInternal,
+    private val repository: DonkiEventsRepository,
     private val cacheDataSource: EventsDataSourceCache,
     private val filters: StateFlow<DonkiEventsRepository.Filters>,
     private val clock: Clock = Clock.systemDefaultZone(),
