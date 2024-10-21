@@ -38,7 +38,7 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalPagingApi::class)
 class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineTest() {
     private val clock = Clock.fixed(CURRENT_INSTANT, systemTimeZone)
-    private val repository = mockk<DonkiEventsRepositoryInternal>()
+    private val repository = mockk<DonkiEventsRepository>()
     private val cacheDataSource = mockk<EventsDataSourceCache>()
     private val mediator = EventsSummariesRemoteMediator(
         repository = repository,

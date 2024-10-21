@@ -14,7 +14,7 @@ import org.equeim.spacer.donki.data.events.network.json.EventSummary
 import java.time.Clock
 
 internal class EventsSummariesPagingSource(
-    private val repository: DonkiEventsRepositoryInternal,
+    private val repository: DonkiEventsRepository,
     invalidationEvents: Flow<*>,
     private val filters: DonkiEventsRepository.Filters,
     coroutineDispatchers: CoroutineDispatchers = CoroutineDispatchers(),
