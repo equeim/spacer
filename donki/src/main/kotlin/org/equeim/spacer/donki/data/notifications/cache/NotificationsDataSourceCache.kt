@@ -27,9 +27,9 @@ import java.time.Instant
 
 internal class NotificationsDataSourceCache(
     private val context: Context,
-    db: NotificationsDatabase? = null,
-    coroutineDispatchers: CoroutineDispatchers = CoroutineDispatchers(),
-    private val clock: Clock = Clock.systemDefaultZone(),
+    db: NotificationsDatabase?,
+    coroutineDispatchers: CoroutineDispatchers,
+    private val clock: Clock,
 ) : Closeable {
     private val coroutineScope = CoroutineScope(coroutineDispatchers.IO + SupervisorJob())
 

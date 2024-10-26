@@ -1,12 +1,12 @@
 [
     {
-        "flrID": "2022-04-28T02:24:00-FLR-001",
+        "flrID": "2022-01-19T02:24:00-FLR-001",
         "instruments": [
             {
                 "displayName": "GOES-P: EXIS 1.0-8.0"
             }
         ],
-        "beginTime": "2022-04-28T02:24Z",
+        "beginTime": "2022-01-19T02:24Z",
         "peakTime": "2022-04-28T03:06Z",
         "endTime": "2022-04-28T03:27Z",
         "classType": "C6.7",

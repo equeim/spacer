@@ -9,20 +9,18 @@ package org.equeim.spacer.donki
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
+import java.util.concurrent.Executor
 
 abstract class BaseCoroutineTest : BaseTest() {
-    protected lateinit var coroutineDispatchers: CoroutineDispatchers
-
-    override fun before() {
-        super.before()
-        val testDispatcher = StandardTestDispatcher()
-        Dispatchers.setMain(testDispatcher)
-        coroutineDispatchers = TestCoroutineDispatchers(testDispatcher)
-    }
+    protected val coroutineDispatchers: CoroutineDispatchers = TestCoroutineDispatchers(
+        StandardTestDispatcher()
+    ).also { Dispatchers.setMain(it.Main) }
+    protected val testExecutor: Executor by lazy { coroutineDispatchers.Default.asExecutor() }
 
     override fun after() {
         Dispatchers.resetMain()

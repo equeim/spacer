@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import okhttp3.HttpUrl
 import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
-import org.equeim.spacer.donki.data.common.DONKI_BASE_URL
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.common.createDonkiRetrofit
 import org.equeim.spacer.donki.data.common.toDonkiException
@@ -21,7 +20,7 @@ import kotlin.coroutines.cancellation.CancellationException
 
 internal class NotificationsDataSourceNetwork(
     private val customNasaApiKey: Flow<String?>,
-    baseUrl: HttpUrl = DONKI_BASE_URL
+    baseUrl: HttpUrl,
 ) {
     private val api = createDonkiRetrofit(baseUrl, TAG).create<NotificationsApi>()
 

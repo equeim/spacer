@@ -1,7 +1,7 @@
 [
     {
-        "hssID": "2022-04-02T00:33:00-HSS-001",
-        "eventTime": "2022-04-02T00:33Z",
+        "hssID": "2022-01-19T00:33:00-HSS-001",
+        "eventTime": "2022-01-19T00:33Z",
         "instruments": [
             {
                 "displayName": "DSCOVR: PLASMAG"

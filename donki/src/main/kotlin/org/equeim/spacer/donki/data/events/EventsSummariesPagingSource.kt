@@ -17,8 +17,8 @@ internal class EventsSummariesPagingSource(
     private val repository: DonkiEventsRepository,
     invalidationEvents: Flow<*>,
     private val filters: DonkiEventsRepository.Filters,
-    coroutineDispatchers: CoroutineDispatchers = CoroutineDispatchers(),
-    clock: Clock = Clock.systemDefaultZone()
+    coroutineDispatchers: CoroutineDispatchers,
+    clock: Clock
 ) : BasePagingSource<EventSummary>(
     dateRange = filters.dateRange,
     coroutineDispatchers = coroutineDispatchers,
@@ -36,7 +36,7 @@ internal class EventsSummariesPagingSource(
         refreshCacheIfNeeded: Boolean
     ): List<EventSummary> = repository.getEventSummariesForWeek(
         week = week,
-        eventTypes = filters.types.toList(),
+        eventTypes = filters.types,
         dateRange = dateRange,
         refreshCacheIfNeeded = refreshCacheIfNeeded
     )

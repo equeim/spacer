@@ -1,8 +1,8 @@
 [
     {
-        "activityID": "2022-04-07T05:36:00-CME-001",
+        "activityID": "2022-01-19T05:36:00-CME-001",
         "catalog": "M2M_CATALOG",
-        "startTime": "2022-04-07T05:36Z",
+        "startTime": "2022-01-19T05:36Z",
         "instruments": [
             {
                 "displayName": "SOHO: LASCO/C2"

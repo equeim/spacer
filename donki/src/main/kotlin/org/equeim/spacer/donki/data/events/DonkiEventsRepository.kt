@@ -20,25 +20,41 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonObject
-import org.equeim.spacer.donki.data.events.cache.EventsDataSourceCache
+import okhttp3.HttpUrl
+import org.equeim.spacer.donki.CoroutineDispatchers
+import org.equeim.spacer.donki.data.common.DONKI_BASE_URL
 import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.common.Week
+import org.equeim.spacer.donki.data.events.cache.EventsCacheDatabase
+import org.equeim.spacer.donki.data.events.cache.EventsDataSourceCache
+import org.equeim.spacer.donki.data.events.network.EventsDataSourceNetwork
 import org.equeim.spacer.donki.data.events.network.json.Event
 import org.equeim.spacer.donki.data.events.network.json.EventSummary
-import org.equeim.spacer.donki.data.events.network.EventsDataSourceNetwork
 import java.io.Closeable
 import java.time.Clock
 import java.time.Instant
 
 private const val TAG = "DonkiEventsRepository"
 
-class DonkiEventsRepository(
+class DonkiEventsRepository internal constructor(
     customNasaApiKey: Flow<String?>,
     context: Context,
-    private val clock: Clock = Clock.systemDefaultZone(),
+    baseUrl: HttpUrl,
+    db: EventsCacheDatabase?,
+    private val coroutineDispatchers: CoroutineDispatchers,
+    private val clock: Clock,
 ) : Closeable {
-    private val networkDataSource = EventsDataSourceNetwork(customNasaApiKey)
-    private val cacheDataSource = EventsDataSourceCache(context)
+    constructor(customNasaApiKey: Flow<String?>, context: Context) : this(
+        customNasaApiKey = customNasaApiKey,
+        context = context,
+        baseUrl = DONKI_BASE_URL,
+        db = null,
+        coroutineDispatchers = CoroutineDispatchers(),
+        clock = Clock.systemDefaultZone()
+    )
+
+    private val networkDataSource = EventsDataSourceNetwork(customNasaApiKey, baseUrl)
+    private val cacheDataSource = EventsDataSourceCache(context, db, coroutineDispatchers, clock)
 
     override fun close() {
         cacheDataSource.close()
@@ -91,7 +107,10 @@ class DonkiEventsRepository(
         return allEvents
     }
 
-    internal suspend fun updateEventsForWeek(week: Week, eventType: EventType): List<Pair<Event, JsonObject>> {
+    internal suspend fun updateEventsForWeek(
+        week: Week,
+        eventType: EventType
+    ): List<Pair<Event, JsonObject>> {
         Log.d(TAG, "updateEventsForWeek() called with: week = $week, eventType = $eventType")
         val loadTime = Instant.now(clock)
         val events = networkDataSource.getEvents(week, eventType)
@@ -101,19 +120,27 @@ class DonkiEventsRepository(
 
     @OptIn(ExperimentalPagingApi::class)
     fun getEventSummariesPager(filters: StateFlow<Filters>): Pager<*, EventSummary> {
-        val mediator = EventsSummariesRemoteMediator(this, cacheDataSource, filters)
+        val mediator = createRemoteMediator(filters)
         return Pager(
             PagingConfig(pageSize = 20, enablePlaceholders = false),
             null,
             mediator
         ) {
-            EventsSummariesPagingSource(
-                this,
-                merge(mediator.refreshed, cacheDataSource.databaseRecreated, filters.drop(1)),
-                filters.value
-            )
+            createPagingSource(filters.value, merge(mediator.refreshed, cacheDataSource.databaseRecreated, filters.drop(1)))
         }
     }
+
+    internal fun createRemoteMediator(filters: StateFlow<Filters>): EventsSummariesRemoteMediator =
+        EventsSummariesRemoteMediator(this, filters, cacheDataSource::isWeekCachedAndNeedsRefresh, clock)
+
+    internal fun createPagingSource(filters: Filters, invalidationEvents: Flow<Any>): EventsSummariesPagingSource =
+        EventsSummariesPagingSource(
+            repository = this,
+            invalidationEvents = invalidationEvents,
+            filters = filters,
+            coroutineDispatchers = coroutineDispatchers,
+            clock = clock
+        )
 
     suspend fun isLastWeekNeedsRefreshing(filters: Filters): Boolean {
         Log.d(TAG, "isLastWeekNeedsRefreshing() called with: filters = $filters")
@@ -144,9 +171,10 @@ class DonkiEventsRepository(
                 cacheDataSource.getEventById(id, eventType, week)?.let { return it }
             }
             val event =
-                updateEventsForWeek(week, eventType).find { it.first.id == id } ?: throw RuntimeException(
-                    "Did not find event $id in server response"
-                )
+                updateEventsForWeek(week, eventType).find { it.first.id == id }
+                    ?: throw RuntimeException(
+                        "Did not find event $id in server response"
+                    )
             EventById(event.first, needsRefreshing = false)
         } catch (e: Exception) {
             if (e !is CancellationException) {
@@ -159,9 +187,10 @@ class DonkiEventsRepository(
     suspend fun isEventNeedsRefreshing(event: Event): Boolean {
         Log.d(TAG, "isEventNeedsRefreshing() called with: event = $event")
         return try {
-            cacheDataSource.isWeekNotCachedOrNeedsRefresh(Week.fromInstant(event.time), event.type).also {
-                Log.d(TAG, "isEventNeedsRefreshing() returned: $it")
-            }
+            cacheDataSource.isWeekNotCachedOrNeedsRefresh(Week.fromInstant(event.time), event.type)
+                .also {
+                    Log.d(TAG, "isEventNeedsRefreshing() returned: $it")
+                }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

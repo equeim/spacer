@@ -153,6 +153,11 @@ internal class EventsDataSourceCache(
         return cacheLoadTime != null && week.needsRefresh(cacheLoadTime, refreshIfRecentlyLoaded)
     }
 
+    suspend fun getWeekLoadTime(week: Week, eventType: EventType): Instant? {
+        return awaitDb().cachedWeeks()
+            .getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear, eventType)
+    }
+
     suspend fun isWeekNotCachedOrNeedsRefresh(
         week: Week,
         eventType: EventType,
@@ -285,7 +290,7 @@ internal class EventsDataSourceCache(
     ) {
         Log.d(
             TAG,
-            "cacheWeek() called with: week = $week, events count = ${events.size}, loadTime = $loadTime"
+            "cacheWeek() called with: week = $week, eventType = $eventType, events count = ${events.size}, loadTime = $loadTime"
         )
         if (events.isEmpty()) {
             Log.d(TAG, "cacheWeek: no events, mark as cached without transaction")
@@ -338,7 +343,7 @@ internal class EventsDataSourceCache(
         loadTime: Instant,
     ) {
         @OptIn(DelicateCoroutinesApi::class)
-        GlobalScope.launch { cacheWeek(week, eventType, events, loadTime) }
+        GlobalScope.launch(coroutineDispatchers.Default) { cacheWeek(week, eventType, events, loadTime) }
     }
 
     private companion object {

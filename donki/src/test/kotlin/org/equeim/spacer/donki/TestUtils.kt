@@ -15,8 +15,11 @@ import okhttp3.HttpUrl
 import okhttp3.mockwebserver.RecordedRequest
 import okio.Buffer
 import org.equeim.spacer.donki.data.common.Week
+import java.io.InputStream
 import java.net.URL
 import java.nio.file.Path
+import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -24,6 +27,13 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import kotlin.io.path.inputStream
 import kotlin.test.assertNotNull
+
+internal val TEST_WEEK: Week = Week(LocalDate.of(2022, 1, 17))
+internal val TEST_WEEK_NEAREST_PAST: Week = Week(LocalDate.of(2022, 1, 10))
+internal val TEST_WEEK_NEAREST_FUTURE: Week = Week(LocalDate.of(2022, 1, 24))
+
+internal val TEST_INSTANT_INSIDE_TEST_WEEK: Instant =
+    TEST_WEEK.getFirstDayInstant() + Duration.ofDays(5)
 
 internal fun instantOf(
     year: Int,
@@ -54,16 +64,17 @@ internal val HttpUrl.apiKey: String
 internal val RecordedRequest.apiKey: String
     get() = assertNotNull(requestUrl).apiKey
 
-internal fun Path.readToBuffer() = Buffer().apply {
-    this@readToBuffer.inputStream().use { readFrom(it) }
-}
+internal fun Class<*>.readTestResourceToBuffer(path: String): Buffer =
+    getTestResourceInputStream(path).use { Buffer().apply { readFrom(it) } }
 
-internal fun URL.readToBuffer() = Buffer().apply {
-    this@readToBuffer.openStream().use { readFrom(it) }
-}
+internal fun Class<*>.getTestResourceInputStream(path: String): InputStream =
+    assertNotNull(getResourceAsStream(getTestResourceFullPath(path)))
 
-internal fun Class<*>.getTestResource(path: String): URL =
-    assertNotNull(getResource("/${packageName.replace('.', '/')}/$path"))
+internal fun Class<*>.getTestResourceURL(path: String): URL =
+    assertNotNull(getResource(path))
+
+private fun Class<*>.getTestResourceFullPath(path: String): String =
+    "/${packageName.replace('.', '/')}/$path"
 
 internal fun mockkLog() {
     mockkStatic(Log::class)
@@ -146,4 +157,13 @@ private object LogAnswer : Answer<Int> {
 
         return 0
     }
+}
+
+class FakeClock(
+    var instant: Instant,
+    private val zone: ZoneId
+) : Clock() {
+    override fun instant(): Instant = instant
+    override fun withZone(zone: ZoneId): Clock = FakeClock(instant, zone)
+    override fun getZone(): ZoneId = zone
 }
