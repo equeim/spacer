@@ -10,15 +10,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.equeim.spacer.donki.data.common.BaseRemoteMediator
 import org.equeim.spacer.donki.data.common.Week
-import org.equeim.spacer.donki.data.events.cache.EventsDataSourceCache
 import org.equeim.spacer.donki.data.events.network.json.EventSummary
 import java.time.Clock
 
 internal class EventsSummariesRemoteMediator(
     private val repository: DonkiEventsRepository,
-    private val cacheDataSource: EventsDataSourceCache,
     private val filters: StateFlow<DonkiEventsRepository.Filters>,
-    private val clock: Clock = Clock.systemDefaultZone(),
+    private val isWeekCachedProvider: IsWeekCachedProvider,
+    private val clock: Clock,
 ) : BaseRemoteMediator<EventSummary, List<Pair<Week, EventType>>>() {
 
     override val TAG: String get() = "EventsSummariesRemoteMediator"
@@ -41,7 +40,7 @@ internal class EventsSummariesRemoteMediator(
          */
         val weeks = ArrayList<Pair<Week, EventType>>(filters.types.size)
         for (type in filters.types) {
-            val needsRefresh = cacheDataSource.isWeekCachedAndNeedsRefresh(initialLoadWeek, type, refreshIfRecentlyLoaded = !initialRefresh)
+            val needsRefresh = isWeekCachedProvider.isWeekCachedAndNeedsRefresh(initialLoadWeek, type, refreshIfRecentlyLoaded = !initialRefresh)
             if (needsRefresh) {
                 Log.d(
                     TAG,
@@ -55,5 +54,9 @@ internal class EventsSummariesRemoteMediator(
             return null
         }
         return weeks
+    }
+
+    fun interface IsWeekCachedProvider {
+        suspend fun isWeekCachedAndNeedsRefresh(week: Week, eventType: EventType, refreshIfRecentlyLoaded: Boolean): Boolean
     }
 }

@@ -1,7 +1,7 @@
 [
     {
-        "rbeID": "2022-04-02T20:05:00-RBE-001",
-        "eventTime": "2022-04-02T20:05Z",
+        "rbeID": "2022-01-19T20:05:00-RBE-001",
+        "eventTime": "2022-01-19T20:05Z",
         "instruments": [
             {
                 "displayName": "GOES-P: SEISS >2MeV"

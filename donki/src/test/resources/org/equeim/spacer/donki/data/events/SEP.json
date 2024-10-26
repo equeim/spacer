@@ -1,7 +1,7 @@
 [
     {
-        "sepID": "2022-04-02T14:39:00-SEP-001",
-        "eventTime": "2022-04-02T14:39Z",
+        "sepID": "2022-01-19T14:39:00-SEP-001",
+        "eventTime": "2022-01-19T14:39Z",
         "instruments": [
             {
                 "displayName": "SOHO: COSTEP 28.2-50.1 MeV"

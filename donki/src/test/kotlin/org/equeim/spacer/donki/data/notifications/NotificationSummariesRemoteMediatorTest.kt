@@ -4,7 +4,7 @@
 
 @file:OptIn(ExperimentalPagingApi::class)
 
-package org.equeim.spacer.donki.data.events
+package org.equeim.spacer.donki.data.notifications
 
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
@@ -13,10 +13,10 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -30,7 +30,7 @@ import org.equeim.spacer.donki.data.common.HttpErrorResponse
 import org.equeim.spacer.donki.data.common.InvalidApiKeyError
 import org.equeim.spacer.donki.data.common.TooManyRequestsError
 import org.equeim.spacer.donki.data.common.Week
-import org.equeim.spacer.donki.data.events.cache.EventsCacheDatabase
+import org.equeim.spacer.donki.data.notifications.cache.NotificationsDatabase
 import org.equeim.spacer.donki.timeZoneParameters
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
@@ -48,17 +48,17 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalPagingApi::class)
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
-class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineTest() {
+class NotificationSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineTest() {
     private val clock = FakeClock(TEST_INSTANT_INSIDE_TEST_WEEK, systemTimeZone)
     private val server = MockWebServer().apply {
         dispatcher = MockWebServerDispatcher()
         start()
     }
-    private val db: EventsCacheDatabase = Room.inMemoryDatabaseBuilder(
+    private val db: NotificationsDatabase = Room.inMemoryDatabaseBuilder(
         ApplicationProvider.getApplicationContext(),
-        EventsCacheDatabase::class.java
+        NotificationsDatabase::class.java
     ).setQueryExecutor(testExecutor).setTransactionExecutor(testExecutor).allowMainThreadQueries().build()
-    private val repository = DonkiEventsRepository(
+    private val repository = DonkiNotificationsRepository(
         customNasaApiKey = flowOf(null),
         context = ApplicationProvider.getApplicationContext(),
         baseUrl = server.url("/"),
@@ -67,8 +67,8 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         clock = clock
     )
     private val filters =
-        MutableStateFlow(DonkiEventsRepository.Filters(types = EventType.entries, dateRange = null))
-    private val mediator: EventsSummariesRemoteMediator = repository.createRemoteMediator(filters)
+        MutableStateFlow(DonkiNotificationsRepository.Filters(types = NotificationType.entries, dateRange = null))
+    private val mediator: NotificationsRemoteMediator = repository.createRemoteMediator(filters)
 
     private lateinit var actualRefreshedEventsScope: CoroutineScope
     private var actualRefreshedEvents = 0
@@ -83,6 +83,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         actualRefreshedEventsScope.cancel()
         server.shutdown()
         repository.close()
+        (coroutineDispatchers.Default as TestDispatcher).scheduler.advanceUntilIdle()
         super.after()
     }
 
@@ -105,10 +106,10 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         }
 
     @Test
-    fun `initialize returns SKIP_INITIAL_REFRESH when with date range filter and its last week was loaded a week after its last day`() =
+    fun `initialize returns SKIP_INITIAL_REFRESH when with date range filter and its last week was loaded after its last day`() =
         runTest {
-            filters.value = DonkiEventsRepository.Filters(
-                types = EventType.entries,
+            filters.value = DonkiNotificationsRepository.Filters(
+                types = NotificationType.entries,
                 dateRange = DateRange(
                     TEST_WEEK.getFirstDayInstant(),
                     TEST_WEEK.getInstantAfterLastDay()
@@ -116,9 +117,9 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
             )
             prepareInitialState(
                 week = TEST_WEEK,
-                loadTime = TEST_INSTANT_WEEK_AFTER_TEST_WEEK
+                loadTime = TEST_WEEK.getInstantAfterLastDay()
             )
-            clock.instant = TEST_INSTANT_WEEK_AFTER_TEST_WEEK + Duration.ofDays(1)
+            clock.instant = TEST_WEEK.getInstantAfterLastDay() + Duration.ofDays(1)
             assertEquals(
                 RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH,
                 mediator.initialize()
@@ -128,8 +129,8 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
     @Test
     fun `initialize returns SKIP_INITIAL_REFRESH when with date range filter and its last week was loaded less than a week before it's last day but less than an hour ago`() =
         runTest {
-            filters.value = DonkiEventsRepository.Filters(
-                types = EventType.entries,
+            filters.value = DonkiNotificationsRepository.Filters(
+                types = NotificationType.entries,
                 dateRange = DateRange(
                     TEST_WEEK.getFirstDayInstant() - Duration.ofDays(1),
                     TEST_WEEK.getInstantAfterLastDay()
@@ -157,60 +158,21 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
             )
 
             // Checking load after LAUNCH_INITIAL_REFRESH
-            server.respondWithSampleEvents()
+            server.respondWithSampleNotification()
             val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
             assertIs<RemoteMediator.MediatorResult.Success>(result)
             assertFalse(result.endOfPaginationReached)
             assertEquals(1, actualRefreshedEvents)
-            assertEquals(
-                RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH,
-                mediator.initialize()
-            )
-        }
-
-    @Test
-    fun `initialize returns LAUNCH_INITIAL_REFRESH when last week was cached more than an hour ago for one event type`() =
-        runTest {
-            server.respondWithSampleEvents()
-
-            // Initial state
-            coroutineScope {
-                for (eventType in EventType.entries.dropLast(1)) {
-                    launch { repository.updateEventsForWeek(TEST_WEEK, eventType) }
-                }
-            }
-            clock.instant =
-                TEST_INSTANT_INSIDE_TEST_WEEK - Duration.ofHours(1) - Duration.ofSeconds(1)
-            repository.updateEventsForWeek(TEST_WEEK, EventType.entries.last())
-            clock.instant = TEST_INSTANT_INSIDE_TEST_WEEK
-
-            // Checking initialize
-            assertEquals(
-                RemoteMediator.InitializeAction.LAUNCH_INITIAL_REFRESH,
-                mediator.initialize()
-            )
-
-            // Checking load after LAUNCH_INITIAL_REFRESH
-            val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
-            assertIs<RemoteMediator.MediatorResult.Success>(result)
-            assertFalse(result.endOfPaginationReached)
-            assertEquals(1, actualRefreshedEvents)
-            assertEquals(
-                RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH,
-                mediator.initialize()
-            )
+            assertEquals(RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH, mediator.initialize())
         }
 
     @Test
     fun `initialize returns LAUNCH_INITIAL_REFRESH when with date range filter and its last week was loaded before its last day but more than an hour ago`() =
         runTest {
             // Initial state
-            filters.value = DonkiEventsRepository.Filters(
-                types = EventType.entries,
-                dateRange = DateRange(
-                    TEST_WEEK.getFirstDayInstant(),
-                    TEST_WEEK.getInstantAfterLastDay()
-                )
+            filters.value = DonkiNotificationsRepository.Filters(
+                types = NotificationType.entries,
+                dateRange = DateRange(TEST_WEEK.getFirstDayInstant(), TEST_WEEK.getInstantAfterLastDay())
             )
             prepareInitialState(TEST_WEEK, clock.instant - Duration.ofMinutes(61))
 
@@ -221,7 +183,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
             )
 
             // Checking load after LAUNCH_INITIAL_REFRESH
-            server.respondWithSampleEvents()
+            server.respondWithSampleNotification()
             val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
             assertIs<RemoteMediator.MediatorResult.Success>(result)
             assertFalse(result.endOfPaginationReached)
@@ -241,7 +203,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
     }
 
     private suspend fun checkManualRefresh() {
-        server.respondWithSampleEvents()
+        server.respondWithSampleNotification()
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Success>(result)
         assertFalse(result.endOfPaginationReached)
@@ -252,12 +214,8 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
     private suspend fun prepareInitialState(week: Week, loadTime: Instant) {
         val saved = clock.instant
         clock.instant = loadTime
-        server.respondWithSampleEvents()
-        coroutineScope {
-            for (eventType in EventType.entries) {
-                launch { repository.updateEventsForWeek(week, eventType) }
-            }
-        }
+        server.respondWithSampleNotification()
+        repository.updateNotificationsForWeek(week)
         server.respondWithError()
         clock.instant = saved
     }
@@ -289,6 +247,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
     fun `Verify that load() handles SQLite errors`() = runTest {
         db.openHelper.writableDatabase.execSQL("DROP TABLE cached_weeks")
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
+        println(result)
         assertIs<RemoteMediator.MediatorResult.Error>(result)
         assertEquals(0, actualRefreshedEvents)
     }
@@ -333,8 +292,5 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
         @ParameterizedRobolectricTestRunner.Parameters(name = "systemTimeZone={0}")
         @JvmStatic
         fun parameters(): List<ZoneId> = timeZoneParameters()
-
-        private val TEST_INSTANT_WEEK_AFTER_TEST_WEEK: Instant =
-            TEST_WEEK.getInstantAfterLastDay() + Duration.ofDays(7)
     }
 }

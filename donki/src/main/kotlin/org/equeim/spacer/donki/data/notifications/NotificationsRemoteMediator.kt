@@ -16,7 +16,7 @@ internal class NotificationsRemoteMediator(
     private val repository: DonkiNotificationsRepository,
     private val cacheDataSource: NotificationsDataSourceCache,
     private val filters: StateFlow<DonkiNotificationsRepository.Filters>,
-    private val clock: Clock = Clock.systemDefaultZone(),
+    private val clock: Clock,
 ) : BaseRemoteMediator<CachedNotificationSummary, Week>() {
 
     override val TAG: String get() = "NotificationsRemoteMediator"
