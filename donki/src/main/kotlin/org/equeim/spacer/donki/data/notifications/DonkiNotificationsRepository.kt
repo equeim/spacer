@@ -196,19 +196,17 @@ class DonkiNotificationsRepository internal constructor(
             }
         }
 
-        if (notificationsToCache.isNotEmpty()) {
-            if (cacheAsync) {
-                @OptIn(DelicateCoroutinesApi::class)
-                GlobalScope.launch(coroutineDispatchers.Default) {
-                    cacheDataSource.cacheWeek(
-                        week,
-                        notificationsToCache,
-                        weekLoadTime
-                    )
-                }
-            } else {
-                cacheDataSource.cacheWeek(week, notificationsToCache, weekLoadTime)
+        if (cacheAsync) {
+            @OptIn(DelicateCoroutinesApi::class)
+            GlobalScope.launch(coroutineDispatchers.Default) {
+                cacheDataSource.cacheWeek(
+                    week,
+                    notificationsToCache,
+                    weekLoadTime
+                )
             }
+        } else {
+            cacheDataSource.cacheWeek(week, notificationsToCache, weekLoadTime)
         }
 
         return buildList(cachedNotifications.size + notificationsToCache.size) {
