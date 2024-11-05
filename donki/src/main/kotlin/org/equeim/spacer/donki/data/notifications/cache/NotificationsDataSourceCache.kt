@@ -52,7 +52,7 @@ internal class NotificationsDataSourceCache(
 
     suspend fun isWeekCachedAndNeedsRefresh(week: Week, refreshIfRecentlyLoaded: Boolean): Boolean {
         val cacheLoadTime = db.await().cachedWeeks()
-            .getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear)
+            .getWeekLoadTime(week.getFirstDayInstant())
         return cacheLoadTime != null && week.needsRefresh(cacheLoadTime, refreshIfRecentlyLoaded)
     }
 
@@ -69,7 +69,7 @@ internal class NotificationsDataSourceCache(
         val db = this.db.await()
         return try {
             val weekCacheTime = db.cachedWeeks()
-                .getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear)
+                .getWeekLoadTime(week.getFirstDayInstant())
             if (weekCacheTime == null) {
                 Log.d(
                     TAG,
@@ -160,8 +160,7 @@ internal class NotificationsDataSourceCache(
             db.cachedWeeks()
                 .updateWeek(
                     CachedNotificationsWeek(
-                        week.weekBasedYear,
-                        week.weekOfWeekBasedYear,
+                        week.getFirstDayInstant(),
                         loadTime
                     )
                 )

@@ -10,7 +10,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.temporal.ChronoField
-import java.time.temporal.WeekFields
 
 @JvmInline
 internal value class Week @VisibleForTesting constructor(
@@ -19,14 +18,8 @@ internal value class Week @VisibleForTesting constructor(
     val lastDay: LocalDate
         get() = firstDay.with(ChronoField.DAY_OF_WEEK, 7)
 
-    val weekBasedYear: Int
-        get() = firstDay[WeekFields.ISO.weekBasedYear()]
-
-    val weekOfWeekBasedYear: Int
-        get() = firstDay[WeekFields.ISO.weekOfWeekBasedYear()]
-
     override fun toString() =
-        "Week(firstDay=$firstDay, lastDay=$lastDay, weekBasedYear=$weekBasedYear, weekOfWeekBasedYear=$weekOfWeekBasedYear)"
+        "Week(firstDay=$firstDay, lastDay=$lastDay)"
 
     fun getFirstDayInstant(): Instant = firstDay.atStartOfDay().toInstant(ZoneOffset.UTC)
     fun getInstantAfterLastDay(): Instant = firstDay

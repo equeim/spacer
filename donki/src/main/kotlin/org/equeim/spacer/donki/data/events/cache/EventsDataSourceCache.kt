@@ -32,10 +32,10 @@ import kotlinx.serialization.json.JsonObject
 import org.equeim.spacer.donki.CoroutineDispatchers
 import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.common.DonkiJson
-import org.equeim.spacer.donki.data.events.EventId
-import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.events.DonkiEventsRepository
+import org.equeim.spacer.donki.data.events.EventId
+import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.donki.data.events.cache.entities.CachedEventsWeek
 import org.equeim.spacer.donki.data.events.cache.entities.toCachedEvent
 import org.equeim.spacer.donki.data.events.cache.entities.toExtras
@@ -149,13 +149,8 @@ internal class EventsDataSourceCache(
         refreshIfRecentlyLoaded: Boolean,
     ): Boolean {
         val cacheLoadTime = awaitDb().cachedWeeks()
-            .getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear, eventType)
+            .getWeekLoadTime(week.getFirstDayInstant(), eventType)
         return cacheLoadTime != null && week.needsRefresh(cacheLoadTime, refreshIfRecentlyLoaded)
-    }
-
-    suspend fun getWeekLoadTime(week: Week, eventType: EventType): Instant? {
-        return awaitDb().cachedWeeks()
-            .getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear, eventType)
     }
 
     suspend fun isWeekNotCachedOrNeedsRefresh(
@@ -163,7 +158,7 @@ internal class EventsDataSourceCache(
         eventType: EventType,
     ): Boolean {
         val cacheLoadTime = awaitDb().cachedWeeks()
-            .getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear, eventType)
+            .getWeekLoadTime(week.getFirstDayInstant(), eventType)
         return cacheLoadTime == null || week.needsRefresh(cacheLoadTime, refreshIfRecentlyLoaded = false)
     }
 
@@ -180,7 +175,7 @@ internal class EventsDataSourceCache(
         val db = awaitDb()
         return try {
             val weekCacheTime = db.cachedWeeks()
-                .getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear, eventType)
+                .getWeekLoadTime(week.getFirstDayInstant(), eventType)
             if (weekCacheTime == null) {
                 Log.d(
                     TAG,
@@ -239,7 +234,7 @@ internal class EventsDataSourceCache(
         val db = awaitDb()
         try {
             val weekLoadTime = db.cachedWeeks()
-                .getWeekLoadTime(week.weekBasedYear, week.weekOfWeekBasedYear, eventType)
+                .getWeekLoadTime(week.getFirstDayInstant(), eventType)
             if (weekLoadTime == null) {
                 Log.d(
                     TAG,
@@ -328,8 +323,7 @@ internal class EventsDataSourceCache(
         awaitDb().cachedWeeks()
             .updateWeek(
                 CachedEventsWeek(
-                    week.weekBasedYear,
-                    week.weekOfWeekBasedYear,
+                    week.getFirstDayInstant(),
                     eventType,
                     loadTime
                 )
