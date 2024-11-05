@@ -15,13 +15,11 @@ import java.time.Instant
 
 @Entity(
     tableName = "cached_weeks",
-    primaryKeys = ["week_based_year", "week_of_week_based_year", "event_type"]
+    primaryKeys = ["time_at_start_of_first_day", "event_type"]
 )
 internal data class CachedEventsWeek(
-    @ColumnInfo(name = "week_based_year")
-    val weekBasedYear: Int,
-    @ColumnInfo(name = "week_of_week_based_year")
-    val weekOfWeekBasedYear: Int,
+    @ColumnInfo(name = "time_at_start_of_first_day")
+    val timeAtStartOfFirstDay: Instant,
     @ColumnInfo(name = "event_type")
     val eventType: EventType,
     @ColumnInfo(name = "load_time")
@@ -33,10 +31,10 @@ internal interface CachedEventsWeeksDao {
     @Query(
         """
             SELECT load_time FROM cached_weeks
-            WHERE week_based_year = :weekBasedYear AND week_of_week_based_year = :weekOfWeekBasedYear AND event_type = :eventType
+            WHERE time_at_start_of_first_day = :timeAtStartOfFirstDay AND event_type = :eventType
         """
     )
-    suspend fun getWeekLoadTime(weekBasedYear: Int, weekOfWeekBasedYear: Int, eventType: EventType): Instant?
+    suspend fun getWeekLoadTime(timeAtStartOfFirstDay: Instant, eventType: EventType): Instant?
 
     @Insert(onConflict = REPLACE)
     suspend fun updateWeek(cachedWeek: CachedEventsWeek)

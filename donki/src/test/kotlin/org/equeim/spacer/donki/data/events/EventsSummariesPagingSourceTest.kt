@@ -185,7 +185,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
     }
 
     @Test
-    fun `Loading first page when current week was cached before it  less than an hour ago`() = runTest {
+    fun `Loading first page when current week was cached before its last day but less than an hour ago`() = runTest {
         prepareInitialState(TEST_WEEK, TEST_INSTANT_INSIDE_TEST_WEEK - Duration.ofMinutes(59))
         loadingFirstPageFromCache()
     }
