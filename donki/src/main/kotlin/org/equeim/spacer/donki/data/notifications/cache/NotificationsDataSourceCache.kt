@@ -77,7 +77,7 @@ internal class NotificationsDataSourceCache(
                 )
                 return null
             }
-            if (!returnCacheThatNeedsRefreshing && week.needsRefresh(weekCacheTime, refreshIfRecentlyLoaded = true)) {
+            if (!returnCacheThatNeedsRefreshing && week.needsRefresh(weekCacheTime, refreshIfRecentlyLoaded = false)) {
                 Log.d(
                     TAG,
                     "getNotificationSummariesForWeek: cache needs refreshing for week = $week, returning null"
