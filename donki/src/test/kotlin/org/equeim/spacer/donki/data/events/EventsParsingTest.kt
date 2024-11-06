@@ -7,7 +7,6 @@ package org.equeim.spacer.donki.data.events
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.decodeFromStream
-import org.equeim.spacer.donki.BaseTest
 import org.equeim.spacer.donki.data.common.DonkiJson
 import org.equeim.spacer.donki.data.events.network.json.CoronalMassEjection
 import org.equeim.spacer.donki.data.events.network.json.Event
@@ -34,7 +33,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
-class EventsParsingTest : BaseTest() {
+class EventsParsingTest {
     @OptIn(ExperimentalSerializationApi::class)
     @Test
     fun `Validate that dataset parses without exceptions`() {

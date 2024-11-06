@@ -22,6 +22,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
+    testOptions.unitTests.all {
+        it.systemProperties("robolectric.logging" to "stdout")
+    }
 }
 
 ksp {
