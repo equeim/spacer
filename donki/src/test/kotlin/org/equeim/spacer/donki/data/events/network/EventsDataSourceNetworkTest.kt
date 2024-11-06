@@ -12,20 +12,29 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
-import org.equeim.spacer.donki.BaseCoroutineTest
+import org.equeim.spacer.donki.CoroutinesRule
+import org.equeim.spacer.donki.MockkLogRule
 import org.equeim.spacer.donki.apiKey
 import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.events.EventType
+import org.junit.Rule
 import java.net.HttpURLConnection
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 
-class EventsDataSourceNetworkTest : BaseCoroutineTest() {
+class EventsDataSourceNetworkTest {
+    @get:Rule
+    val coroutinesRule = CoroutinesRule()
+
+    @get:Rule
+    val logRule = MockkLogRule()
+
     private val server = MockWebServer().apply {
         start()
     }
@@ -35,9 +44,9 @@ class EventsDataSourceNetworkTest : BaseCoroutineTest() {
         baseUrl = server.url("/")
     )
 
-    override fun after() {
+    @AfterTest
+    fun after() {
         server.shutdown()
-        super.after()
     }
 
     @Test

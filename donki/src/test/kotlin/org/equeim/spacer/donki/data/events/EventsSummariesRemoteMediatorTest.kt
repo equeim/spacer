@@ -21,7 +21,7 @@ import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
-import org.equeim.spacer.donki.BaseCoroutineTest
+import org.equeim.spacer.donki.CoroutinesRule
 import org.equeim.spacer.donki.FakeClock
 import org.equeim.spacer.donki.TEST_INSTANT_INSIDE_TEST_WEEK
 import org.equeim.spacer.donki.TEST_WEEK
@@ -32,6 +32,7 @@ import org.equeim.spacer.donki.data.common.TooManyRequestsError
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.events.cache.EventsCacheDatabase
 import org.equeim.spacer.donki.timeZoneParameters
+import org.junit.Rule
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -39,6 +40,8 @@ import java.net.ConnectException
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -48,7 +51,10 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalPagingApi::class)
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
-class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineTest() {
+class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
+    @get:Rule
+    val coroutinesRule = CoroutinesRule()
+
     private val clock = FakeClock(TEST_INSTANT_INSIDE_TEST_WEEK, systemTimeZone)
     private val server = MockWebServer().apply {
         dispatcher = MockWebServerDispatcher()
@@ -57,13 +63,13 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
     private val db: EventsCacheDatabase = Room.inMemoryDatabaseBuilder(
         ApplicationProvider.getApplicationContext(),
         EventsCacheDatabase::class.java
-    ).setQueryExecutor(testExecutor).setTransactionExecutor(testExecutor).allowMainThreadQueries().build()
+    ).setQueryExecutor(coroutinesRule.testExecutor).setTransactionExecutor(coroutinesRule.testExecutor).allowMainThreadQueries().build()
     private val repository = DonkiEventsRepository(
         customNasaApiKey = flowOf(null),
         context = ApplicationProvider.getApplicationContext(),
         baseUrl = server.url("/"),
         db = db,
-        coroutineDispatchers = coroutineDispatchers,
+        coroutineDispatchers = coroutinesRule.coroutineDispatchers,
         clock = clock
     )
     private val filters =
@@ -73,17 +79,17 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) : BaseCoroutineT
     private lateinit var actualRefreshedEventsScope: CoroutineScope
     private var actualRefreshedEvents = 0
 
-    override fun before() {
-        super.before()
-        actualRefreshedEventsScope = CoroutineScope(coroutineDispatchers.Default)
+    @BeforeTest
+    fun before() {
+        actualRefreshedEventsScope = CoroutineScope(coroutinesRule.coroutineDispatchers.Default)
         actualRefreshedEventsScope.launch { mediator.refreshed.collect { actualRefreshedEvents++ } }
     }
 
-    override fun after() {
+    @AfterTest
+    fun after() {
         actualRefreshedEventsScope.cancel()
         server.shutdown()
         repository.close()
-        super.after()
     }
 
     @Test

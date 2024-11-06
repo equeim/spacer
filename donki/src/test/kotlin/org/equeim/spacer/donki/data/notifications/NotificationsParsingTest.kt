@@ -6,7 +6,6 @@ package org.equeim.spacer.donki.data.notifications
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.decodeFromStream
-import org.equeim.spacer.donki.BaseTest
 import org.equeim.spacer.donki.data.common.DonkiJson
 import org.equeim.spacer.donki.data.notifications.network.NotificationJson
 import org.equeim.spacer.donki.getTestResourceInputStream
@@ -19,7 +18,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
-class NotificationsParsingTest : BaseTest() {
+class NotificationsParsingTest {
     @OptIn(ExperimentalSerializationApi::class)
     @Test
     fun `Validate that dataset parses without exceptions`() {

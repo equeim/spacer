@@ -25,7 +25,7 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
 import okhttp3.mockwebserver.SocketPolicy
 import okio.Buffer
-import org.equeim.spacer.donki.BaseCoroutineTest
+import org.equeim.spacer.donki.CoroutinesRule
 import org.equeim.spacer.donki.FakeClock
 import org.equeim.spacer.donki.TEST_INSTANT_INSIDE_TEST_WEEK
 import org.equeim.spacer.donki.TEST_WEEK
@@ -43,6 +43,7 @@ import org.equeim.spacer.donki.instantOf
 import org.equeim.spacer.donki.readTestResourceToBuffer
 import org.equeim.spacer.donki.timeZoneParameters
 import org.equeim.spacer.donki.weekOf
+import org.junit.Rule
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -55,6 +56,7 @@ import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -127,7 +129,10 @@ internal fun MockWebServer.respondWithError() {
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @Config(manifest = Config.NONE)
-class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTest() {
+class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
+    @get:Rule
+    val coroutinesRule = CoroutinesRule()
+
     private val clock = FakeClock(TEST_INSTANT_INSIDE_TEST_WEEK, systemTimeZone)
     private val server = MockWebServer().apply {
         dispatcher = MockWebServerDispatcher()
@@ -137,14 +142,14 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
     private val db: EventsCacheDatabase = Room.inMemoryDatabaseBuilder(
         ApplicationProvider.getApplicationContext(),
         EventsCacheDatabase::class.java
-    ).setQueryExecutor(testExecutor).setTransactionExecutor(testExecutor).allowMainThreadQueries()
+    ).setQueryExecutor(coroutinesRule.testExecutor).setTransactionExecutor(coroutinesRule.testExecutor).allowMainThreadQueries()
         .build()
     private val repository = DonkiEventsRepository(
         customNasaApiKey = flowOf(null),
         context = ApplicationProvider.getApplicationContext(),
         baseUrl = server.url("/"),
         db = db,
-        coroutineDispatchers = coroutineDispatchers,
+        coroutineDispatchers = coroutinesRule.coroutineDispatchers,
         clock = clock
     )
     private var pagingSource: EventsSummariesPagingSource =
@@ -156,11 +161,11 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) : BaseCoroutineTes
             emptyFlow()
         )
 
-    override fun after() {
+    @AfterTest
+    fun after() {
         server.shutdown()
         repository.close()
         pagingSource.invalidate()
-        super.after()
     }
 
     @Test

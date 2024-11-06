@@ -12,12 +12,14 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
-import org.equeim.spacer.donki.BaseCoroutineTest
+import org.equeim.spacer.donki.CoroutinesRule
+import org.equeim.spacer.donki.MockkLogRule
 import org.equeim.spacer.donki.apiKey
 import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
 import org.equeim.spacer.donki.data.common.InvalidApiKeyError
 import org.equeim.spacer.donki.data.common.TooManyRequestsError
 import org.equeim.spacer.donki.data.common.Week
+import org.junit.Rule
 import java.net.HttpURLConnection
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
@@ -29,14 +31,19 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 
-class NotificationsDataSourceNetworkTest : BaseCoroutineTest() {
+class NotificationsDataSourceNetworkTest {
+    @get:Rule
+    val coroutinesRule = CoroutinesRule()
+
+    @get:Rule
+    val logRule = MockkLogRule()
+
     private val server = MockWebServer()
     private lateinit var dataSource: NotificationsDataSourceNetwork
     private val nasaApiKey = MutableStateFlow(DEFAULT_NASA_API_KEY)
 
     @BeforeTest
-    override fun before() {
-        super.before()
+    fun before() {
         server.start()
         dataSource = NotificationsDataSourceNetwork(
             customNasaApiKey = nasaApiKey,
@@ -45,9 +52,8 @@ class NotificationsDataSourceNetworkTest : BaseCoroutineTest() {
     }
 
     @AfterTest
-    override fun after() {
+    fun after() {
         server.shutdown()
-        super.after()
     }
 
     @Test
