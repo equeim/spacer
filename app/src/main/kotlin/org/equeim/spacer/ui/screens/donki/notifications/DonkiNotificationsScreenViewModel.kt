@@ -178,6 +178,7 @@ class DonkiNotificationsScreenViewModel(
             id = id,
             time = eventTimeFormatter.format(time),
             title = title ?: getTypeDisplayString(notificationTypesStringsCache),
+            subtitle = subtitle,
             read = read
         )
     }
@@ -194,6 +195,7 @@ class DonkiNotificationsScreenViewModel(
         val id: NotificationId,
         val time: String,
         val title: String,
+        val subtitle: String?,
         val read: Boolean,
     ) : ListItem
 

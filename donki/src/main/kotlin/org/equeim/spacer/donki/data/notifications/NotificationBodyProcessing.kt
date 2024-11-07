@@ -12,7 +12,11 @@ import java.util.SortedSet
 private val titleRegex =
     Regex("## Message Type: (?:(?:Auto-generated )?Space Weather Notification - )?(.*)")
 
-internal fun String.findTitle(): String? = titleRegex.find(this)?.groupValues?.get(1)
+internal fun String.findTitle(): String? = titleRegex.find(this)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotEmpty() }
+
+private val subtitleRegex = Regex("## Summary:\\s+(.*)")
+
+internal fun String.findSubtitle(): String? = subtitleRegex.find(this)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotEmpty() }
 
 @Suppress("RegExpUnnecessaryNonCapturingGroup")
 private val eventIdRegex = Regex("[A-Z0-9:-]+-(?:${EventType.entries.joinToString("|") { it.stringValue }})-\\d+")
