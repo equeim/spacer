@@ -169,9 +169,8 @@ class DonkiEventsScreenViewModel(
     ): EventPresentation {
         return EventPresentation(
             id = id,
-            type = getTypeDisplayString(eventTypesStringsCache),
-            time = eventTimeFormatter.format(time),
-            detailsSummary = getDetailsSummary()
+            title = getString(R.string.event_title_in_list, eventTimeFormatter.format(time), getTypeDisplayString(eventTypesStringsCache)),
+            detailsSummary = getDetailsSummary(),
         )
     }
 
@@ -199,8 +198,7 @@ class DonkiEventsScreenViewModel(
 
     data class EventPresentation(
         val id: EventId,
-        val type: String,
-        val time: String,
+        val title: String,
         val detailsSummary: String?,
     ) : ListItem
 

@@ -6,9 +6,7 @@ package org.equeim.spacer.ui.screens.donki.events
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -26,10 +24,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -66,7 +62,7 @@ import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.FilterList
 import org.equeim.spacer.ui.theme.NotificationsNone
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import java.util.Locale
 
@@ -174,34 +170,18 @@ private fun DonkiEventsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.elevatedCardElevation(2.dp)
             ) {
-                Column {
-                    Text(text = item.time)
+                Column(verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
+                    Text(
+                        text = item.title,
+                        style = MaterialTheme.typography.titleMedium
+                    )
                     if (item.detailsSummary != null) {
-                        Row(
-                            Modifier.padding(top = Dimens.SpacingSmall),
-                            horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall),
-                            verticalAlignment = Alignment.Top
-                        ) {
+                        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
                             Text(
-                                text = item.type,
-                                style = MaterialTheme.typography.titleLarge,
-                                modifier = Modifier.weight(1.0f)
+                                text = item.detailsSummary,
+                                style = MaterialTheme.typography.bodyLarge
                             )
-                            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurfaceVariant) {
-                                Text(
-                                    text = item.detailsSummary,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    modifier = Modifier.weight(0.3f),
-                                    textAlign = TextAlign.End
-                                )
-                            }
                         }
-                    } else {
-                        Text(
-                            text = item.type,
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.padding(top = Dimens.SpacingSmall)
-                        )
                     }
                 }
             }
@@ -249,10 +229,14 @@ fun DonkiEventsScreenPreview() {
                 listOf(
                     DateSeparator(LocalDate.now().toString()),
                     DonkiEventsScreenViewModel.EventPresentation(
-                        id = EventId(""),
-                        type = stringResource(EventType.SolarEnergeticParticle.displayStringResId),
-                        time = LocalDateTime.now().toString(),
-                        detailsSummary = "AAAAAAAAAAAAA"
+                        id = EventId("1"),
+                        title = stringResource(R.string.event_title_in_list, LocalTime.now().withNano(0).toString(), stringResource(EventType.SolarEnergeticParticle.displayStringResId)),
+                        detailsSummary = "AAAAAAAAAAAAA",
+                    ),
+                    DonkiEventsScreenViewModel.EventPresentation(
+                        id = EventId("2"),
+                        title = stringResource(R.string.event_title_in_list, LocalTime.now().withNano(0).toString(), stringResource(EventType.CoronalMassEjection.displayStringResId)),
+                        detailsSummary = stringResource(R.string.earch_impact_predicted_glancing),
                     )
                 ),
             )

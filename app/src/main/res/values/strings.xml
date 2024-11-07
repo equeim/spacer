@@ -114,6 +114,7 @@ SPDX-License-Identifier: MIT
     <string name="flr_end_time">End time</string>
     <string name="flr_class">Class</string>
     <string name="flr_source_location">Source location</string>
+    <string name="event_title_in_list">%1$s · %2$s</string>
 
     <string name="filters">Filters</string>
     <string name="filter_types">Types</string>
