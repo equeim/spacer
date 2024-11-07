@@ -111,6 +111,10 @@ class NotificationsParsingTest {
             notification.body.findTitle()
         )
         assertEquals(
+            "Update on CME with ID 2024-10-01T23:09:00-CME-001 (see previous notification 20241002-AL-001). Based on preliminary analysis by the Moon to Mars Space Weather Analysis Office and heliospheric modeling carried out at NASA Community Coordinated Modeling Center, it is estimated that this CME may affect Lucy, Solar Orbiter (glancing blow), and STEREO A (glancing blow).  The leading edge or flank of the CME may reach Lucy at 2024-10-04T19:43Z, Solar Orbiter at 2024-10-03T00:00Z, and STEREO A at 2024-10-04T16:30Z (plus minus 7 hours).",
+            notification.body.findSubtitle()
+        )
+        assertEquals(
             listOf(
                 "http://iswa.gsfc.nasa.gov/downloads/20241002_042200_2.0_anim.tim-den.gif" to (1812 until 1884),
                 "http://iswa.gsfc.nasa.gov/downloads/20241002_042200_2.0_anim.tim-vel.gif" to (1885 until 1957),

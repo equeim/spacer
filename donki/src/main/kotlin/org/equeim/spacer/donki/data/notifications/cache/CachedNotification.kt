@@ -27,6 +27,8 @@ data class CachedNotification(
     val time: Instant,
     @ColumnInfo(name = "title")
     val title: String?,
+    @ColumnInfo(name = "subtitle")
+    val subtitle: String?,
     @ColumnInfo(name = "body")
     val body: String,
     @ColumnInfo(name = "link")
@@ -45,6 +47,8 @@ data class CachedNotificationSummary(
     val time: Instant,
     @ColumnInfo(name = "title")
     val title: String?,
+    @ColumnInfo(name = "subtitle")
+    val subtitle: String?,
     @ColumnInfo(name = "read")
     val read: Boolean,
 )

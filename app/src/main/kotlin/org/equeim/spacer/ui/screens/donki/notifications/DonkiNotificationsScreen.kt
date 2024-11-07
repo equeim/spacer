@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -77,7 +78,10 @@ data object DonkiNotificationsScreen : Destination {
 }
 
 @Composable
-private fun DonkiNotificationsScreen(navController: NavController<Destination>, navHostEntries: List<NavHostEntry<Destination>>) {
+private fun DonkiNotificationsScreen(
+    navController: NavController<Destination>,
+    navHostEntries: List<NavHostEntry<Destination>>
+) {
     val model = viewModel<DonkiNotificationsScreenViewModel>()
     val filters = model.filtersUiState.collectAsStateWithLifecycle()
     val holder = rememberBaseEventsListStateHolder(
@@ -166,7 +170,8 @@ private fun DonkiNotificationsScreen(
                                 Modifier
                                     .padding(start = Dimens.SpacingSmall)
                                     .size(6.dp)
-                                    .align(Alignment.CenterVertically)) {
+                                    .align(Alignment.CenterVertically)
+                            ) {
                                 drawCircle(badgeColor)
                             }
                         }
@@ -176,6 +181,14 @@ private fun DonkiNotificationsScreen(
                         modifier = Modifier.padding(top = Dimens.SpacingSmall),
                         style = MaterialTheme.typography.titleMedium
                     )
+                    item.subtitle?.let {
+                        Text(
+                            text = item.subtitle,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = Dimens.SpacingSmall)
+                        )
+                    }
                 }
             }
         }
@@ -220,18 +233,21 @@ fun DonkiNotificationsScreenPreview() {
                         id = NotificationId("0"),
                         time = LocalDateTime.now().toString(),
                         title = "Flare intensity has crossed the threshold of M5.0",
+                        subtitle = "Significant flare detected by GOES.  Flare intensity has crossed the threshold of M5.0.",
                         read = false
                     ),
                     DonkiNotificationsScreenViewModel.NotificationPresentation(
                         id = NotificationId("1"),
                         time = LocalDateTime.now().toString(),
                         title = "Weekly Space Weather Summary Report for October 02, 2024 - October 08, 2024",
+                        subtitle = "Solar activity was at low levels during this reporting period. There were no significant flares or CMEs.",
                         read = true
                     ),
                     DonkiNotificationsScreenViewModel.NotificationPresentation(
-                        id = NotificationId("1"),
+                        id = NotificationId("2"),
                         time = LocalDateTime.now().toString(),
                         title = stringResource(NotificationType.MagnetopauseCrossing.displayStringResId),
+                        subtitle = null,
                         read = true
                     )
                 ),

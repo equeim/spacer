@@ -188,6 +188,7 @@ class DonkiNotificationsRepository internal constructor(
                         type = notification.type,
                         time = notification.time,
                         title = notification.body.findTitle(),
+                        subtitle = notification.body.findSubtitle(),
                         body = notification.body.trim(),
                         link = notification.link,
                         read = Duration.between(notification.time, weekLoadTime) > UNREAD_THRESHOLD
@@ -218,6 +219,7 @@ class DonkiNotificationsRepository internal constructor(
                         type = it.type,
                         time = it.time,
                         title = it.title,
+                        subtitle = it.subtitle,
                         read = it.read
                     )
                 })
