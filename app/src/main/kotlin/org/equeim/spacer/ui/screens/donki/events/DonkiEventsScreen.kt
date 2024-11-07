@@ -7,10 +7,13 @@ package org.equeim.spacer.ui.screens.donki.events
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +27,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
@@ -42,7 +46,7 @@ import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.ui.LocalDefaultLocale
-import org.equeim.spacer.ui.components.ElevatedCardWithPadding
+import org.equeim.spacer.ui.components.CARD_CONTENT_PADDING
 import org.equeim.spacer.ui.components.RootScreenTopAppBar
 import org.equeim.spacer.ui.components.ToolbarIcon
 import org.equeim.spacer.ui.screens.Destination
@@ -165,12 +169,15 @@ private fun DonkiEventsScreen(
         ) { item ->
             item as DonkiEventsScreenViewModel.EventPresentation
 
-            ElevatedCardWithPadding(
+            ElevatedCard(
                 onClick = { navigateToDetailsScreen(item.id) },
                 modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.elevatedCardElevation(2.dp)
+                elevation = CardDefaults.elevatedCardElevation(2.dp),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall, Alignment.CenterVertically),
+                    modifier = Modifier.heightIn(min = 64.dp).padding(CARD_CONTENT_PADDING)
+                ) {
                     Text(
                         text = item.title,
                         style = MaterialTheme.typography.titleMedium
@@ -231,7 +238,7 @@ fun DonkiEventsScreenPreview() {
                     DonkiEventsScreenViewModel.EventPresentation(
                         id = EventId("1"),
                         title = stringResource(R.string.event_title_in_list, LocalTime.now().withNano(0).toString(), stringResource(EventType.SolarEnergeticParticle.displayStringResId)),
-                        detailsSummary = "AAAAAAAAAAAAA",
+                        detailsSummary = null,
                     ),
                     DonkiEventsScreenViewModel.EventPresentation(
                         id = EventId("2"),
