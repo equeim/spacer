@@ -23,18 +23,4 @@ data class MagnetopauseCrossing(
 ) : Event {
     override val type: EventType
         get() = EventType.MagnetopauseCrossing
-
-    override fun toEventSummary(): EventSummary =
-        MagnetopauseCrossingSummaryFromJson(
-            id = id,
-            time = time
-        )
-}
-
-private data class MagnetopauseCrossingSummaryFromJson(
-    override val id: EventId,
-    override val time: Instant
-) : EventSummary {
-    override val type: EventType
-        get() = EventType.MagnetopauseCrossing
 }

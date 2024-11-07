@@ -11,6 +11,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
+import org.equeim.spacer.donki.data.events.cache.entities.InterplanetaryShockExtrasSummaryCached
 import java.time.Instant
 
 @Serializable
@@ -26,7 +27,7 @@ data class InterplanetaryShock(
         get() = EventType.InterplanetaryShock
 
     override fun toEventSummary(): EventSummary =
-        InterplanetaryShockSummaryFromJson(
+        InterplanetaryShockExtrasSummaryCached(
             id = id,
             time = time,
             location = location
@@ -38,9 +39,3 @@ interface InterplanetaryShockSummary : EventSummary {
         get() = EventType.InterplanetaryShock
     val location: String
 }
-
-private data class InterplanetaryShockSummaryFromJson(
-    override val id: EventId,
-    override val time: Instant,
-    override val location: String
-) : InterplanetaryShockSummary

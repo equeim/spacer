@@ -20,6 +20,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
+import org.equeim.spacer.donki.data.events.cache.entities.CoronalMassEjectionExtrasSummaryCached
 import org.equeim.spacer.donki.data.events.network.json.units.Angle
 import org.equeim.spacer.donki.data.events.network.json.units.Coordinates
 import org.equeim.spacer.donki.data.events.network.json.units.Speed
@@ -199,7 +200,7 @@ data class CoronalMassEjection(
     )
 
     override fun toEventSummary(): CoronalMassEjectionSummary =
-        CoronalMassEjectionSummaryFromJson(
+        CoronalMassEjectionExtrasSummaryCached(
             id = id,
             time = time,
             predictedEarthImpact = predictedEarthImpact
@@ -211,12 +212,6 @@ interface CoronalMassEjectionSummary : EventSummary {
         get() = EventType.CoronalMassEjection
     val predictedEarthImpact: CoronalMassEjection.EarthImpactType
 }
-
-private data class CoronalMassEjectionSummaryFromJson(
-    override val id: EventId,
-    override val time: Instant,
-    override val predictedEarthImpact: CoronalMassEjection.EarthImpactType
-) : CoronalMassEjectionSummary
 
 private object EnlilSimulationEstimatedDurationSerializer : KSerializer<Duration> {
     private val SECONDS_IN_HOUR = Duration.ofHours(1).seconds.toFloat()

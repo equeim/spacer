@@ -18,7 +18,11 @@ sealed interface Event {
     val link: String
     val linkedEvents: List<EventId>
 
-    fun toEventSummary(): EventSummary
+    fun toEventSummary(): EventSummary = EventSummaryWithoutExtras(
+        id = id,
+        time = time,
+        type = type
+    )
 }
 
 @Immutable
@@ -27,6 +31,12 @@ interface EventSummary {
     val type: EventType
     val time: Instant
 }
+
+internal data class EventSummaryWithoutExtras(
+    override val id: EventId,
+    override val type: EventType,
+    override val time: Instant
+) : EventSummary
 
 @Suppress("UNCHECKED_CAST")
 internal fun EventType.eventSerializer(): KSerializer<Event> = when (this) {
