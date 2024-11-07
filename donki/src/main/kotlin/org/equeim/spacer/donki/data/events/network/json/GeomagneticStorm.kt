@@ -12,6 +12,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
+import org.equeim.spacer.donki.data.events.cache.entities.GeomagneticStormExtrasSummaryCached
 import java.time.Instant
 
 @Serializable
@@ -36,7 +37,7 @@ data class GeomagneticStorm(
     )
 
     override fun toEventSummary(): GeomagneticStormSummary =
-        GeomagneticStormSummaryFromJson(
+        GeomagneticStormExtrasSummaryCached(
             id = id,
             time = time,
             kpIndex = kpIndex()
@@ -48,9 +49,3 @@ interface GeomagneticStormSummary : EventSummary {
         get() = EventType.GeomagneticStorm
     val kpIndex: Float?
 }
-
-private data class GeomagneticStormSummaryFromJson(
-    override val id: EventId,
-    override val time: Instant,
-    override val kpIndex: Float?
-) : GeomagneticStormSummary

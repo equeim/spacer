@@ -11,6 +11,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
+import org.equeim.spacer.donki.data.events.cache.entities.SolarFlareExtrasSummaryCached
 import org.equeim.spacer.donki.data.events.network.json.units.Coordinates
 import java.time.Instant
 
@@ -30,7 +31,7 @@ data class SolarFlare(
         get() = EventType.SolarFlare
 
     override fun toEventSummary(): EventSummary =
-        SolarFlareSummaryFromJson(
+        SolarFlareExtrasSummaryCached(
             id = id,
             time = time,
             classType = classType
@@ -42,9 +43,3 @@ interface SolarFlareSummary : EventSummary {
         get() = EventType.SolarFlare
     val classType: String
 }
-
-private data class SolarFlareSummaryFromJson(
-    override val id: EventId,
-    override val time: Instant,
-    override val classType: String,
-) : SolarFlareSummary
