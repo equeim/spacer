@@ -60,7 +60,7 @@ internal abstract class CachedNotificationsDao {
 
     @Query(
         """
-            SELECT id, type, time, title, read FROM cached_notifications
+            SELECT id, type, time, title, subtitle, read FROM cached_notifications
             WHERE time >= :startTime AND time < :endTime AND type IN (:types)
             ORDER BY time DESC
         """
