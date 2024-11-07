@@ -24,6 +24,7 @@ import org.equeim.spacer.donki.CoroutinesRule
 import org.equeim.spacer.donki.FakeClock
 import org.equeim.spacer.donki.TEST_INSTANT_INSIDE_TEST_WEEK
 import org.equeim.spacer.donki.TEST_WEEK
+import org.equeim.spacer.donki.allExceptions
 import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.common.HttpErrorResponse
 import org.equeim.spacer.donki.data.common.InvalidApiKeyError
@@ -290,7 +291,7 @@ class NotificationSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
         server.respond = { MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST) }
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Error>(result)
-        assertTrue(result.throwable is ConnectException || result.throwable.suppressed.any { it is ConnectException })
+        assertTrue(result.throwable.allExceptions().filterIsInstance<ConnectException>().any())
     }
 
     companion object {
