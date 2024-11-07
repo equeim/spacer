@@ -84,3 +84,9 @@ class FakeClock(
     override fun withZone(zone: ZoneId): Clock = FakeClock(instant, zone)
     override fun getZone(): ZoneId = zone
 }
+
+internal fun Throwable.allExceptions(): Sequence<Throwable> = sequence {
+    yield(this@allExceptions)
+    cause?.let { yieldAll(it.allExceptions()) }
+    suppressed.forEach { yieldAll(it.allExceptions()) }
+}
