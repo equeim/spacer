@@ -40,6 +40,7 @@ import org.equeim.spacer.donki.data.events.network.json.SolarFlareSummary
 import org.equeim.spacer.ui.screens.donki.DateSeparator
 import org.equeim.spacer.ui.screens.donki.FiltersUiState
 import org.equeim.spacer.ui.screens.donki.ListItem
+import org.equeim.spacer.ui.screens.donki.events.details.cme.displayStringResId
 import org.equeim.spacer.ui.utils.createEventDateFormatter
 import org.equeim.spacer.ui.utils.createEventTimeFormatter
 import org.equeim.spacer.ui.utils.defaultLocale
@@ -180,13 +181,30 @@ class DonkiEventsScreenViewModel(
 
     private fun EventSummary.getDetailsSummary(): String? {
         return when (this) {
-            is GeomagneticStormSummary -> kpIndex?.let { getString(R.string.gst_kp_index, it) }
+            is GeomagneticStormSummary -> kpIndex?.let { getString(R.string.gst_max_kp_index, it) }
             is InterplanetaryShockSummary -> location
-            is SolarFlareSummary -> classType
-            is CoronalMassEjectionSummary -> when (predictedEarthImpact) {
-                CoronalMassEjection.EarthImpactType.NoImpact -> null
-                CoronalMassEjection.EarthImpactType.Impact -> getString(R.string.earch_impact_predicted)
-                CoronalMassEjection.EarthImpactType.GlancingBlow -> getString(R.string.earch_impact_predicted_glancing)
+            is SolarFlareSummary -> getString(R.string.flr_class_with_value, classType)
+            is CoronalMassEjectionSummary -> if (cmeType != null || predictedEarthImpact != CoronalMassEjection.EarthImpactType.NoImpact) {
+                buildString {
+                    cmeType?.let {
+                        append(getString(R.string.cme_type_in_list, getString(it.displayStringResId)))
+                    }
+                    val impactString = when (predictedEarthImpact) {
+                        CoronalMassEjection.EarthImpactType.NoImpact -> null
+                        CoronalMassEjection.EarthImpactType.Impact -> {
+                            getString(R.string.earch_impact_predicted)
+                        }
+                        CoronalMassEjection.EarthImpactType.GlancingBlow -> {
+                            getString(R.string.earch_impact_predicted_glancing)
+                        }
+                    }
+                    if (impactString != null) {
+                        if (isNotEmpty()) appendLine()
+                        append(impactString)
+                    }
+                }
+            } else {
+                null
             }
             else -> null
         }

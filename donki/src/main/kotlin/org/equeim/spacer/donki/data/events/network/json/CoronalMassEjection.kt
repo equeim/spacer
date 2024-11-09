@@ -46,6 +46,9 @@ data class CoronalMassEjection(
             analysis.predictedEarthImpact.takeIf { it != EarthImpactType.NoImpact }
         } ?: EarthImpactType.NoImpact
 
+    val cmeType: CmeType?
+        get() = cmeAnalyses.sortedByDescending { it.submissionTime }.firstNotNullOfOrNull { it.type }
+
     enum class EarthImpactType(val integerValue: Int) {
         NoImpact(0),
         Impact(1),
@@ -203,7 +206,8 @@ data class CoronalMassEjection(
         CoronalMassEjectionExtrasSummaryCached(
             id = id,
             time = time,
-            predictedEarthImpact = predictedEarthImpact
+            predictedEarthImpact = predictedEarthImpact,
+            cmeType = cmeType,
         )
 }
 
@@ -211,6 +215,7 @@ interface CoronalMassEjectionSummary : EventSummary {
     override val type: EventType
         get() = EventType.CoronalMassEjection
     val predictedEarthImpact: CoronalMassEjection.EarthImpactType
+    val cmeType: CoronalMassEjection.CmeType?
 }
 
 private object EnlilSimulationEstimatedDurationSerializer : KSerializer<Duration> {

@@ -35,12 +35,15 @@ internal data class CoronalMassEjectionExtras(
     @ColumnInfo(name = "id") @PrimaryKey
     val id: EventId,
     @ColumnInfo(name = "predicted_earth_impact")
-    val predictedEarthImpact: CoronalMassEjection.EarthImpactType
+    val predictedEarthImpact: CoronalMassEjection.EarthImpactType,
+    @ColumnInfo(name = "cme_type")
+    val cmeType: CoronalMassEjection.CmeType?,
 )
 
 internal fun CoronalMassEjection.toExtras() = CoronalMassEjectionExtras(
     id = id,
-    predictedEarthImpact = predictedEarthImpact
+    predictedEarthImpact = predictedEarthImpact,
+    cmeType = cmeType,
 )
 
 internal data class CoronalMassEjectionExtrasSummaryCached(
@@ -49,14 +52,16 @@ internal data class CoronalMassEjectionExtrasSummaryCached(
     @ColumnInfo(name = "time")
     override val time: Instant,
     @ColumnInfo(name = "predicted_earth_impact")
-    override val predictedEarthImpact: CoronalMassEjection.EarthImpactType
+    override val predictedEarthImpact: CoronalMassEjection.EarthImpactType,
+    @ColumnInfo(name = "cme_type")
+    override val cmeType: CoronalMassEjection.CmeType?,
 ) : CoronalMassEjectionSummary
 
 @Dao
 internal abstract class CoronalMassEjectionDao {
     @Query(
         """
-            SELECT events.id, events.time, predicted_earth_impact FROM events
+            SELECT events.id, events.time, predicted_earth_impact, cme_type FROM events
             JOIN coronal_mass_ejection_extras ON events.id = coronal_mass_ejection_extras.id
             WHERE events.type = :type AND events.time >= :startTime AND events.time < :endTime
             ORDER BY time DESC

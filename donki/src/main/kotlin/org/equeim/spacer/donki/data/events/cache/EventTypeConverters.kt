@@ -6,6 +6,7 @@ package org.equeim.spacer.donki.data.events.cache
 
 import androidx.room.TypeConverter
 import org.equeim.spacer.donki.data.events.EventType
+import org.equeim.spacer.donki.data.events.network.json.CoronalMassEjection.CmeType
 import org.equeim.spacer.donki.data.events.network.json.CoronalMassEjection.EarthImpactType
 
 internal object EventTypeConverters {
@@ -20,4 +21,10 @@ internal object EventTypeConverters {
 
     @TypeConverter
     fun earthImpactTypeFromInt(earthImpactType: Int): EarthImpactType = EarthImpactType.entries.first { it.integerValue == earthImpactType }
+
+    @TypeConverter
+    fun cmeTypeToString(cmeType: CmeType): String = cmeType.stringValue
+
+    @TypeConverter
+    fun cmeTypeFromString(cmeType: String): CmeType = CmeType.entries.first { it.stringValue == cmeType }
 }

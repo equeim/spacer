@@ -75,8 +75,8 @@ SPDX-License-Identifier: MIT
     <string name="cme_speed_value">%1$2.1f km/s</string>
     <string name="cme_speed_measured_at_height">Speed measured at height</string>
     <string name="cme_speed_measured_at_height_value">%1$2.1f R☉</string>
-    <string name="cme_type">CME type</string>
-    <string name="cme_type_in_list">CME type: %1$s</string>
+    <string name="cme_type">Type</string>
+    <string name="cme_type_in_list">Type: %1$s</string>
     <string name="cme_type_slowest">Slowest (S)</string>
     <string name="cme_type_common" tools:ignore="TypographyOther">Common (C)</string>
     <string name="cme_type_occasional">Occasional (O)</string>
@@ -106,13 +106,14 @@ SPDX-License-Identifier: MIT
     <string name="enlil_kp_135">Predicted Kₚ 135°</string>
     <string name="enlil_kp_180">Predicted Kₚ 180°</string>
     <string name="glancing_blow">Glancing blow</string>
-    <string name="gst_kp_index">Kₚ = %1$.2f</string>
+    <string name="gst_max_kp_index">Maximum Kₚ-index: %1$.2f</string>
     <string name="gst_kp_indexes">Kₚ-indexes</string>
     <string name="gst_no_kp_indexes">No Kₚ-indexes</string>
     <string name="ips_location">Location</string>
     <string name="flr_peak_time">Peak time</string>
     <string name="flr_end_time">End time</string>
     <string name="flr_class">Class</string>
+    <string name="flr_class_with_value">Class: %1$s</string>
     <string name="flr_source_location">Source location</string>
     <string name="event_title_in_list">%1$s · %2$s</string>
 
