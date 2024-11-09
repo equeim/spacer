@@ -107,6 +107,7 @@ private fun setDarkThemeWindowProperties(window: Window, view: View, isDarkTheme
         isAppearanceLightNavigationBars = !isDarkTheme
     }
     if (Build.VERSION.SDK_INT < 29) {
+        @Suppress("DEPRECATION")
         window.navigationBarColor = view.context.getColor(
             if (isDarkTheme) R.color.navigation_bar_color_dark_theme else R.color.navigation_bar_color_light_theme
         )
