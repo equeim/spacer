@@ -3,20 +3,20 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [versions]
-android-gradle-plugin = "8.7.0"
-kotlin = "2.0.20"
-ksp = "2.0.20-1.0.25"
+android-gradle-plugin = "8.7.2"
+kotlin = "2.0.21"
+ksp = "2.0.21-1.0.27"
 gradle-versions-plugin = "0.51.0"
 
 sdk-platform-compile = "35"
 sdk-platform-min = "27"
 sdk-platform-target = "35"
 
-androidx-activity = "1.9.2"
-androidx-compose = "2024.09.03"
-androidx-core = "1.13.1"
+androidx-activity = "1.9.3"
+androidx-compose = "2024.10.01"
+androidx-core = "1.15.0"
 androidx-datastore = "1.1.1"
-androidx-lifecycle = "2.8.6"
+androidx-lifecycle = "2.8.7"
 androidx-paging = "3.3.2"
 androidx-room = "2.6.1"
 androidx-test-core = "1.6.1"
