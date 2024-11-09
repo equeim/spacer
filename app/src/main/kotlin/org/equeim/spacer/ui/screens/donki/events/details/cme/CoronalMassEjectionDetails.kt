@@ -71,8 +71,7 @@ fun CoronalMassEjectionDetails(
                                 stringResource(
                                     R.string.cme_speed_in_list,
                                     it.toKilometersPerSecond()
-                                ),
-                                style = MaterialTheme.typography.titleSmall
+                                )
                             )
                         }
                         analysis.measurementType?.let {
@@ -80,8 +79,7 @@ fun CoronalMassEjectionDetails(
                                 stringResource(
                                     R.string.cme_measurement_type_in_list,
                                     stringResource(it.displayStringResId)
-                                ),
-                                style = MaterialTheme.typography.titleSmall
+                                )
                             )
                         }
 
