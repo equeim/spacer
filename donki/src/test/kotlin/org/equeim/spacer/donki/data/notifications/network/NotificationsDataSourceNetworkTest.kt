@@ -19,6 +19,7 @@ import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
 import org.equeim.spacer.donki.data.common.InvalidApiKeyError
 import org.equeim.spacer.donki.data.common.TooManyRequestsError
 import org.equeim.spacer.donki.data.common.Week
+import org.equeim.spacer.donki.data.common.createDonkiOkHttpClient
 import org.junit.Rule
 import java.net.HttpURLConnection
 import java.time.LocalDate
@@ -47,6 +48,7 @@ class NotificationsDataSourceNetworkTest {
         server.start()
         dataSource = NotificationsDataSourceNetwork(
             customNasaApiKey = nasaApiKey,
+            okHttpClient = createDonkiOkHttpClient(),
             baseUrl = server.url("/")
         )
     }

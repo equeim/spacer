@@ -20,7 +20,7 @@ private class Logger(private val tag: String) : HttpLoggingInterceptor.Logger {
     }
 }
 
-private fun createOkHttpClient(
+fun createOkHttpClient(
     logTag: String,
     configure: OkHttpClient.Builder.() -> OkHttpClient.Builder,
 ): OkHttpClient {
@@ -35,13 +35,12 @@ private fun createOkHttpClient(
 }
 
 fun createRetrofit(
+    okHttpClient: OkHttpClient,
     baseUrl: HttpUrl,
-    logTag: String,
-    configureOkHttpClient: OkHttpClient.Builder.() -> OkHttpClient.Builder = { this },
     configureRetrofit: Retrofit.Builder.() -> Retrofit.Builder = { this },
 ): Retrofit {
     return Retrofit.Builder()
-        .callFactory(createOkHttpClient(logTag, configureOkHttpClient))
+        .callFactory(okHttpClient)
         .baseUrl(baseUrl)
         .configureRetrofit()
         .build()

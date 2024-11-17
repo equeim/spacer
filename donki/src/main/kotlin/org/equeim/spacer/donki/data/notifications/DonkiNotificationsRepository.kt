@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import okhttp3.HttpUrl
+import okhttp3.OkHttpClient
 import org.equeim.spacer.donki.CoroutineDispatchers
 import org.equeim.spacer.donki.data.common.DONKI_BASE_URL
 import org.equeim.spacer.donki.data.common.DateRange
@@ -37,16 +38,18 @@ import java.time.Instant
 
 class DonkiNotificationsRepository internal constructor(
     customNasaApiKey: Flow<String?>,
-    context: Context,
+    okHttpClient: OkHttpClient,
     baseUrl: HttpUrl,
+    context: Context,
     db: NotificationsDatabase?,
     private val coroutineDispatchers: CoroutineDispatchers,
     private val clock: Clock,
 ) : Closeable {
-    constructor(customNasaApiKey: Flow<String?>, context: Context) : this(
+    constructor(customNasaApiKey: Flow<String?>, okHttpClient: OkHttpClient, context: Context) : this(
         customNasaApiKey = customNasaApiKey,
-        context = context,
+        okHttpClient = okHttpClient,
         baseUrl = DONKI_BASE_URL,
+        context = context,
         db = null,
         coroutineDispatchers = CoroutineDispatchers(),
         clock = Clock.systemDefaultZone()
@@ -54,6 +57,7 @@ class DonkiNotificationsRepository internal constructor(
 
     private val networkDataSource = NotificationsDataSourceNetwork(
         customNasaApiKey = customNasaApiKey,
+        okHttpClient = okHttpClient,
         baseUrl = baseUrl
     )
     private val cacheDataSource = NotificationsDataSourceCache(context, db, coroutineDispatchers, clock)

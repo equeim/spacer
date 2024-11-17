@@ -24,6 +24,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonObject
 import okhttp3.HttpUrl
+import okhttp3.OkHttpClient
 import org.equeim.spacer.donki.CoroutineDispatchers
 import org.equeim.spacer.donki.data.common.DONKI_BASE_URL
 import org.equeim.spacer.donki.data.common.DateRange
@@ -41,22 +42,24 @@ private const val TAG = "DonkiEventsRepository"
 
 class DonkiEventsRepository internal constructor(
     customNasaApiKey: Flow<String?>,
-    context: Context,
+    okHttpClient: OkHttpClient,
     baseUrl: HttpUrl,
+    context: Context,
     db: EventsCacheDatabase?,
     private val coroutineDispatchers: CoroutineDispatchers,
     private val clock: Clock,
 ) : Closeable {
-    constructor(customNasaApiKey: Flow<String?>, context: Context) : this(
+    constructor(customNasaApiKey: Flow<String?>, okHttpClient: OkHttpClient, context: Context) : this(
         customNasaApiKey = customNasaApiKey,
-        context = context,
+        okHttpClient = okHttpClient,
         baseUrl = DONKI_BASE_URL,
+        context = context,
         db = null,
         coroutineDispatchers = CoroutineDispatchers(),
         clock = Clock.systemDefaultZone()
     )
 
-    private val networkDataSource = EventsDataSourceNetwork(customNasaApiKey, baseUrl)
+    private val networkDataSource = EventsDataSourceNetwork(customNasaApiKey, okHttpClient, baseUrl)
     private val cacheDataSource = EventsDataSourceCache(context, db, coroutineDispatchers, clock)
     private val coroutineScope = CoroutineScope(SupervisorJob() + coroutineDispatchers.Default)
 

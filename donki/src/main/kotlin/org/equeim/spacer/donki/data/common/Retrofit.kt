@@ -8,9 +8,11 @@ import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Interceptor
+import okhttp3.OkHttpClient
 import okhttp3.Response
 import okhttp3.ResponseBody
 import org.equeim.spacer.retrofit.JsonConverterFactory
+import org.equeim.spacer.retrofit.createOkHttpClient
 import org.equeim.spacer.retrofit.createRetrofit
 import retrofit2.Converter
 import retrofit2.HttpException
@@ -28,14 +30,15 @@ object DonkiNetworkStats {
         internal set
 }
 
+fun createDonkiOkHttpClient(): OkHttpClient = createOkHttpClient("DonkiHttp") {
+    addInterceptor(RemainingRequestsInterceptor())
+}
+
 internal val DONKI_BASE_URL = "https://api.nasa.gov/DONKI/".toHttpUrl()
 
-internal fun createDonkiRetrofit(baseUrl: HttpUrl, logTag: String) = createRetrofit(
+internal fun createDonkiRetrofit(okHttpClient: OkHttpClient, baseUrl: HttpUrl) = createRetrofit(
     baseUrl = baseUrl,
-    logTag = logTag,
-    configureOkHttpClient = {
-        addInterceptor(RemainingRequestsInterceptor())
-    },
+    okHttpClient = okHttpClient,
     configureRetrofit = {
         addConverterFactory(DonkiJsonConverterFactory(DonkiJson))
     }

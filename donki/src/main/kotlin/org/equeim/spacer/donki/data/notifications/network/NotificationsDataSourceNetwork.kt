@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import okhttp3.HttpUrl
+import okhttp3.OkHttpClient
 import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.common.createDonkiRetrofit
@@ -20,9 +21,10 @@ import kotlin.coroutines.cancellation.CancellationException
 
 internal class NotificationsDataSourceNetwork(
     private val customNasaApiKey: Flow<String?>,
+    okHttpClient: OkHttpClient,
     baseUrl: HttpUrl,
 ) {
-    private val api = createDonkiRetrofit(baseUrl, TAG).create<NotificationsApi>()
+    private val api = createDonkiRetrofit(okHttpClient, baseUrl).create<NotificationsApi>()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun getNotifications(week: Week): List<NotificationJson> =

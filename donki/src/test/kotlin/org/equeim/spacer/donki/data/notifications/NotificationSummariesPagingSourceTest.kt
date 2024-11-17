@@ -35,6 +35,7 @@ import org.equeim.spacer.donki.data.common.HttpErrorResponse
 import org.equeim.spacer.donki.data.common.InvalidApiKeyError
 import org.equeim.spacer.donki.data.common.TooManyRequestsError
 import org.equeim.spacer.donki.data.common.Week
+import org.equeim.spacer.donki.data.common.createDonkiOkHttpClient
 import org.equeim.spacer.donki.data.notifications.cache.CachedNotificationSummary
 import org.equeim.spacer.donki.data.notifications.cache.NotificationsDatabase
 import org.equeim.spacer.donki.getTestResourceInputStream
@@ -118,8 +119,9 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     private val db: NotificationsDatabase = createInMemoryTestDatabase(coroutinesRule.coroutineDispatchers)
     private val repository = DonkiNotificationsRepository(
         customNasaApiKey = flowOf(null),
-        context = ApplicationProvider.getApplicationContext(),
+        okHttpClient = createDonkiOkHttpClient(),
         baseUrl = server.url("/"),
+        context = ApplicationProvider.getApplicationContext(),
         db = db,
         coroutineDispatchers = coroutinesRule.coroutineDispatchers,
         clock = clock

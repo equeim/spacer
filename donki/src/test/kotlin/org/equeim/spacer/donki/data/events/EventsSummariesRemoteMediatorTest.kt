@@ -31,6 +31,7 @@ import org.equeim.spacer.donki.data.common.HttpErrorResponse
 import org.equeim.spacer.donki.data.common.InvalidApiKeyError
 import org.equeim.spacer.donki.data.common.TooManyRequestsError
 import org.equeim.spacer.donki.data.common.Week
+import org.equeim.spacer.donki.data.common.createDonkiOkHttpClient
 import org.equeim.spacer.donki.data.events.cache.EventsCacheDatabase
 import org.equeim.spacer.donki.timeZoneParameters
 import org.junit.Rule
@@ -64,8 +65,9 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
     private val db: EventsCacheDatabase = createInMemoryTestDatabase(coroutinesRule.coroutineDispatchers)
     private val repository = DonkiEventsRepository(
         customNasaApiKey = flowOf(null),
-        context = ApplicationProvider.getApplicationContext(),
+        okHttpClient = createDonkiOkHttpClient(),
         baseUrl = server.url("/"),
+        context = ApplicationProvider.getApplicationContext(),
         db = db,
         coroutineDispatchers = coroutinesRule.coroutineDispatchers,
         clock = clock
