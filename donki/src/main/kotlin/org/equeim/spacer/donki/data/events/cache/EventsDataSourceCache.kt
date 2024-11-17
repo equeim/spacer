@@ -61,9 +61,9 @@ import java.time.Instant
 
 internal class EventsDataSourceCache(
     private val context: Context,
-    db: EventsCacheDatabase? = null,
-    private val coroutineDispatchers: CoroutineDispatchers = CoroutineDispatchers(),
-    private val clock: Clock = Clock.systemDefaultZone(),
+    db: EventsCacheDatabase?,
+    private val coroutineDispatchers: CoroutineDispatchers,
+    private val clock: Clock,
 ) : Closeable {
     private val coroutineScope = CoroutineScope(coroutineDispatchers.IO + SupervisorJob())
 
