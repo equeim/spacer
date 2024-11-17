@@ -4,17 +4,23 @@
 
 package org.equeim.spacer.donki
 
+import android.content.Context
 import android.util.Log
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.test.core.app.ApplicationProvider
 import io.mockk.Answer
 import io.mockk.Call
 import io.mockk.MockKMatcherScope
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
+import kotlinx.coroutines.asExecutor
 import okhttp3.HttpUrl
 import okhttp3.mockwebserver.RecordedRequest
 import okio.Buffer
 import org.equeim.spacer.donki.data.common.Week
+import org.equeim.spacer.donki.data.events.cache.EventsCacheDatabase
 import java.io.InputStream
 import java.net.URL
 import java.nio.file.Path
@@ -89,4 +95,13 @@ internal fun Throwable.allExceptions(): Sequence<Throwable> = sequence {
     yield(this@allExceptions)
     cause?.let { yieldAll(it.allExceptions()) }
     suppressed.forEach { yieldAll(it.allExceptions()) }
+}
+
+internal inline fun <reified T : RoomDatabase> createInMemoryTestDatabase(
+    coroutineDispatchers: CoroutineDispatchers
+): T {
+    val executor = coroutineDispatchers.Default.asExecutor()
+    return Room.inMemoryDatabaseBuilder(
+        ApplicationProvider.getApplicationContext(), T::class.java
+    ).setQueryExecutor(executor).setTransactionExecutor(executor).allowMainThreadQueries().build()
 }

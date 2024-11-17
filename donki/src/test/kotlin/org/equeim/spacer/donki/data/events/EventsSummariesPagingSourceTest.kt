@@ -7,7 +7,6 @@ package org.equeim.spacer.donki.data.events
 import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
@@ -31,6 +30,7 @@ import org.equeim.spacer.donki.TEST_INSTANT_INSIDE_TEST_WEEK
 import org.equeim.spacer.donki.TEST_WEEK
 import org.equeim.spacer.donki.TEST_WEEK_NEAREST_FUTURE
 import org.equeim.spacer.donki.TEST_WEEK_NEAREST_PAST
+import org.equeim.spacer.donki.createInMemoryTestDatabase
 import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.common.HttpErrorResponse
 import org.equeim.spacer.donki.data.common.InvalidApiKeyError
@@ -139,11 +139,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
         start()
     }
 
-    private val db: EventsCacheDatabase = Room.inMemoryDatabaseBuilder(
-        ApplicationProvider.getApplicationContext(),
-        EventsCacheDatabase::class.java
-    ).setQueryExecutor(coroutinesRule.testExecutor).setTransactionExecutor(coroutinesRule.testExecutor).allowMainThreadQueries()
-        .build()
+    private val db: EventsCacheDatabase = createInMemoryTestDatabase(coroutinesRule.coroutineDispatchers)
     private val repository = DonkiEventsRepository(
         customNasaApiKey = flowOf(null),
         context = ApplicationProvider.getApplicationContext(),
