@@ -17,6 +17,7 @@ import org.equeim.spacer.donki.MockkLogRule
 import org.equeim.spacer.donki.apiKey
 import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
 import org.equeim.spacer.donki.data.common.Week
+import org.equeim.spacer.donki.data.common.createDonkiOkHttpClient
 import org.equeim.spacer.donki.data.events.EventType
 import org.junit.Rule
 import java.net.HttpURLConnection
@@ -41,6 +42,7 @@ class EventsDataSourceNetworkTest {
     private val nasaApiKey = MutableStateFlow(DEFAULT_NASA_API_KEY)
     private val dataSource = EventsDataSourceNetwork(
         customNasaApiKey = nasaApiKey,
+        okHttpClient = createDonkiOkHttpClient(),
         baseUrl = server.url("/")
     )
 

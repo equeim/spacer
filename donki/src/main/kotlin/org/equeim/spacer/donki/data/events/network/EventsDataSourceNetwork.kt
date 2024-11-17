@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.serialization.json.JsonObject
 import okhttp3.HttpUrl
+import okhttp3.OkHttpClient
 import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
 import org.equeim.spacer.donki.data.common.DonkiJson
 import org.equeim.spacer.donki.data.common.Week
@@ -25,9 +26,10 @@ import retrofit2.create
 
 internal class EventsDataSourceNetwork(
     private val customNasaApiKey: Flow<String?>,
+    okHttpClient: OkHttpClient,
     baseUrl: HttpUrl
 ) {
-    private val api = createDonkiRetrofit(baseUrl, TAG).create<EventsApi>()
+    private val api = createDonkiRetrofit(okHttpClient, baseUrl).create<EventsApi>()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun getEvents(

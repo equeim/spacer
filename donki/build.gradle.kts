@@ -35,6 +35,8 @@ ksp {
 dependencies {
     implementation(project(":retrofit-provider"))
 
+    api(libs.okhttp)
+
     implementation(libs.coroutines.core)
 
     implementation(libs.androidx.core)
