@@ -26,6 +26,7 @@ import org.equeim.spacer.donki.data.notifications.NotificationId
 import org.equeim.spacer.donki.data.notifications.cache.CachedNotification
 import org.equeim.spacer.donki.data.notifications.findLinkedEvents
 import org.equeim.spacer.donki.data.notifications.findWebLinks
+import org.equeim.spacer.getDonkiNotificationsRepositoryInstance
 import org.equeim.spacer.ui.screens.donki.LinkedEventPresentation
 import org.equeim.spacer.ui.screens.donki.donkiErrorToString
 import org.equeim.spacer.ui.screens.donki.events.DonkiEventsScreenViewModel.Companion.displayStringResId
@@ -42,14 +43,12 @@ class NotificationDetailsScreenViewModel(
     application: Application
 ) : AndroidViewModel(application) {
     private val settings = AppSettings(application)
-    private val repository =
-        DonkiNotificationsRepository(settings.customNasaApiKeyOrNull(), application)
+    private val repository = getDonkiNotificationsRepositoryInstance(application)
 
     private val _contentState = MutableStateFlow<ContentState>(ContentState.Empty)
     val contentState: StateFlow<ContentState> by ::_contentState
 
     init {
-        addCloseable(repository)
         viewModelScope.launch { loadNotification() }
     }
 

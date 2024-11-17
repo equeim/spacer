@@ -31,6 +31,7 @@ import org.equeim.spacer.donki.data.events.DonkiEventsRepository
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.donki.data.events.network.json.Event
+import org.equeim.spacer.getDonkiEventsRepositoryInstance
 import org.equeim.spacer.ui.screens.donki.LinkedEventPresentation
 import org.equeim.spacer.ui.screens.donki.donkiErrorToString
 import org.equeim.spacer.ui.screens.donki.events.DonkiEventsScreenViewModel.Companion.displayStringResId
@@ -55,7 +56,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
     AndroidViewModel(application) {
 
     private val settings = AppSettings(application)
-    private val repository = DonkiEventsRepository(settings.customNasaApiKeyOrNull(), application)
+    private val repository = getDonkiEventsRepositoryInstance(application)
 
     private enum class LoadingType {
         Initial, Refresh
@@ -88,7 +89,6 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
             .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     init {
-        addCloseable(repository)
         loadEvent()
         viewModelScope.launch {
             loadRequests.send(LoadingType.Initial)

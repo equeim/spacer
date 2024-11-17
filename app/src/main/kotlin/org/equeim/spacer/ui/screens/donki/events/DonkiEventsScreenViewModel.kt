@@ -37,6 +37,7 @@ import org.equeim.spacer.donki.data.events.network.json.EventSummary
 import org.equeim.spacer.donki.data.events.network.json.GeomagneticStormSummary
 import org.equeim.spacer.donki.data.events.network.json.InterplanetaryShockSummary
 import org.equeim.spacer.donki.data.events.network.json.SolarFlareSummary
+import org.equeim.spacer.getDonkiEventsRepositoryInstance
 import org.equeim.spacer.ui.screens.donki.DateSeparator
 import org.equeim.spacer.ui.screens.donki.FiltersUiState
 import org.equeim.spacer.ui.screens.donki.ListItem
@@ -65,7 +66,7 @@ class DonkiEventsScreenViewModel(
     }
 
     private val settings = AppSettings(application)
-    private val repository = DonkiEventsRepository(settings.customNasaApiKeyOrNull(), application)
+    private val repository = getDonkiEventsRepositoryInstance(application)
 
     private class Formatters(locale: Locale, val zone: ZoneId) {
         val eventDateFormatter = createEventDateFormatter(locale, zone)
@@ -93,8 +94,6 @@ class DonkiEventsScreenViewModel(
     val eventsTimeZone: StateFlow<ZoneId?>
 
     init {
-        addCloseable(repository)
-
         val defaultLocaleFlow =
             application.defaultLocaleFlow()
                 .stateIn(viewModelScope, SharingStarted.Eagerly, application.defaultLocale)

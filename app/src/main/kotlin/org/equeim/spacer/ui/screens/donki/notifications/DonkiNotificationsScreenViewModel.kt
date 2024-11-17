@@ -41,6 +41,7 @@ import org.equeim.spacer.donki.data.notifications.NotificationType.Report
 import org.equeim.spacer.donki.data.notifications.NotificationType.SolarEnergeticParticle
 import org.equeim.spacer.donki.data.notifications.NotificationType.SolarFlare
 import org.equeim.spacer.donki.data.notifications.cache.CachedNotificationSummary
+import org.equeim.spacer.getDonkiNotificationsRepositoryInstance
 import org.equeim.spacer.ui.screens.donki.DateSeparator
 import org.equeim.spacer.ui.screens.donki.FiltersUiState
 import org.equeim.spacer.ui.screens.donki.ListItem
@@ -65,8 +66,7 @@ class DonkiNotificationsScreenViewModel(
     }
 
     private val settings = AppSettings(application)
-    private val repository =
-        DonkiNotificationsRepository(settings.customNasaApiKeyOrNull(), application)
+    private val repository = getDonkiNotificationsRepositoryInstance(application)
 
     private class Formatters(locale: Locale, val zone: ZoneId) {
         val notificationDateFormatter = createEventDateFormatter(locale, zone)
@@ -97,8 +97,6 @@ class DonkiNotificationsScreenViewModel(
     val notificationsTimeZone: StateFlow<ZoneId?>
 
     init {
-        addCloseable(repository)
-
         val defaultLocaleFlow =
             application.defaultLocaleFlow()
                 .stateIn(viewModelScope, SharingStarted.Eagerly, application.defaultLocale)
