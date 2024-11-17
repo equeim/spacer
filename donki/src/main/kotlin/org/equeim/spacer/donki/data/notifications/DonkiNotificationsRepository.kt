@@ -43,12 +43,12 @@ class DonkiNotificationsRepository internal constructor(
     private val clock: Clock,
 ) : Closeable {
     constructor(customNasaApiKey: Flow<String?>, context: Context) : this(
-        customNasaApiKey,
-        context,
-        DONKI_BASE_URL,
-        null,
-        CoroutineDispatchers(),
-        Clock.systemDefaultZone()
+        customNasaApiKey = customNasaApiKey,
+        context = context,
+        baseUrl = DONKI_BASE_URL,
+        db = null,
+        coroutineDispatchers = CoroutineDispatchers(),
+        clock = Clock.systemDefaultZone()
     )
 
     private val networkDataSource = NotificationsDataSourceNetwork(
