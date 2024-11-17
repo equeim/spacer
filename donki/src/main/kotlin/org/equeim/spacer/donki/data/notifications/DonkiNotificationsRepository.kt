@@ -12,8 +12,9 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.drop
@@ -57,7 +58,10 @@ class DonkiNotificationsRepository internal constructor(
     )
     private val cacheDataSource = NotificationsDataSourceCache(context, db, coroutineDispatchers, clock)
 
+    private val coroutineScope = CoroutineScope(SupervisorJob() + coroutineDispatchers.Default)
+
     override fun close() {
+        coroutineScope.cancel()
         cacheDataSource.close()
     }
 
@@ -198,8 +202,7 @@ class DonkiNotificationsRepository internal constructor(
         }
 
         if (cacheAsync) {
-            @OptIn(DelicateCoroutinesApi::class)
-            GlobalScope.launch(coroutineDispatchers.Default) {
+            coroutineScope.launch {
                 cacheDataSource.cacheWeek(
                     week,
                     notificationsToCache,
