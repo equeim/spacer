@@ -9,7 +9,6 @@ package org.equeim.spacer.donki.data.notifications
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.RemoteMediator
-import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -25,6 +24,7 @@ import org.equeim.spacer.donki.FakeClock
 import org.equeim.spacer.donki.TEST_INSTANT_INSIDE_TEST_WEEK
 import org.equeim.spacer.donki.TEST_WEEK
 import org.equeim.spacer.donki.allExceptions
+import org.equeim.spacer.donki.createInMemoryTestDatabase
 import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.common.HttpErrorResponse
 import org.equeim.spacer.donki.data.common.InvalidApiKeyError
@@ -60,10 +60,7 @@ class NotificationSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
         dispatcher = MockWebServerDispatcher()
         start()
     }
-    private val db: NotificationsDatabase = Room.inMemoryDatabaseBuilder(
-        ApplicationProvider.getApplicationContext(),
-        NotificationsDatabase::class.java
-    ).setQueryExecutor(coroutinesRule.testExecutor).setTransactionExecutor(coroutinesRule.testExecutor).allowMainThreadQueries().build()
+    private val db: NotificationsDatabase = createInMemoryTestDatabase(coroutinesRule.coroutineDispatchers)
     private val repository = DonkiNotificationsRepository(
         customNasaApiKey = flowOf(null),
         context = ApplicationProvider.getApplicationContext(),

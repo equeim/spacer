@@ -7,7 +7,6 @@ package org.equeim.spacer.donki.data.notifications
 import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.emptyFlow
@@ -30,6 +29,7 @@ import org.equeim.spacer.donki.TEST_INSTANT_INSIDE_TEST_WEEK
 import org.equeim.spacer.donki.TEST_WEEK
 import org.equeim.spacer.donki.TEST_WEEK_NEAREST_FUTURE
 import org.equeim.spacer.donki.TEST_WEEK_NEAREST_PAST
+import org.equeim.spacer.donki.createInMemoryTestDatabase
 import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.common.HttpErrorResponse
 import org.equeim.spacer.donki.data.common.InvalidApiKeyError
@@ -115,11 +115,7 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
         start()
     }
 
-    private val db: NotificationsDatabase = Room.inMemoryDatabaseBuilder(
-        ApplicationProvider.getApplicationContext(),
-        NotificationsDatabase::class.java
-    ).setQueryExecutor(coroutinesRule.testExecutor).setTransactionExecutor(coroutinesRule.testExecutor).allowMainThreadQueries()
-        .build()
+    private val db: NotificationsDatabase = createInMemoryTestDatabase(coroutinesRule.coroutineDispatchers)
     private val repository = DonkiNotificationsRepository(
         customNasaApiKey = flowOf(null),
         context = ApplicationProvider.getApplicationContext(),
