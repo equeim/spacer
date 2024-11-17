@@ -12,6 +12,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
@@ -47,6 +48,12 @@ internal class NotificationsDataSourceCache(
 
     override fun close() {
         Log.d(TAG, "close() called")
+        db.invokeOnCompletion { cause ->
+            if (cause == null) {
+                @OptIn(ExperimentalCoroutinesApi::class)
+                db.getCompleted().close()
+            }
+        }
         coroutineScope.cancel()
     }
 
