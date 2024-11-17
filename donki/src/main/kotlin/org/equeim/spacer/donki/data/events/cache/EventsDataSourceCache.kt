@@ -13,8 +13,6 @@ import androidx.room.Room
 import androidx.room.withTransaction
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -328,16 +326,6 @@ internal class EventsDataSourceCache(
                     loadTime
                 )
             )
-    }
-
-    fun cacheWeekAsync(
-        week: Week,
-        eventType: EventType,
-        events: List<Pair<Event, JsonObject>>,
-        loadTime: Instant,
-    ) {
-        @OptIn(DelicateCoroutinesApi::class)
-        GlobalScope.launch(coroutineDispatchers.Default) { cacheWeek(week, eventType, events, loadTime) }
     }
 
     private companion object {

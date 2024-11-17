@@ -11,6 +11,9 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -55,8 +58,10 @@ class DonkiEventsRepository internal constructor(
 
     private val networkDataSource = EventsDataSourceNetwork(customNasaApiKey, baseUrl)
     private val cacheDataSource = EventsDataSourceCache(context, db, coroutineDispatchers, clock)
+    private val coroutineScope = CoroutineScope(SupervisorJob() + coroutineDispatchers.Default)
 
     override fun close() {
+        coroutineScope.cancel()
         cacheDataSource.close()
     }
 
@@ -87,7 +92,7 @@ class DonkiEventsRepository internal constructor(
                     } else {
                         val weekLoadTime = Instant.now(clock)
                         val events = networkDataSource.getEvents(week, eventType)
-                        cacheDataSource.cacheWeekAsync(week, eventType, events, weekLoadTime)
+                        coroutineScope.launch { cacheDataSource.cacheWeek(week, eventType, events, weekLoadTime) }
                         val summaries = if (dateRange == null) {
                             events.asSequence()
                         } else {
