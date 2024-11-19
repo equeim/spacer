@@ -16,6 +16,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.launch
 import org.equeim.spacer.donki.CoroutineDispatchers
 import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.common.Week
@@ -45,6 +48,9 @@ internal class NotificationsDataSourceCache(
             ).build()
         }
     }
+
+    private val _markedNotificationsAsRead = Channel<Unit>(Channel.CONFLATED)
+    val markedNotificationsAsRead: ReceiveChannel<Unit> by ::_markedNotificationsAsRead
 
     override fun close() {
         Log.d(TAG, "close() called")
@@ -124,7 +130,7 @@ internal class NotificationsDataSourceCache(
             val dao = db.await().cachedNotifications()
             val notification = dao.getNotificationById(id)
             return if (notification != null && !notification.read) {
-                dao.markNotificationAsRead(id)
+                coroutineScope.launch { markNotificationAsRead(id) }
                 notification.copy(read = true)
             } else {
                 notification
@@ -138,6 +144,19 @@ internal class NotificationsDataSourceCache(
                 )
             }
             throw e
+        }
+    }
+
+    private suspend fun markNotificationAsRead(id: NotificationId) {
+        Log.d(TAG, "markNotificationAsRead() called with: id = $id")
+        try {
+            db.await().cachedNotifications().markNotificationAsRead(id)
+            Log.d(TAG, "markNotificationAsRead: sending event")
+            _markedNotificationsAsRead.send(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "markNotificationAsRead: failed to mark notification $id as read", e)
         }
     }
 
