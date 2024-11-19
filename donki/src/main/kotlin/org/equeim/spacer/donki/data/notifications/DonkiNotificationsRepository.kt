@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
@@ -46,7 +47,11 @@ class DonkiNotificationsRepository internal constructor(
     private val coroutineDispatchers: CoroutineDispatchers,
     private val clock: Clock,
 ) : Closeable {
-    constructor(customNasaApiKey: Flow<String?>, okHttpClient: OkHttpClient, context: Context) : this(
+    constructor(
+        customNasaApiKey: Flow<String?>,
+        okHttpClient: OkHttpClient,
+        context: Context
+    ) : this(
         customNasaApiKey = customNasaApiKey,
         okHttpClient = okHttpClient,
         baseUrl = DONKI_BASE_URL,
@@ -61,7 +66,8 @@ class DonkiNotificationsRepository internal constructor(
         okHttpClient = okHttpClient,
         baseUrl = baseUrl
     )
-    private val cacheDataSource = NotificationsDataSourceCache(context, db, coroutineDispatchers, clock)
+    private val cacheDataSource =
+        NotificationsDataSourceCache(context, db, coroutineDispatchers, clock)
 
     private val coroutineScope = CoroutineScope(SupervisorJob() + coroutineDispatchers.Default)
 
@@ -83,6 +89,7 @@ class DonkiNotificationsRepository internal constructor(
             invalidationEvents = merge(
                 mediator.refreshed,
                 filters.drop(1),
+                cacheDataSource.markedNotificationsAsRead.receiveAsFlow(),
             ),
             coroutineDispatchers = coroutineDispatchers,
             createPagingSource = { createPagingSource(filters.value) }
