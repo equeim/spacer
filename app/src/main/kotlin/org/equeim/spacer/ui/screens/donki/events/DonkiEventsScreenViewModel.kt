@@ -110,8 +110,10 @@ class DonkiEventsScreenViewModel(
             determineEventTimeZone(defaultZone, displayEventsTimeInUTC)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-        val basePagingData =
-            repository.getEventSummariesPager(eventFilters).flow.cachedIn(viewModelScope)
+        val (pager, closeable) = repository.getEventSummariesPager(eventFilters)
+        addCloseable(closeable)
+
+        val basePagingData = pager.flow.cachedIn(viewModelScope)
         val eventTypesStringsCacheFlow =
             defaultLocaleFlow.map { ConcurrentHashMap<EventType, String>() }
         val formattersFlow =

@@ -5,7 +5,6 @@
 package org.equeim.spacer.donki.data.events
 
 import android.util.Log
-import kotlinx.coroutines.flow.Flow
 import org.equeim.spacer.donki.CoroutineDispatchers
 import org.equeim.spacer.donki.data.common.BasePagingSource
 import org.equeim.spacer.donki.data.common.DateRange
@@ -15,7 +14,6 @@ import java.time.Clock
 
 internal class EventsSummariesPagingSource(
     private val repository: DonkiEventsRepository,
-    invalidationEvents: Flow<*>,
     private val filters: DonkiEventsRepository.Filters,
     coroutineDispatchers: CoroutineDispatchers,
     clock: Clock
@@ -23,7 +21,6 @@ internal class EventsSummariesPagingSource(
     dateRange = filters.dateRange,
     coroutineDispatchers = coroutineDispatchers,
     clock = clock,
-    invalidationEvents = invalidationEvents,
     TAG = "EventsSummariesPagingSource"
 ) {
     init {
