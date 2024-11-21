@@ -131,7 +131,7 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
             DonkiNotificationsRepository.Filters(
                 types = NotificationType.entries,
                 dateRange = null
-            ), emptyFlow()
+            )
         )
 
     @AfterTest
@@ -369,8 +369,7 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
                     firstDayInstant = instantOf(2016, 1, 18, 0, 0),
                     instantAfterLastDay = instantOf(2016, 1, 25, 0, 0),
                 )
-            ),
-            emptyFlow()
+            )
         )
         val params = PagingSource.LoadParams.Append(weekOf(2016, 1, 18), 20, false)
         val resultFromNetwork = pagingSource.load(params).assertIsPage()
@@ -414,8 +413,7 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
                     firstDayInstant = instantOf(2016, 1, 19, 0, 0),
                     instantAfterLastDay = instantOf(2016, 1, 22, 0, 0),
                 )
-            ),
-            emptyFlow()
+            )
         )
         val params = PagingSource.LoadParams.Append(weekOf(2016, 1, 18), 20, false)
         val resultFromNetwork = pagingSource.load(params).assertIsPage()

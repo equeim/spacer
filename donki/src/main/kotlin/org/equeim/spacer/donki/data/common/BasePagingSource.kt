@@ -6,39 +6,29 @@ package org.equeim.spacer.donki.data.common
 
 import android.util.Log
 import androidx.paging.PagingSource
+import androidx.paging.PagingSourceFactory
 import androidx.paging.PagingState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.equeim.spacer.donki.CoroutineDispatchers
+import java.io.Closeable
+import java.lang.ref.WeakReference
 import java.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
 internal abstract class BasePagingSource<Item : Any>(
     protected val dateRange: DateRange?,
-    invalidationEvents: Flow<*>,
     private val coroutineDispatchers: CoroutineDispatchers,
     private val clock: Clock,
     @Suppress("PropertyName")
     protected val TAG: String,
 ) : PagingSource<Week, Item>() {
     private var lastLoadReturnedEmptyPage = false
-
-    init {
-        val coroutineScope = CoroutineScope(Dispatchers.Unconfined)
-        coroutineScope.launch {
-            invalidationEvents.collect { invalidate() }
-        }
-        registerInvalidatedCallback {
-            Log.d(TAG, m("invalidated"))
-            coroutineScope.cancel()
-        }
-    }
 
     protected abstract suspend fun getItemsForWeek(
         week: Week,
@@ -116,5 +106,30 @@ internal abstract class BasePagingSource<Item : Any>(
 
     private companion object {
         val EMPTY_PAGE_THROTTLE_DELAY = 1.seconds
+    }
+
+    class Factory<Item : Any>(invalidationEvents: Flow<*>, coroutineDispatchers: CoroutineDispatchers, private val createPagingSource: () -> BasePagingSource<Item>) : PagingSourceFactory<Week, Item>, Closeable {
+        private val coroutineScope = CoroutineScope(coroutineDispatchers.Default)
+        @Volatile
+        private var lastPagingSource: WeakReference<BasePagingSource<Item>>? = null
+
+        init {
+            coroutineScope.launch {
+                invalidationEvents.collect {
+                    lastPagingSource?.get()?.apply {
+                        m("Invalidating")
+                        invalidate()
+                    }
+                }
+            }
+        }
+
+        override fun invoke(): BasePagingSource< Item> {
+            return createPagingSource().also { lastPagingSource = WeakReference(it) }
+        }
+
+        override fun close() {
+            coroutineScope.cancel()
+        }
     }
 }

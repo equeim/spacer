@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import org.equeim.spacer.donki.CoroutineDispatchers
+import org.equeim.spacer.donki.data.common.BasePagingSource
 import org.equeim.spacer.donki.data.common.DONKI_BASE_URL
 import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.common.Week
@@ -76,15 +77,22 @@ class DonkiNotificationsRepository internal constructor(
     )
 
     @OptIn(ExperimentalPagingApi::class)
-    fun getNotificationSummariesPager(filters: StateFlow<Filters>): Pager<*, CachedNotificationSummary> {
+    fun getNotificationSummariesPager(filters: StateFlow<Filters>): Pair<Pager<*, CachedNotificationSummary>, Closeable> {
         val mediator = createRemoteMediator(filters)
+        val pagingSourceFactory = BasePagingSource.Factory(
+            invalidationEvents = merge(
+                mediator.refreshed,
+                filters.drop(1),
+            ),
+            coroutineDispatchers = coroutineDispatchers,
+            createPagingSource = { createPagingSource(filters.value) }
+        )
         return Pager(
             config = PagingConfig(pageSize = 20, enablePlaceholders = false),
             initialKey = null,
-            remoteMediator = mediator
-        ) {
-            createPagingSource(filters.value, merge(mediator.refreshed, filters.drop(1)))
-        }
+            remoteMediator = mediator,
+            pagingSourceFactory = pagingSourceFactory
+        ) to pagingSourceFactory
     }
 
     @VisibleForTesting
@@ -92,10 +100,11 @@ class DonkiNotificationsRepository internal constructor(
         NotificationsRemoteMediator(this, cacheDataSource, filters, clock)
 
     @VisibleForTesting
-    internal fun createPagingSource(filters: Filters, invalidationEvents: Flow<Any>): NotificationSummariesPagingSource =
+    internal fun createPagingSource(
+        filters: Filters
+    ): NotificationSummariesPagingSource =
         NotificationSummariesPagingSource(
             repository = this,
-            invalidationEvents = invalidationEvents,
             filters = filters,
             coroutineDispatchers = coroutineDispatchers,
             clock = clock

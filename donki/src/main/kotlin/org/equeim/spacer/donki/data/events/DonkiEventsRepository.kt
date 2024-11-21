@@ -26,6 +26,7 @@ import kotlinx.serialization.json.JsonObject
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import org.equeim.spacer.donki.CoroutineDispatchers
+import org.equeim.spacer.donki.data.common.BasePagingSource
 import org.equeim.spacer.donki.data.common.DONKI_BASE_URL
 import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.common.Week
@@ -127,24 +128,27 @@ class DonkiEventsRepository internal constructor(
     }
 
     @OptIn(ExperimentalPagingApi::class)
-    fun getEventSummariesPager(filters: StateFlow<Filters>): Pager<*, EventSummary> {
+    fun getEventSummariesPager(filters: StateFlow<Filters>): Pair<Pager<*, EventSummary>, Closeable> {
         val mediator = createRemoteMediator(filters)
+        val pagingSourceFactory = BasePagingSource.Factory(
+            invalidationEvents = merge(mediator.refreshed, cacheDataSource.databaseRecreated, filters.drop(1)),
+            coroutineDispatchers = coroutineDispatchers,
+            createPagingSource = { createPagingSource(filters.value) }
+        )
         return Pager(
-            PagingConfig(pageSize = 20, enablePlaceholders = false),
-            null,
-            mediator
-        ) {
-            createPagingSource(filters.value, merge(mediator.refreshed, cacheDataSource.databaseRecreated, filters.drop(1)))
-        }
+            config = PagingConfig(pageSize = 20, enablePlaceholders = false),
+            initialKey = null,
+            remoteMediator = mediator,
+            pagingSourceFactory = pagingSourceFactory
+        ) to pagingSourceFactory
     }
 
     internal fun createRemoteMediator(filters: StateFlow<Filters>): EventsSummariesRemoteMediator =
         EventsSummariesRemoteMediator(this, filters, cacheDataSource::isWeekCachedAndNeedsRefresh, clock)
 
-    internal fun createPagingSource(filters: Filters, invalidationEvents: Flow<Any>): EventsSummariesPagingSource =
+    internal fun createPagingSource(filters: Filters): EventsSummariesPagingSource =
         EventsSummariesPagingSource(
             repository = this,
-            invalidationEvents = invalidationEvents,
             filters = filters,
             coroutineDispatchers = coroutineDispatchers,
             clock = clock

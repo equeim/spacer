@@ -5,7 +5,6 @@
 package org.equeim.spacer.donki.data.notifications
 
 import android.util.Log
-import kotlinx.coroutines.flow.Flow
 import org.equeim.spacer.donki.CoroutineDispatchers
 import org.equeim.spacer.donki.data.common.BasePagingSource
 import org.equeim.spacer.donki.data.common.DateRange
@@ -15,13 +14,11 @@ import java.time.Clock
 
 internal class NotificationSummariesPagingSource(
     private val repository: DonkiNotificationsRepository,
-    invalidationEvents: Flow<*>,
     private val filters: DonkiNotificationsRepository.Filters,
     coroutineDispatchers: CoroutineDispatchers = CoroutineDispatchers(),
     clock: Clock = Clock.systemDefaultZone()
 ) : BasePagingSource<CachedNotificationSummary>(
     dateRange = filters.dateRange,
-    invalidationEvents = invalidationEvents,
     coroutineDispatchers = coroutineDispatchers,
     clock = clock,
     TAG = "NotificationSummariesPagingSource"

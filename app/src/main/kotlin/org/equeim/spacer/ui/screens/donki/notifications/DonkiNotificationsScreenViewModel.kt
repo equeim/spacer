@@ -113,10 +113,10 @@ class DonkiNotificationsScreenViewModel(
             determineEventTimeZone(defaultZone, displayEventsTimeInUTC)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-        val basePagingData =
-            repository.getNotificationSummariesPager(notificationFilters).flow.cachedIn(
-                viewModelScope
-            )
+        val (pager, closeable) = repository.getNotificationSummariesPager(notificationFilters)
+        addCloseable(closeable)
+
+        val basePagingData = pager.flow.cachedIn(viewModelScope)
         val notificationTypesStringsCacheFlow =
             defaultLocaleFlow.map { ConcurrentHashMap<NotificationType, String>() }
         val formattersFlow =
