@@ -354,13 +354,13 @@ private fun EnlilModelCard(
                     }
                 }
                 simulation.kp90?.let {
-                    LabelFieldPair(R.string.enlil_kp_90, integerFormatter.format(it))
+                    LabelFieldPair(R.string.enlil_kp_90, integerFormatter.format(it.toLong()))
                 }
                 simulation.kp135?.let {
-                    LabelFieldPair(R.string.enlil_kp_135, integerFormatter.format(it))
+                    LabelFieldPair(R.string.enlil_kp_135, integerFormatter.format(it.toLong()))
                 }
                 simulation.kp180?.let {
-                    LabelFieldPair(R.string.enlil_kp_180, integerFormatter.format(it))
+                    LabelFieldPair(R.string.enlil_kp_180, integerFormatter.format(it.toLong()))
                 }
                 if (simulation.impacts.isNotEmpty()) {
                     SectionHeader(
