@@ -53,31 +53,20 @@ internal data class InterplanetaryShockExtrasSummaryCached(
 ) : InterplanetaryShockSummary
 
 @Dao
-internal abstract class InterplanetaryShockDao {
+internal interface InterplanetaryShockDao {
     @Query(
         """
             SELECT events.id, events.time, location FROM events
             JOIN interplanetary_shock_extras ON events.id = interplanetary_shock_extras.id
-            WHERE events.type = :type AND events.time >= :startTime AND events.time < :endTime
+            WHERE events.type = "IPS" AND events.time >= :startTime AND events.time < :endTime
             ORDER BY time DESC
         """
     )
-    protected abstract suspend fun _getEventSummaries(
-        type: EventType,
+    suspend fun getEventSummaries(
         startTime: Instant,
         endTime: Instant
     ): List<InterplanetaryShockExtrasSummaryCached>
 
-    suspend fun getEventSummaries(
-        startTime: Instant,
-        endTime: Instant
-    ): List<InterplanetaryShockSummary> =
-        _getEventSummaries(
-            EventType.InterplanetaryShock,
-            startTime,
-            endTime
-        )
-
     @Insert(onConflict = REPLACE)
-    abstract suspend fun updateExtras(extras: InterplanetaryShockExtras)
+    suspend fun updateExtras(extras: InterplanetaryShockExtras)
 }

@@ -58,31 +58,20 @@ internal data class CoronalMassEjectionExtrasSummaryCached(
 ) : CoronalMassEjectionSummary
 
 @Dao
-internal abstract class CoronalMassEjectionDao {
+internal interface CoronalMassEjectionDao {
     @Query(
         """
             SELECT events.id, events.time, predicted_earth_impact, cme_type FROM events
             JOIN coronal_mass_ejection_extras ON events.id = coronal_mass_ejection_extras.id
-            WHERE events.type = :type AND events.time >= :startTime AND events.time < :endTime
+            WHERE events.type = "CME" AND events.time >= :startTime AND events.time < :endTime
             ORDER BY time DESC
         """
     )
-    protected abstract suspend fun _getEventSummaries(
-        type: EventType,
+    suspend fun getEventSummaries(
         startTime: Instant,
         endTime: Instant
     ): List<CoronalMassEjectionExtrasSummaryCached>
 
-    suspend fun getEventSummaries(
-        startTime: Instant,
-        endTime: Instant
-    ): List<CoronalMassEjectionSummary> =
-        _getEventSummaries(
-            EventType.CoronalMassEjection,
-            startTime,
-            endTime
-        )
-
     @Insert(onConflict = REPLACE)
-    abstract suspend fun updateExtras(extras: CoronalMassEjectionExtras)
+    suspend fun updateExtras(extras: CoronalMassEjectionExtras)
 }
