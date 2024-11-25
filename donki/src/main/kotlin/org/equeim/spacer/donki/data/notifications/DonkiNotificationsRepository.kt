@@ -250,6 +250,9 @@ class DonkiNotificationsRepository internal constructor(
         }
     }
 
+    fun getNumberOfUnreadNotifications(): Flow<Int> =
+        cacheDataSource.getNumberOfUnreadNotifications()
+
     private companion object {
         const val TAG = "DonkiNotificationsRepository"
 

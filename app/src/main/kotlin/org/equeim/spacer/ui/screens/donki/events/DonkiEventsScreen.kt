@@ -49,6 +49,7 @@ import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.components.CARD_CONTENT_PADDING
 import org.equeim.spacer.ui.components.RootScreenTopAppBar
 import org.equeim.spacer.ui.components.ToolbarIcon
+import org.equeim.spacer.ui.components.ToolbarIconWithBadge
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.DialogDestinationNavHost
 import org.equeim.spacer.ui.screens.donki.BaseEventsList
@@ -65,6 +66,7 @@ import org.equeim.spacer.ui.screens.settings.SettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.FilterList
 import org.equeim.spacer.ui.theme.NotificationsNone
+import org.equeim.spacer.ui.utils.rememberIntegerFormatter
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -82,7 +84,10 @@ data object DonkiEventsScreen : Destination {
 }
 
 @Composable
-private fun DonkiEventsScreen(navController: NavController<Destination>, navHostEntries: List<NavHostEntry<Destination>>) {
+private fun DonkiEventsScreen(
+    navController: NavController<Destination>,
+    navHostEntries: List<NavHostEntry<Destination>>
+) {
     val model = viewModel<DonkiEventsScreenViewModel>()
     val filters = model.filtersUiState.collectAsStateWithLifecycle()
     val holder = rememberBaseEventsListStateHolder(
@@ -94,11 +99,14 @@ private fun DonkiEventsScreen(navController: NavController<Destination>, navHost
         isLastWeekNeedsRefreshing = model::isLastWeekNeedsRefreshing,
     )
     val eventsTimeZone = model.eventsTimeZone.collectAsStateWithLifecycle()
+    val numberOfUnreadNotifications =
+        model.numberOfUnreadNotifications.collectAsStateWithLifecycle()
     DonkiEventsScreen(
         holder = holder,
         filtersUiState = filters,
         updateFilters = model::updateFilters,
         eventsTimeZone = eventsTimeZone,
+        numberOfUnreadNotifications = numberOfUnreadNotifications,
         navHostEntries = { navHostEntries },
         navigateToDetailsScreen = { navController.navigate(DonkiEventDetailsScreen(it)) },
         navigateToNotificationsScreen = { navController.navigate(DonkiNotificationsScreen) },
@@ -113,6 +121,7 @@ private fun DonkiEventsScreen(
     filtersUiState: State<FiltersUiState<EventType>>,
     updateFilters: (FiltersUiState<EventType>) -> Unit,
     eventsTimeZone: State<ZoneId?>,
+    numberOfUnreadNotifications: State<Int>,
     navHostEntries: () -> List<NavHostEntry<Destination>>,
     navigateToDetailsScreen: (EventId) -> Unit,
     navigateToNotificationsScreen: () -> Unit,
@@ -141,7 +150,21 @@ private fun DonkiEventsScreen(
                     }
                 },
                 endActions = {
-                    ToolbarIcon(Icons.Filled.NotificationsNone, R.string.notifications, navigateToNotificationsScreen)
+                    if (numberOfUnreadNotifications.value > 0) {
+                        val formatter = rememberIntegerFormatter()
+                        ToolbarIconWithBadge(
+                            icon = Icons.Filled.NotificationsNone,
+                            textId = R.string.notifications,
+                            badgeText = { formatter.format(numberOfUnreadNotifications.value.toLong()) },
+                            onClick = navigateToNotificationsScreen
+                        )
+                    } else {
+                        ToolbarIcon(
+                            icon = Icons.Filled.NotificationsNone,
+                            textId = R.string.notifications,
+                            onClick = navigateToNotificationsScreen
+                        )
+                    }
                     ToolbarIcon(Icons.Filled.Settings, R.string.filters, navigateToSettingsScreen)
                 }
             )
@@ -175,8 +198,13 @@ private fun DonkiEventsScreen(
                 elevation = CardDefaults.elevatedCardElevation(2.dp),
             ) {
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall, Alignment.CenterVertically),
-                    modifier = Modifier.heightIn(min = 64.dp).padding(CARD_CONTENT_PADDING)
+                    verticalArrangement = Arrangement.spacedBy(
+                        Dimens.SpacingSmall,
+                        Alignment.CenterVertically
+                    ),
+                    modifier = Modifier
+                        .heightIn(min = 64.dp)
+                        .padding(CARD_CONTENT_PADDING)
                 ) {
                     Text(
                         text = item.title,
@@ -237,12 +265,20 @@ fun DonkiEventsScreenPreview() {
                     DateSeparator(LocalDate.now().toString()),
                     DonkiEventsScreenViewModel.EventPresentation(
                         id = EventId("1"),
-                        title = stringResource(R.string.event_title_in_list, LocalTime.now().withNano(0).toString(), stringResource(EventType.SolarEnergeticParticle.displayStringResId)),
+                        title = stringResource(
+                            R.string.event_title_in_list,
+                            LocalTime.now().withNano(0).toString(),
+                            stringResource(EventType.SolarEnergeticParticle.displayStringResId)
+                        ),
                         detailsSummary = null,
                     ),
                     DonkiEventsScreenViewModel.EventPresentation(
                         id = EventId("2"),
-                        title = stringResource(R.string.event_title_in_list, LocalTime.now().withNano(0).toString(), stringResource(EventType.CoronalMassEjection.displayStringResId)),
+                        title = stringResource(
+                            R.string.event_title_in_list,
+                            LocalTime.now().withNano(0).toString(),
+                            stringResource(EventType.CoronalMassEjection.displayStringResId)
+                        ),
                         detailsSummary = stringResource(R.string.earch_impact_predicted_glancing),
                     )
                 ),
@@ -260,6 +296,7 @@ fun DonkiEventsScreenPreview() {
             filtersUiState = filters,
             updateFilters = {},
             eventsTimeZone = remember { mutableStateOf(ZoneId.systemDefault()) },
+            numberOfUnreadNotifications = remember { mutableStateOf(69) },
             navHostEntries = { emptyList() },
             navigateToDetailsScreen = {},
             navigateToNotificationsScreen = {},
