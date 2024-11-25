@@ -18,6 +18,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import org.equeim.spacer.donki.CoroutineDispatchers
 import org.equeim.spacer.donki.data.common.DateRange
@@ -122,6 +126,13 @@ internal class NotificationsDataSourceCache(
             }
             throw e
         }
+    }
+
+    fun getNumberOfUnreadNotifications(): Flow<Int> = flow {
+        emitAll(db.await().cachedNotifications().getNumberOfUnreadNotifications())
+    }.catch {
+        Log.e(TAG, "getNumberOfUnreadNotifications: failed to get number of unread notifications", it)
+        emit(0)
     }
 
     suspend fun getCachedNotificationByIdAndMarkAsRead(id: NotificationId): CachedNotification? {

@@ -12,6 +12,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
 import org.equeim.spacer.donki.data.notifications.NotificationId
 import org.equeim.spacer.donki.data.notifications.NotificationType
 import java.time.Instant
@@ -85,4 +86,11 @@ internal interface CachedNotificationsDao {
         """
     )
     suspend fun markNotificationAsRead(id: NotificationId)
+
+    @Query(
+        """
+            SELECT count(*) FROM cached_notifications WHERE read = 0
+        """
+    )
+    fun getNumberOfUnreadNotifications(): Flow<Int>
 }

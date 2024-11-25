@@ -38,6 +38,7 @@ import org.equeim.spacer.donki.data.events.network.json.GeomagneticStormSummary
 import org.equeim.spacer.donki.data.events.network.json.InterplanetaryShockSummary
 import org.equeim.spacer.donki.data.events.network.json.SolarFlareSummary
 import org.equeim.spacer.getDonkiEventsRepositoryInstance
+import org.equeim.spacer.getDonkiNotificationsRepositoryInstance
 import org.equeim.spacer.ui.screens.donki.DateSeparator
 import org.equeim.spacer.ui.screens.donki.FiltersUiState
 import org.equeim.spacer.ui.screens.donki.ListItem
@@ -92,6 +93,10 @@ class DonkiEventsScreenViewModel(
     val pagingData: Flow<PagingData<ListItem>>
 
     val eventsTimeZone: StateFlow<ZoneId?>
+
+    val numberOfUnreadNotifications: StateFlow<Int> = getDonkiNotificationsRepositoryInstance(application)
+        .getNumberOfUnreadNotifications()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
     init {
         val defaultLocaleFlow =
