@@ -53,31 +53,20 @@ internal data class GeomagneticStormExtrasSummaryCached(
 ) : GeomagneticStormSummary
 
 @Dao
-internal abstract class GeomagneticStormDao {
+internal interface GeomagneticStormDao {
     @Query(
         """
             SELECT events.id, events.time, kp_index FROM events
             JOIN geomagnetic_storm_extras ON events.id = geomagnetic_storm_extras.id
-            WHERE events.type = :type AND events.time >= :startTime AND events.time < :endTime
+            WHERE events.type = "GST" AND events.time >= :startTime AND events.time < :endTime
             ORDER BY time DESC
         """
     )
-    protected abstract suspend fun _getEventSummaries(
-        type: EventType,
+    suspend fun getEventSummaries(
         startTime: Instant,
         endTime: Instant
     ): List<GeomagneticStormExtrasSummaryCached>
 
-    internal suspend fun getEventSummaries(
-        startTime: Instant,
-        endTime: Instant
-    ): List<GeomagneticStormSummary> =
-        _getEventSummaries(
-            EventType.GeomagneticStorm,
-            startTime,
-            endTime
-        )
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun updateExtras(extras: GeomagneticStormExtras)
+    suspend fun updateExtras(extras: GeomagneticStormExtras)
 }

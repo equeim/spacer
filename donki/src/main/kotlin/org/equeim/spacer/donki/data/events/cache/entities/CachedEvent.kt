@@ -54,9 +54,9 @@ internal data class CachedEventSummary(
 ) : EventSummary
 
 @Dao
-internal abstract class CachedEventsDao {
+internal interface CachedEventsDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun updateEvents(events: Iterable<CachedEvent>)
+    suspend fun updateEvents(events: Iterable<CachedEvent>)
 
     @Query(
         """
@@ -65,7 +65,7 @@ internal abstract class CachedEventsDao {
             ORDER BY time DESC
         """
     )
-    abstract suspend fun getEventSummaries(
+    suspend fun getEventSummaries(
         type: EventType,
         startTime: Instant,
         endTime: Instant
@@ -77,5 +77,5 @@ internal abstract class CachedEventsDao {
             WHERE id = :id
         """
     )
-    abstract suspend fun getEventJsonById(id: EventId): String?
+    suspend fun getEventJsonById(id: EventId): String?
 }

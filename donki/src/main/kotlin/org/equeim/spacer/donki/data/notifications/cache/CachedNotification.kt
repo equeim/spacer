@@ -54,9 +54,9 @@ data class CachedNotificationSummary(
 )
 
 @Dao
-internal abstract class CachedNotificationsDao {
+internal interface CachedNotificationsDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    abstract suspend fun storeNotifications(notifications: List<CachedNotification>)
+    suspend fun storeNotifications(notifications: List<CachedNotification>)
 
     @Query(
         """
@@ -65,7 +65,7 @@ internal abstract class CachedNotificationsDao {
             ORDER BY time DESC
         """
     )
-    abstract suspend fun getNotificationSummaries(
+    suspend fun getNotificationSummaries(
         startTime: Instant,
         endTime: Instant,
         types: List<NotificationType>
@@ -77,12 +77,12 @@ internal abstract class CachedNotificationsDao {
             WHERE id = :id
         """
     )
-    abstract suspend fun getNotificationById(id: NotificationId): CachedNotification?
+    suspend fun getNotificationById(id: NotificationId): CachedNotification?
 
     @Query(
         """
             UPDATE cached_notifications SET read = 1 WHERE id = :id
         """
     )
-    abstract suspend fun markNotificationAsRead(id: NotificationId)
+    suspend fun markNotificationAsRead(id: NotificationId)
 }
