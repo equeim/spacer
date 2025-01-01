@@ -19,6 +19,9 @@ import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.saveable.SaveableStateRegistry
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import kotlinx.coroutines.CoroutineScope
@@ -30,17 +33,20 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.equeim.spacer.R
+import org.equeim.spacer.donki.data.common.NeedToRefreshState
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -48,22 +54,24 @@ fun rememberBaseEventsListStateHolder(
     items: LazyPagingItems<ListItem>,
     listState: LazyListState,
     filters: State<FiltersUiState<*>>,
+    getNeedToRefreshState: () -> Flow<NeedToRefreshState>,
     @StringRes allEventTypesAreDisabledErrorString: Int,
     @StringRes noEventsInDateRangeErrorString: Int,
-    isLastWeekNeedsRefreshing: suspend () -> Boolean,
 ): BaseEventsListStateHolder {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val registry = checkNotNull(LocalSaveableStateRegistry.current)
-    return remember(items, listState, filters, context, scope, registry) {
+    return remember(items, listState, filters, context, lifecycleOwner, scope, registry) {
         BaseEventsListStateHolder(
             items,
             listState,
             filters,
+            getNeedToRefreshState,
             allEventTypesAreDisabledErrorString,
             noEventsInDateRangeErrorString,
-            isLastWeekNeedsRefreshing,
             context,
+            lifecycleOwner,
             scope,
             registry
         )
@@ -73,14 +81,15 @@ fun rememberBaseEventsListStateHolder(
 class BaseEventsListStateHolder(
     val items: LazyPagingItems<ListItem>,
     val listState: LazyListState,
-    private val filters: State<FiltersUiState<*>>,
-    @StringRes private val allEventTypesAreDisabledErrorString: Int,
-    @StringRes private val noEventsInDateRangeErrorString: Int,
-    private val isLastWeekNeedsRefreshing: suspend () -> Boolean,
+    filters: State<FiltersUiState<*>>,
+    getNeedToRefreshState: () -> Flow<NeedToRefreshState>,
+    @StringRes allEventTypesAreDisabledErrorString: Int,
+    @StringRes noEventsInDateRangeErrorString: Int,
     context: Context,
-    private val coroutineScope: CoroutineScope,
+    lifecycleOwner: LifecycleOwner,
+    coroutineScope: CoroutineScope,
     saveableStateRegistry: SaveableStateRegistry
-): RememberObserver {
+) : RememberObserver {
     private val loading: StateFlow<Boolean> = snapshotFlow {
         with(items.loadState) {
             isAnyLoading(source.refresh, mediator?.refresh) ||
@@ -96,9 +105,17 @@ class BaseEventsListStateHolder(
     private var refreshingManually: Boolean = (saveableStateRegistry.consumeRestored(::refreshingManually.name) as Boolean?) ?: false
     private val registryEntry = saveableStateRegistry.registerProvider(::refreshingManually.name) { refreshingManually }
 
-    val enableRefreshIndicator: Boolean by derivedStateOf {
-        filters.value.types.isNotEmpty()
-    }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val needToRefreshState: StateFlow<NeedToRefreshState> =
+        lifecycleOwner.lifecycle.currentStateFlow.map { it == Lifecycle.State.RESUMED }
+            .distinctUntilChanged()
+            .flatMapLatest { resumed ->
+                if (resumed) getNeedToRefreshState() else flowOf(NeedToRefreshState.DontNeedToRefresh)
+            }.stateIn(coroutineScope, SharingStarted.Eagerly, NeedToRefreshState.DontNeedToRefresh)
+
+    val enableRefreshIndicator: StateFlow<Boolean> = needToRefreshState.map {
+        it != NeedToRefreshState.DontNeedToRefresh
+    }.stateIn(coroutineScope, SharingStarted.Eagerly, false)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val showRefreshIndicator: StateFlow<Boolean> = loading.mapLatest { loading ->
@@ -115,8 +132,7 @@ class BaseEventsListStateHolder(
 
     val fullscreenError: String? by derivedStateOf {
         if (items.itemCount == 0) {
-            val filters = filters.value
-            if (filters.types.isEmpty()) {
+            if (filters.value.types.isEmpty()) {
                 context.getString(allEventTypesAreDisabledErrorString)
             } else {
                 val loadError = with(items.loadState) {
@@ -129,7 +145,8 @@ class BaseEventsListStateHolder(
                 }?.error?.donkiErrorToString(context)
                 when {
                     loadError != null -> loadError
-                    filters.dateRange != null -> context.getString(noEventsInDateRangeErrorString)
+                    filters.value.dateRange != null -> context.getString(noEventsInDateRangeErrorString)
+
                     else -> null
                 }
             }
@@ -154,6 +171,11 @@ class BaseEventsListStateHolder(
         snapshotFlow { filters }.drop(1).onEach {
             listState.scrollToItem(0)
         }.launchIn(coroutineScope)
+
+        needToRefreshState
+            .filter { it == NeedToRefreshState.HaveWeeksThatNeedRefreshNow }
+            .onEach { refreshIfNotAlreadyLoading() }
+            .launchIn(coroutineScope)
     }
 
     override fun onRemembered() = Unit
@@ -174,15 +196,6 @@ class BaseEventsListStateHolder(
             refreshingManually = true
         } else {
             Log.d(TAG, "refreshIfNotAlreadyLoading: already loading")
-        }
-    }
-
-    fun onActivityResumed() {
-        Log.d(TAG, "onActivityResumed() called")
-        coroutineScope.launch {
-            if (isLastWeekNeedsRefreshing()) {
-                refreshIfNotAlreadyLoading()
-            }
         }
     }
 

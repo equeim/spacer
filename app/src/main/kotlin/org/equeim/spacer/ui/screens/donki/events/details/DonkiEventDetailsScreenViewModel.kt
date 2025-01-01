@@ -113,7 +113,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
         Log.d(TAG, "onActivityResumed() called")
         viewModelScope.launch {
             val event = (_contentState.value as? ContentState.EventData)?.event
-            if (event != null && loadingType.value == null && repository.isEventNeedsRefreshing(event)) {
+            if (event != null && loadingType.value == null && repository.isEventNeedsRefreshingNow(event)) {
                 Log.d(TAG, "onActivityResumed: refreshing")
                 loadRequests.send(LoadingType.Refresh)
             }
@@ -155,7 +155,7 @@ class DonkiEventDetailsScreenViewModel(private val eventId: EventId, application
                     loadingType.value = null
                 }
             }.onEach {
-                if (it.needsRefreshing) {
+                if (it.needsRefreshingNow) {
                     Log.d(TAG, "Event needs refreshing, schedule load request")
                     loadRequests.send(LoadingType.Refresh)
                 }

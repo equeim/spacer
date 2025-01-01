@@ -33,7 +33,6 @@ internal abstract class BasePagingSource<Item : Any>(
     protected abstract suspend fun getItemsForWeek(
         week: Week,
         dateRange: DateRange?,
-        refreshCacheIfNeeded: Boolean
     ): List<Item>
 
     /**
@@ -67,7 +66,6 @@ internal abstract class BasePagingSource<Item : Any>(
                 val events = getItemsForWeek(
                     week = week,
                     dateRange = dateRange?.coerceToWeek(week),
-                    refreshCacheIfNeeded = params !is LoadParams.Refresh
                 )
                 if (lastLoadReturnedEmptyPage && events.isEmpty()) {
                     Log.d(

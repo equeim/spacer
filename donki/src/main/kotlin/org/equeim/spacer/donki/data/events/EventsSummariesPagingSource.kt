@@ -30,12 +30,10 @@ internal class EventsSummariesPagingSource(
     override suspend fun getItemsForWeek(
         week: Week,
         dateRange: DateRange?,
-        refreshCacheIfNeeded: Boolean
     ): List<EventSummary> = repository.getEventSummariesForWeek(
         week = week,
         eventTypes = filters.types,
         dateRange = dateRange,
-        refreshCacheIfNeeded = refreshCacheIfNeeded
     )
 
     override suspend fun load(params: LoadParams<Week>): LoadResult<Week, EventSummary> =

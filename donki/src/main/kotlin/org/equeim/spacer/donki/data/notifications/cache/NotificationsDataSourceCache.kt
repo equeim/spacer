@@ -22,10 +22,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.equeim.spacer.donki.CoroutineDispatchers
 import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.common.Week
+import org.equeim.spacer.donki.data.common.intersect
 import org.equeim.spacer.donki.data.notifications.NotificationId
 import org.equeim.spacer.donki.data.notifications.NotificationType
 import java.io.Closeable
@@ -67,40 +69,58 @@ internal class NotificationsDataSourceCache(
         coroutineScope.cancel()
     }
 
-    suspend fun isWeekCachedAndNeedsRefresh(week: Week, refreshIfRecentlyLoaded: Boolean): Boolean {
-        val cacheLoadTime = db.await().cachedWeeks()
-            .getWeekLoadTime(week.getFirstDayInstant())
-        return cacheLoadTime != null && week.needsRefresh(cacheLoadTime, refreshIfRecentlyLoaded)
+    data class WeekThatNeedsRefresh(val week: Week, val cachedRecently: Boolean)
+
+    fun getWeeksThatNeedRefresh(dateRange: DateRange?): Flow<List<WeekThatNeedsRefresh>> {
+        Log.d(
+            TAG,
+            "getWeeksThatNeedRefresh() called with: dateRange = $dateRange"
+        )
+        return flow { emitAll(db.await().cachedWeeks().getWeeksThatNeedRefresh()) }.map { weeks ->
+            if (weeks.isEmpty()) {
+                Log.d(TAG, "getWeeksThatNeedRefresh: no weeks need refresh")
+                return@map emptyList()
+            }
+            Log.d(TAG, "getWeeksThatNeedRefresh: all weeks that need refresh:\n${weeks.joinToString("\n") { it.toLogString(clock) }}")
+            var filtered: Sequence<CachedNotificationsWeek> = weeks.asSequence()
+            if (dateRange != null) {
+                filtered = filtered.filter { dateRange.intersect(it.toDateRange()) }
+            }
+            filtered.map {
+                WeekThatNeedsRefresh(
+                    week = Week.fromInstant(it.timeAtStartOfFirstDay),
+                    cachedRecently = Duration.between(
+                        it.loadTime,
+                        Instant.now(clock)
+                    ) < RECENTLY_CACHED_INTERVAL
+                )
+            }.toList().also {
+                Log.d(TAG, "getWeeksThatNeedRefresh() returned:\n${it.joinToString("\n")}")
+            }
+        }.catch {
+            Log.e(TAG, "getWeeksThatNeedRefresh: db error with: dateRange = $dateRange", it)
+        }
     }
 
     suspend fun getNotificationSummariesForWeek(
         week: Week,
         types: List<NotificationType>,
         dateRange: DateRange?,
-        returnCacheThatNeedsRefreshing: Boolean,
     ): List<CachedNotificationSummary>? {
         Log.d(
             TAG,
-            "getNotificationSummariesForWeek() called with: week = $week, types = $types, dateRange = $dateRange, returnCacheThatNeedsRefreshing = $returnCacheThatNeedsRefreshing"
+            "getNotificationSummariesForWeek() called with: week = $week, types = $types, dateRange = $dateRange"
         )
-        val db = this.db.await()
         return try {
-            val weekCacheTime = db.cachedWeeks()
-                .getWeekLoadTime(week.getFirstDayInstant())
-            if (weekCacheTime == null) {
+            val db = this.db.await()
+            if (!db.cachedWeeks().isWeekCached(week.getFirstDayInstant())) {
                 Log.d(
                     TAG,
                     "getNotificationSummariesForWeek: no cache for week = $week, returning null"
                 )
                 return null
             }
-            if (!returnCacheThatNeedsRefreshing && week.needsRefresh(weekCacheTime, refreshIfRecentlyLoaded = false)) {
-                Log.d(
-                    TAG,
-                    "getNotificationSummariesForWeek: cache needs refreshing for week = $week, returning null"
-                )
-                return null
-            }
+
             val startTime: Instant
             val endTime: Instant
             if (dateRange != null) {
@@ -120,7 +140,7 @@ internal class NotificationsDataSourceCache(
             if (e !is CancellationException) {
                 Log.e(
                     TAG,
-                    "getNotificationSummariesForWeek: failed to get events summaries for week = $week, types = $types",
+                    "getNotificationSummariesForWeek: db error with: week = $week, types = $types",
                     e
                 )
             }
@@ -131,7 +151,11 @@ internal class NotificationsDataSourceCache(
     fun getNumberOfUnreadNotifications(): Flow<Int> = flow {
         emitAll(db.await().cachedNotifications().getNumberOfUnreadNotifications())
     }.catch {
-        Log.e(TAG, "getNumberOfUnreadNotifications: failed to get number of unread notifications", it)
+        Log.e(
+            TAG,
+            "getNumberOfUnreadNotifications: failed to get number of unread notifications",
+            it
+        )
         emit(0)
     }
 
@@ -171,17 +195,6 @@ internal class NotificationsDataSourceCache(
         }
     }
 
-    private fun Week.needsRefresh(
-        cacheLoadTime: Instant,
-        refreshIfRecentlyLoaded: Boolean,
-    ): Boolean {
-        return cacheLoadTime < getInstantAfterLastDay() &&
-                (refreshIfRecentlyLoaded || Duration.between(
-                    cacheLoadTime,
-                    Instant.now(clock)
-                ) > WINDOW_BETWEEN_LOAD_TIME_AND_CURRENT_TIME_WHEN_REFRESH_IS_NOT_NEEDED)
-    }
-
     suspend fun cacheWeek(
         week: Week,
         notifications: List<CachedNotification>,
@@ -210,7 +223,6 @@ internal class NotificationsDataSourceCache(
 
     private companion object {
         const val TAG = "DonkiNotificationsDataSourceCache"
-        val WINDOW_BETWEEN_LOAD_TIME_AND_CURRENT_TIME_WHEN_REFRESH_IS_NOT_NEEDED: Duration =
-            Duration.ofHours(1)
+        val RECENTLY_CACHED_INTERVAL: Duration = Duration.ofHours(1)
     }
 }

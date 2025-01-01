@@ -46,3 +46,6 @@ data class DateRange(
         )
     }
 }
+
+internal fun DateRange.intersect(other: DateRange): Boolean =
+    firstDayInstant < other.instantAfterLastDay && other.firstDayInstant < instantAfterLastDay

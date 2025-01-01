@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -42,6 +43,7 @@ import dev.olshevski.navigation.reimagined.rememberNavController
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
+import org.equeim.spacer.donki.data.common.NeedToRefreshState
 import org.equeim.spacer.donki.data.notifications.NotificationId
 import org.equeim.spacer.donki.data.notifications.NotificationType
 import org.equeim.spacer.ui.LocalDefaultLocale
@@ -84,20 +86,20 @@ private fun DonkiNotificationsScreen(
 ) {
     val model = viewModel<DonkiNotificationsScreenViewModel>()
     val filters = model.filtersUiState.collectAsStateWithLifecycle()
+    model.filtersUiState.collectAsState()
     val holder = rememberBaseEventsListStateHolder(
         items = model.pagingData.collectAsLazyPagingItems(),
         listState = rememberLazyListState(),
         filters = filters,
+        getNeedToRefreshState = model::getNeedToRefreshState,
         allEventTypesAreDisabledErrorString = R.string.all_notification_types_are_disabled,
         noEventsInDateRangeErrorString = R.string.no_notifications_in_date_range,
-        isLastWeekNeedsRefreshing = model::isLastWeekNeedsRefreshing,
     )
-    val eventsTimeZone = model.notificationsTimeZone.collectAsStateWithLifecycle()
     DonkiNotificationsScreen(
         holder = holder,
         filtersUiState = filters,
         updateFilters = model::updateFilters,
-        eventsTimeZone = eventsTimeZone,
+        eventsTimeZone = model.notificationsTimeZone.collectAsStateWithLifecycle(),
         navigateToDetailsScreen = { navController.navigate(NotificationDetailsScreen(it)) },
         popBackStack = navController::pop,
         navHostEntries = { navHostEntries }
@@ -258,9 +260,9 @@ fun DonkiNotificationsScreenPreview() {
                 items = items,
                 listState = rememberLazyListState(),
                 filters = filters,
+                getNeedToRefreshState = { flowOf(NeedToRefreshState.DontNeedToRefresh) },
                 allEventTypesAreDisabledErrorString = R.string.all_notification_types_are_disabled,
                 noEventsInDateRangeErrorString = R.string.no_notifications_in_date_range,
-                isLastWeekNeedsRefreshing = { false }
             ),
             filtersUiState = filters,
             updateFilters = {},

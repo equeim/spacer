@@ -17,17 +17,21 @@ import androidx.paging.insertSeparators
 import androidx.paging.map
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.job
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
+import org.equeim.spacer.donki.data.common.NeedToRefreshState
 import org.equeim.spacer.donki.data.events.DonkiEventsRepository
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
@@ -216,8 +220,12 @@ class DonkiEventsScreenViewModel(
         }
     }
 
-    suspend fun isLastWeekNeedsRefreshing(): Boolean {
-        return repository.isLastWeekNeedsRefreshing(eventFilters.value)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun getNeedToRefreshState(): Flow<NeedToRefreshState> {
+        return eventFilters.transformLatest {
+            emit(NeedToRefreshState.DontNeedToRefresh)
+            emitAll(repository.getNeedToRefreshState(it))
+        }
     }
 
     data class EventPresentation(

@@ -187,13 +187,21 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
 
     @Test
     fun `Loading first page when current week was cached before its last day but less than an hour ago`() = runTest {
-        prepareInitialState(TEST_WEEK, TEST_INSTANT_INSIDE_TEST_WEEK - Duration.ofMinutes(59))
+        prepareInitialState(
+            week = TEST_WEEK,
+            loadTime = TEST_INSTANT_INSIDE_TEST_WEEK - Duration.ofMinutes(59),
+            emptyResponse = false
+        )
         loadingFirstPageFromCache()
     }
 
     @Test
     fun `Loading first page when current week was cached more than an hour ago`() = runTest {
-        prepareInitialState(TEST_WEEK, TEST_INSTANT_INSIDE_TEST_WEEK - Duration.ofMinutes(61))
+        prepareInitialState(
+            week = TEST_WEEK,
+            loadTime = TEST_INSTANT_INSIDE_TEST_WEEK - Duration.ofMinutes(61),
+            emptyResponse = false
+        )
         loadingFirstPageFromCache()
     }
 
@@ -219,8 +227,23 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
         loadingNextPageAndUpdatingCache(emptyResponse = false)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private suspend fun TestScope.loadingNextPageAndUpdatingCache(emptyResponse: Boolean) {
+        // From network
+        if (emptyResponse) {
+            server.respondWithEmptyBody()
+        } else {
+            server.respondWithSampleEvents()
+        }
+        checkLoadingNextPage(shouldBeEmpty = emptyResponse)
+        advanceUntilIdle()
+        // From cache
+        server.respondWithError()
+        checkLoadingNextPage(shouldBeEmpty = emptyResponse)
+    }
+
     @Test
-    fun `Loading next page when its week was cached more than an hour ago - cached events are empty and new ones are too`() =
+    fun `Loading next page when its week was cached more than an hour ago - cached events are empty`() =
         runTest {
             clock.instant = TEST_WEEK.getInstantAfterLastDay() + Duration.ofDays(1)
             prepareInitialState(
@@ -228,23 +251,11 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
                 clock.instant - Duration.ofMinutes(61),
                 emptyResponse = true
             )
-            loadingNextPageAndUpdatingCache(emptyResponse = true)
+            checkLoadingNextPage(shouldBeEmpty = true)
         }
 
     @Test
-    fun `Loading next page when its week was cached more than an hour ago - cached events are empty and new ones are not`() =
-        runTest {
-            clock.instant = TEST_WEEK.getInstantAfterLastDay() + Duration.ofDays(1)
-            prepareInitialState(
-                TEST_WEEK,
-                clock.instant - Duration.ofMinutes(61),
-                emptyResponse = true
-            )
-            loadingNextPageAndUpdatingCache(emptyResponse = false)
-        }
-
-    @Test
-    fun `Loading next page when its week was cached more than an hour ago - cached events are not empty and new ones are not changed`() =
+    fun `Loading next page when its week was cached more than an hour ago - cached events are not empty`() =
         runTest {
             clock.instant = TEST_WEEK.getInstantAfterLastDay() + Duration.ofDays(1)
             prepareInitialState(
@@ -252,43 +263,18 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
                 clock.instant - Duration.ofMinutes(61),
                 emptyResponse = false
             )
-            loadingNextPageAndUpdatingCache(emptyResponse = false)
+            checkLoadingNextPage(shouldBeEmpty = false)
         }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private suspend fun TestScope.loadingNextPageAndUpdatingCache(emptyResponse: Boolean) {
-        val loadPage = suspend {
-            val params = PagingSource.LoadParams.Append(TEST_WEEK, 20, false)
-            val result = pagingSource.load(params).assertIsPage()
-            assertNotNull(result.prevKey).validate()
-            assertEquals(TEST_WEEK_NEAREST_FUTURE, result.prevKey)
-            assertNotNull(result.nextKey).validate()
-            assertEquals(TEST_WEEK_NEAREST_PAST, result.nextKey)
-            if (emptyResponse) {
-                assertTrue(result.data.isEmpty())
-            } else {
-                result.data.validateSampleEvents()
-            }
-        }
-        // From network
-        if (emptyResponse) {
-            server.respondWithEmptyBody()
-        } else {
-            server.respondWithSampleEvents()
-        }
-        loadPage()
-        advanceUntilIdle()
-        // From cache
-        server.respondWithError()
-        loadPage()
-    }
 
     @Test
     fun `Loading next page when it was cached less than a week after its last day, and less than an hour ago`() = runTest {
         clock.instant = TEST_WEEK.getInstantAfterLastDay() + Duration.ofDays(1)
-        prepareInitialState(TEST_WEEK, clock.instant - Duration.ofMinutes(59))
-
-        loadNextPageFromCache()
+        prepareInitialState(
+            week = TEST_WEEK,
+            loadTime = clock.instant - Duration.ofMinutes(59),
+            emptyResponse = false
+        )
+        checkLoadingNextPage(shouldBeEmpty = false)
     }
 
     @Test
@@ -300,18 +286,21 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
                 clock.instant,
                 emptyResponse = false
             )
-
-            loadNextPageFromCache()
+            checkLoadingNextPage(shouldBeEmpty = false)
         }
 
-    private suspend fun loadNextPageFromCache() {
+    private suspend fun checkLoadingNextPage(shouldBeEmpty: Boolean) {
         val params = PagingSource.LoadParams.Append(TEST_WEEK, 20, false)
         val result = pagingSource.load(params).assertIsPage()
         assertNotNull(result.prevKey).validate()
         assertEquals(TEST_WEEK_NEAREST_FUTURE, result.prevKey)
         assertNotNull(result.nextKey).validate()
         assertEquals(TEST_WEEK_NEAREST_PAST, result.nextKey)
-        result.data.validateSampleEvents()
+        if (shouldBeEmpty) {
+            assertTrue(result.data.isEmpty())
+        } else {
+            result.data.validateSampleEvents()
+        }
     }
 
     @Test
@@ -489,7 +478,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     private suspend fun prepareInitialState(
         week: Week,
         loadTime: Instant,
-        emptyResponse: Boolean = false
+        emptyResponse: Boolean
     ) {
         val saved = clock.instant
         clock.instant = loadTime
