@@ -7,17 +7,17 @@ package org.equeim.spacer.donki.data.events
 import android.util.Log
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.equeim.spacer.donki.data.common.BaseRemoteMediator
 import org.equeim.spacer.donki.data.common.Week
+import org.equeim.spacer.donki.data.events.cache.EventsDataSourceCache
 import org.equeim.spacer.donki.data.events.network.json.EventSummary
-import java.time.Clock
 
 internal class EventsSummariesRemoteMediator(
     private val repository: DonkiEventsRepository,
+    private val cacheDataSource: EventsDataSourceCache,
     private val filters: StateFlow<DonkiEventsRepository.Filters>,
-    private val isWeekCachedProvider: IsWeekCachedProvider,
-    private val clock: Clock,
 ) : BaseRemoteMediator<EventSummary, List<Pair<Week, EventType>>>() {
 
     override val TAG: String get() = "EventsSummariesRemoteMediator"
@@ -33,30 +33,11 @@ internal class EventsSummariesRemoteMediator(
     override suspend fun getRefreshData(initialRefresh: Boolean): List<Pair<Week, EventType>>? {
         Log.d(TAG, "getRefreshData() called with: initialRefresh = $initialRefresh")
         val filters = this.filters.value
-        val initialLoadWeek = filters.dateRange?.lastWeek ?: Week.getCurrentWeek(clock)
-        Log.d(TAG, "getRefreshData: initial load week is $initialLoadWeek")
-        /**
-         * Can't use [Sequence.filter] because it isn't inline and we can't suspend
-         */
-        val weeks = ArrayList<Pair<Week, EventType>>(filters.types.size)
-        for (type in filters.types) {
-            val needsRefresh = isWeekCachedProvider.isWeekCachedAndNeedsRefresh(initialLoadWeek, type, refreshIfRecentlyLoaded = !initialRefresh)
-            if (needsRefresh) {
-                Log.d(
-                    TAG,
-                    "getRefreshWeeks: week $initialLoadWeek with event type $type is cached but needs to be refreshed"
-                )
-                weeks.add(initialLoadWeek to type)
-            }
+        val weeks = cacheDataSource.getWeeksThatNeedRefresh(filters.types, filters.dateRange).first()
+        var filtered = weeks.asSequence()
+        if (initialRefresh) {
+            filtered = filtered.filter { !it.cachedRecently }
         }
-        if (weeks.isEmpty()) {
-            Log.d(TAG, "getRefreshData: don't need to refresh cache for initial load weeks")
-            return null
-        }
-        return weeks
-    }
-
-    fun interface IsWeekCachedProvider {
-        suspend fun isWeekCachedAndNeedsRefresh(week: Week, eventType: EventType, refreshIfRecentlyLoaded: Boolean): Boolean
+        return filtered.map { it.week to it.eventType }.toList().takeIf { it.isNotEmpty() }
     }
 }

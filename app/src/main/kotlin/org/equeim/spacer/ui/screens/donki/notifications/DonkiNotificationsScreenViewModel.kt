@@ -17,17 +17,21 @@ import androidx.paging.insertSeparators
 import androidx.paging.map
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.job
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
+import org.equeim.spacer.donki.data.common.NeedToRefreshState
 import org.equeim.spacer.donki.data.notifications.DonkiNotificationsRepository
 import org.equeim.spacer.donki.data.notifications.NotificationId
 import org.equeim.spacer.donki.data.notifications.NotificationType
@@ -74,11 +78,13 @@ class DonkiNotificationsScreenViewModel(
     }
 
     val filtersUiState: StateFlow<FiltersUiState<NotificationType>> =
-        savedStateHandle.getStateFlow(FILTERS_KEY, FiltersUiState(
-            types = NotificationType.entries,
-            dateRange = null,
-            dateRangeEnabled = false
-        ))
+        savedStateHandle.getStateFlow(
+            FILTERS_KEY, FiltersUiState(
+                types = NotificationType.entries,
+                dateRange = null,
+                dateRangeEnabled = false
+            )
+        )
 
     fun updateFilters(filtersUiState: FiltersUiState<NotificationType>) {
         Log.d(TAG, "updateFilters() called with: filtersUiState = $filtersUiState")
@@ -87,10 +93,12 @@ class DonkiNotificationsScreenViewModel(
 
     private val notificationFilters: StateFlow<DonkiNotificationsRepository.Filters> =
         filtersUiState.map { it.toEventFilters() }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, DonkiNotificationsRepository.Filters(
-                types = NotificationType.entries,
-                dateRange = null
-            ))
+            .stateIn(
+                viewModelScope, SharingStarted.Eagerly, DonkiNotificationsRepository.Filters(
+                    types = NotificationType.entries,
+                    dateRange = null
+                )
+            )
 
     val pagingData: Flow<PagingData<ListItem>>
 
@@ -185,8 +193,12 @@ class DonkiNotificationsScreenViewModel(
         return notificationTypesStringsCache.computeIfAbsent(type) { getString(type.displayStringResId) }
     }
 
-    suspend fun isLastWeekNeedsRefreshing(): Boolean {
-        return repository.isLastWeekNeedsRefreshing(notificationFilters.value)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun getNeedToRefreshState(): Flow<NeedToRefreshState> {
+        return notificationFilters.transformLatest {
+            emit(NeedToRefreshState.DontNeedToRefresh)
+            emitAll(repository.getNeedToRefreshState(it))
+        }
     }
 
     data class NotificationPresentation(

@@ -17,8 +17,11 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -29,6 +32,7 @@ import org.equeim.spacer.donki.CoroutineDispatchers
 import org.equeim.spacer.donki.data.common.BasePagingSource
 import org.equeim.spacer.donki.data.common.DONKI_BASE_URL
 import org.equeim.spacer.donki.data.common.DateRange
+import org.equeim.spacer.donki.data.common.NeedToRefreshState
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.events.cache.EventsCacheDatabase
 import org.equeim.spacer.donki.data.events.cache.EventsDataSourceCache
@@ -69,15 +73,30 @@ class DonkiEventsRepository internal constructor(
         cacheDataSource.close()
     }
 
+    fun getNeedToRefreshState(filters: Filters): Flow<NeedToRefreshState> {
+        Log.d(TAG, "getNeedToRefreshState() called with: filters = $filters")
+        return cacheDataSource.getWeeksThatNeedRefresh(filters.types, filters.dateRange).map { weeks ->
+            when {
+                weeks.isEmpty() -> NeedToRefreshState.DontNeedToRefresh
+                weeks.all { it.cachedRecently } -> NeedToRefreshState.HaveWeeksThatNeedRefreshButAllCachedRecently
+                else -> NeedToRefreshState.HaveWeeksThatNeedRefreshNow
+            }
+        }.catch {
+            Log.e(TAG, "haveWeeksThatNeedRefresh: EventsDataSourceCache error", it)
+            emit(NeedToRefreshState.DontNeedToRefresh)
+        }.onEach {
+            Log.d(TAG, "getNeedToRefreshState: emitting $it")
+        }
+    }
+
     internal suspend fun getEventSummariesForWeek(
         week: Week,
         eventTypes: List<EventType>,
         dateRange: DateRange?,
-        refreshCacheIfNeeded: Boolean,
     ): List<EventSummary> {
         Log.d(
             TAG,
-            "getEventSummariesForWeek() called with: week = $week, eventTypes = $eventTypes, timeRange = $dateRange, refreshCacheIfNeeded = $refreshCacheIfNeeded"
+            "getEventSummariesForWeek() called with: week = $week, eventTypes = $eventTypes, timeRange = $dateRange"
         )
         val allEvents = ArrayList<EventSummary>()
         val mutex = Mutex()
@@ -89,7 +108,6 @@ class DonkiEventsRepository internal constructor(
                             week,
                             eventType,
                             dateRange,
-                            returnCacheThatNeedsRefreshing = !refreshCacheIfNeeded
                         )
                     if (cachedEvents != null) {
                         mutex.withLock { allEvents.addAll(cachedEvents) }
@@ -144,7 +162,7 @@ class DonkiEventsRepository internal constructor(
     }
 
     internal fun createRemoteMediator(filters: StateFlow<Filters>): EventsSummariesRemoteMediator =
-        EventsSummariesRemoteMediator(this, filters, cacheDataSource::isWeekCachedAndNeedsRefresh, clock)
+        EventsSummariesRemoteMediator(this, cacheDataSource, filters)
 
     internal fun createPagingSource(filters: Filters): EventsSummariesPagingSource =
         EventsSummariesPagingSource(
@@ -153,23 +171,6 @@ class DonkiEventsRepository internal constructor(
             coroutineDispatchers = coroutineDispatchers,
             clock = clock
         )
-
-    suspend fun isLastWeekNeedsRefreshing(filters: Filters): Boolean {
-        Log.d(TAG, "isLastWeekNeedsRefreshing() called with: filters = $filters")
-        val week = filters.dateRange?.lastWeek ?: Week.getCurrentWeek(clock)
-        return try {
-            filters.types.any {
-                cacheDataSource.isWeekNotCachedOrNeedsRefresh(week, it)
-            }.also {
-                Log.d(TAG, "isLastWeekNeedsRefreshing() returned: $it")
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e(TAG, "isLastWeekNeedsRefreshing: EventsDataSourceCache error", e)
-            false
-        }
-    }
 
     suspend fun getEventById(
         id: EventId,
@@ -187,7 +188,7 @@ class DonkiEventsRepository internal constructor(
                     ?: throw RuntimeException(
                         "Did not find event $id in server response"
                     )
-            EventById(event.first, needsRefreshing = false)
+            EventById(event.first, needsRefreshingNow = false)
         } catch (e: Exception) {
             if (e !is CancellationException) {
                 Log.e(TAG, "getEventDetailsById: failed to get event $id", e)
@@ -196,24 +197,24 @@ class DonkiEventsRepository internal constructor(
         }
     }
 
-    suspend fun isEventNeedsRefreshing(event: Event): Boolean {
-        Log.d(TAG, "isEventNeedsRefreshing() called with: event = $event")
+    suspend fun isEventNeedsRefreshingNow(event: Event): Boolean {
+        Log.d(TAG, "isEventNeedsRefreshingNow() called with: event = $event")
         return try {
-            cacheDataSource.isWeekNotCachedOrNeedsRefresh(Week.fromInstant(event.time), event.type)
+            cacheDataSource.isWeekNotCachedOrNeedsRefreshingNow(Week.fromInstant(event.time), event.type)
                 .also {
-                    Log.d(TAG, "isEventNeedsRefreshing() returned: $it")
+                    Log.d(TAG, "isEventNeedsRefreshingNow() returned: $it")
                 }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Log.e(TAG, "isEventNeedsRefreshing: DonkiDataSourceCache error", e)
+            Log.e(TAG, "isEventNeedsRefreshingNow: DonkiDataSourceCache error", e)
             false
         }
     }
 
     data class EventById(
         val event: Event,
-        val needsRefreshing: Boolean,
+        val needsRefreshingNow: Boolean,
     )
 
     @Immutable

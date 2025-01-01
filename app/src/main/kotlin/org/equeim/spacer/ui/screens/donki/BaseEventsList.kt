@@ -44,8 +44,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
@@ -83,8 +81,6 @@ fun <EventType : Enum<EventType>> BaseEventsList(
     listContentTypeProvider: (ListItem) -> Any?,
     listItemSlot: @Composable (ListItem) -> Unit,
 ) {
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME, onEvent = holder::onActivityResumed)
-
     val listIsEmpty by remember(holder) { derivedStateOf { holder.items.itemCount == 0 } }
     val initialLazyListState = rememberLazyListState()
     val lazyListState = if (listIsEmpty) initialLazyListState else holder.listState
@@ -99,6 +95,7 @@ fun <EventType : Enum<EventType>> BaseEventsList(
     )
 
     val pullToRefreshState = rememberPullToRefreshState()
+    val enableRefreshIndicator: Boolean by holder.enableRefreshIndicator.collectAsStateWithLifecycle()
     val showPullToRefreshIndicator: Boolean by holder.showRefreshIndicator.collectAsStateWithLifecycle()
     Box(Modifier.consumeWindowInsets(contentPadding)) {
         val fullscreenError = holder.fullscreenError
@@ -112,7 +109,7 @@ fun <EventType : Enum<EventType>> BaseEventsList(
                 .pullToRefresh(
                     isRefreshing = showPullToRefreshIndicator,
                     state = pullToRefreshState,
-                    enabled = holder.enableRefreshIndicator,
+                    enabled = enableRefreshIndicator,
                     onRefresh = holder::refreshIfNotAlreadyLoading
                 )
             val mainContentPadding = contentPadding + Dimens.ScreenContentPadding()

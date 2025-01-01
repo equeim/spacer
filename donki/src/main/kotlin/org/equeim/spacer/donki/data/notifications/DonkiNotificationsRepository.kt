@@ -17,8 +17,12 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import okhttp3.HttpUrl
@@ -27,6 +31,7 @@ import org.equeim.spacer.donki.CoroutineDispatchers
 import org.equeim.spacer.donki.data.common.BasePagingSource
 import org.equeim.spacer.donki.data.common.DONKI_BASE_URL
 import org.equeim.spacer.donki.data.common.DateRange
+import org.equeim.spacer.donki.data.common.NeedToRefreshState
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.notifications.cache.CachedNotification
 import org.equeim.spacer.donki.data.notifications.cache.CachedNotificationSummary
@@ -104,7 +109,7 @@ class DonkiNotificationsRepository internal constructor(
 
     @VisibleForTesting
     internal fun createRemoteMediator(filters: StateFlow<Filters>): NotificationsRemoteMediator =
-        NotificationsRemoteMediator(this, cacheDataSource, filters, clock)
+        NotificationsRemoteMediator(this, cacheDataSource, filters)
 
     @VisibleForTesting
     internal fun createPagingSource(
@@ -130,19 +135,25 @@ class DonkiNotificationsRepository internal constructor(
         }
     }
 
-    suspend fun isLastWeekNeedsRefreshing(filters: Filters): Boolean {
-        Log.d(TAG, "isLastWeekNeedsRefreshing() called with: filters = $filters")
-        val week = filters.dateRange?.lastWeek ?: Week.getCurrentWeek(clock)
-        return try {
-            cacheDataSource.isWeekCachedAndNeedsRefresh(week, refreshIfRecentlyLoaded = false)
-                .also {
-                    Log.d(TAG, "isLastWeekNeedsRefreshing() returned: $it")
+    fun getNeedToRefreshState(filters: Filters): Flow<NeedToRefreshState> {
+        Log.d(TAG, "getNeedToRefreshState() called with: filters = $filters")
+        return if (filters.types.isEmpty()) {
+            flowOf(NeedToRefreshState.DontNeedToRefresh)
+        } else {
+            cacheDataSource.getWeeksThatNeedRefresh(
+                filters.dateRange
+            ).map { weeks ->
+                when {
+                    weeks.isEmpty() -> NeedToRefreshState.DontNeedToRefresh
+                    weeks.all { it.cachedRecently } -> NeedToRefreshState.HaveWeeksThatNeedRefreshButAllCachedRecently
+                    else -> NeedToRefreshState.HaveWeeksThatNeedRefreshNow
                 }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e(TAG, "isLastWeekNeedsRefreshing: NotificationsDataSourceCache error", e)
-            false
+            }.catch {
+                Log.e(TAG, "haveWeeksThatNeedRefresh: NotificationsDataSourceCache error", it)
+                emit(NeedToRefreshState.DontNeedToRefresh)
+            }
+        }.onEach {
+            Log.d(TAG, "getNeedToRefreshState: emitting $it")
         }
     }
 
@@ -155,7 +166,6 @@ class DonkiNotificationsRepository internal constructor(
         week: Week,
         types: List<NotificationType>,
         dateRange: DateRange?,
-        refreshCacheIfNeeded: Boolean,
     ): List<CachedNotificationSummary> {
         Log.d(
             TAG,
@@ -165,8 +175,7 @@ class DonkiNotificationsRepository internal constructor(
         val cachedNotifications = cacheDataSource.getNotificationSummariesForWeek(
             week = week,
             types = types,
-            dateRange = dateRange,
-            returnCacheThatNeedsRefreshing = !refreshCacheIfNeeded
+            dateRange = dateRange
         )
         if (cachedNotifications != null) {
             return cachedNotifications
@@ -197,8 +206,7 @@ class DonkiNotificationsRepository internal constructor(
         val cachedNotifications = cacheDataSource.getNotificationSummariesForWeek(
             week = week,
             types = NotificationType.entries,
-            dateRange = null,
-            returnCacheThatNeedsRefreshing = true
+            dateRange = null
         ).orEmpty()
         val notificationsToCache = ArrayList<CachedNotification>(
             (notificationJsons.size - cachedNotifications.size).coerceAtLeast(0)

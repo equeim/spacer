@@ -43,6 +43,7 @@ import dev.olshevski.navigation.reimagined.rememberNavController
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
+import org.equeim.spacer.donki.data.common.NeedToRefreshState
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.ui.LocalDefaultLocale
@@ -79,8 +80,7 @@ data object DonkiEventsScreen : Destination {
         navController: NavController<Destination>,
         navHostEntries: List<NavHostEntry<Destination>>,
         parentNavHostEntries: List<NavHostEntry<Destination>>?
-    ) =
-        DonkiEventsScreen(navController, navHostEntries)
+    ) = DonkiEventsScreen(navController, navHostEntries)
 }
 
 @Composable
@@ -94,9 +94,9 @@ private fun DonkiEventsScreen(
         items = model.pagingData.collectAsLazyPagingItems(),
         listState = rememberLazyListState(),
         filters = filters,
+        getNeedToRefreshState = model::getNeedToRefreshState,
         allEventTypesAreDisabledErrorString = R.string.all_event_types_are_disabled,
         noEventsInDateRangeErrorString = R.string.no_events_in_date_range,
-        isLastWeekNeedsRefreshing = model::isLastWeekNeedsRefreshing,
     )
     val eventsTimeZone = model.eventsTimeZone.collectAsStateWithLifecycle()
     val numberOfUnreadNotifications =
@@ -289,9 +289,9 @@ fun DonkiEventsScreenPreview() {
                 items = items,
                 listState = rememberLazyListState(),
                 filters = filters,
+                getNeedToRefreshState = { flowOf(NeedToRefreshState.DontNeedToRefresh) },
                 allEventTypesAreDisabledErrorString = R.string.all_event_types_are_disabled,
                 noEventsInDateRangeErrorString = R.string.no_events_in_date_range,
-                isLastWeekNeedsRefreshing = { false }
             ),
             filtersUiState = filters,
             updateFilters = {},

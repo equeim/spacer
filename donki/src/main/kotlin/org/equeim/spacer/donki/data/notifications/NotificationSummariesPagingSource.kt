@@ -30,12 +30,10 @@ internal class NotificationSummariesPagingSource(
     override suspend fun getItemsForWeek(
         week: Week,
         dateRange: DateRange?,
-        refreshCacheIfNeeded: Boolean
     ): List<CachedNotificationSummary> = repository.getNotificationSummariesForWeek(
         week = week,
         types = filters.types,
-        dateRange = dateRange,
-        refreshCacheIfNeeded = refreshCacheIfNeeded
+        dateRange = dateRange
     )
 
     override suspend fun load(params: LoadParams<Week>): LoadResult<Week, CachedNotificationSummary> =
