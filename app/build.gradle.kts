@@ -40,7 +40,7 @@ android {
 }
 
 composeCompiler {
-    stabilityConfigurationFile.set(layout.projectDirectory.file("compose_compiler_config.conf"))
+    stabilityConfigurationFiles.add(layout.projectDirectory.file("compose_compiler_config.conf"))
     val composeReportsDir = layout.buildDirectory.dir("compose_compiler")
     if (project.findProperty("composeCompilerReports") == "true") {
         reportsDestination.set(composeReportsDir)
