@@ -195,6 +195,19 @@ internal class NotificationsDataSourceCache(
         }
     }
 
+    suspend fun markAllNotificationsAsRead() {
+        Log.d(TAG, "markAllNotificationsAsRead() called")
+        try {
+            db.await().cachedNotifications().markAllNotificationsAsRead()
+            Log.d(TAG, "markAllNotificationsAsRead: sending event")
+            _markedNotificationsAsRead.send(Unit)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "markAllNotificationsAsRead: failed to mark notifications as read", e)
+        }
+    }
+
     suspend fun cacheWeek(
         week: Week,
         notifications: List<CachedNotification>,

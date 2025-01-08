@@ -89,6 +89,13 @@ internal interface CachedNotificationsDao {
 
     @Query(
         """
+            UPDATE cached_notifications SET read = 1 WHERE read = 0
+        """
+    )
+    suspend fun markAllNotificationsAsRead()
+
+    @Query(
+        """
             SELECT count(*) FROM cached_notifications WHERE read = 0
         """
     )

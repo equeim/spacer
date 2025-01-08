@@ -127,4 +127,5 @@ SPDX-License-Identifier: MIT
     <string name="select_date_range">Select date range</string>
     <string name="date_range_string">%1$s - %2$s %3$s</string>
     <string name="date_range_picker_headline">Time zone: %s</string>
+    <string name="mark_all_as_read">Mark all notifications as read</string>
 </resources>

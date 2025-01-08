@@ -261,6 +261,11 @@ class DonkiNotificationsRepository internal constructor(
     fun getNumberOfUnreadNotifications(): Flow<Int> =
         cacheDataSource.getNumberOfUnreadNotifications()
 
+    suspend fun markAllNotificationsAsRead() {
+        Log.d(TAG, "markAllNotificationsAsRead() called")
+        cacheDataSource.markAllNotificationsAsRead()
+    }
+
     private companion object {
         const val TAG = "DonkiNotificationsRepository"
 
