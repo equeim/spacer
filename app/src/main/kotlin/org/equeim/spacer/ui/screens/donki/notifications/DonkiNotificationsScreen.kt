@@ -4,6 +4,7 @@
 
 package org.equeim.spacer.ui.screens.donki.notifications
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +24,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -50,6 +53,7 @@ import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.components.ElevatedCardWithPadding
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.components.ToolbarIcon
+import org.equeim.spacer.ui.components.ToolbarIconWithBadge
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.DialogDestinationNavHost
 import org.equeim.spacer.ui.screens.donki.BaseEventsList
@@ -62,7 +66,9 @@ import org.equeim.spacer.ui.screens.donki.notifications.details.NotificationDeta
 import org.equeim.spacer.ui.screens.donki.rememberBaseEventsListStateHolder
 import org.equeim.spacer.ui.screens.donki.shouldShowFiltersAsDialog
 import org.equeim.spacer.ui.theme.Dimens
+import org.equeim.spacer.ui.theme.DoneAll
 import org.equeim.spacer.ui.theme.FilterList
+import org.equeim.spacer.ui.utils.rememberIntegerFormatter
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -100,6 +106,8 @@ private fun DonkiNotificationsScreen(
         filtersUiState = filters,
         updateFilters = model::updateFilters,
         eventsTimeZone = model.notificationsTimeZone.collectAsStateWithLifecycle(),
+        numberOfUnreadNotifications = model.numberOfUnreadNotifications.collectAsStateWithLifecycle(),
+        markAllNotificationsAsRead = model::markAllNotificationsAsRead,
         navigateToDetailsScreen = { navController.navigate(NotificationDetailsScreen(it)) },
         popBackStack = navController::pop,
         navHostEntries = { navHostEntries }
@@ -113,6 +121,8 @@ private fun DonkiNotificationsScreen(
     filtersUiState: State<FiltersUiState<NotificationType>>,
     updateFilters: (FiltersUiState<NotificationType>) -> Unit,
     eventsTimeZone: State<ZoneId?>,
+    numberOfUnreadNotifications: State<Int>,
+    markAllNotificationsAsRead: () -> Unit,
     navigateToDetailsScreen: (NotificationId) -> Unit,
     popBackStack: () -> Unit,
     navHostEntries: () -> List<NavHostEntry<Destination>>,
@@ -128,6 +138,16 @@ private fun DonkiNotificationsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             SubScreenTopAppBar(stringResource(R.string.notifications), popBackStack) {
+                val haveUnreadNotifications = remember { derivedStateOf { numberOfUnreadNotifications.value != 0 } }
+                AnimatedVisibility(haveUnreadNotifications.value) {
+                    val formatter = rememberIntegerFormatter()
+                    ToolbarIconWithBadge(
+                        icon = Icons.Filled.DoneAll,
+                        textId = R.string.mark_all_as_read,
+                        badgeText = { formatter.format(numberOfUnreadNotifications.value.toLong()) },
+                        onClick = markAllNotificationsAsRead
+                    )
+                }
                 if (showFiltersAsDialog.value) {
                     ToolbarIcon(Icons.Filled.FilterList, R.string.filters) {
                         dialogNavController.navigate(NotificationFiltersDialog)
@@ -267,6 +287,8 @@ fun DonkiNotificationsScreenPreview() {
             filtersUiState = filters,
             updateFilters = {},
             eventsTimeZone = remember { mutableStateOf(ZoneId.systemDefault()) },
+            numberOfUnreadNotifications = remember { mutableIntStateOf(42) },
+            markAllNotificationsAsRead = { },
             navigateToDetailsScreen = { },
             popBackStack = {},
             navHostEntries = { emptyList() }

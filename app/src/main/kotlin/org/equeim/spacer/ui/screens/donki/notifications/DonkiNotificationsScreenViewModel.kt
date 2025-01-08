@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.common.NeedToRefreshState
@@ -99,6 +100,9 @@ class DonkiNotificationsScreenViewModel(
                     dateRange = null
                 )
             )
+
+    val numberOfUnreadNotifications: StateFlow<Int> = repository.getNumberOfUnreadNotifications()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
     val pagingData: Flow<PagingData<ListItem>>
 
@@ -198,6 +202,13 @@ class DonkiNotificationsScreenViewModel(
         return notificationFilters.transformLatest {
             emit(NeedToRefreshState.DontNeedToRefresh)
             emitAll(repository.getNeedToRefreshState(it))
+        }
+    }
+
+    fun markAllNotificationsAsRead() {
+        Log.d(TAG, "markAllNotificationsAsRead() called")
+        viewModelScope.launch {
+            repository.markAllNotificationsAsRead()
         }
     }
 
