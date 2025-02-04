@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022-2024 Alexey Rochev
+// SPDX-FileCopyrightText: 2022-2025 Alexey Rochev
 //
 // SPDX-License-Identifier: MIT
 
@@ -53,6 +53,13 @@ internal interface CachedNotificationsWeeksDao {
 
     @Insert(onConflict = REPLACE)
     suspend fun updateWeek(cachedWeek: CachedNotificationsWeek)
+
+    @Query(
+        """
+            SELECT count(*) FROM cached_weeks
+        """
+    )
+    suspend fun haveCachedWeeks(): Boolean
 }
 
 // Duration in seconds between start of the week and the time week doesn't need refresh anymore
