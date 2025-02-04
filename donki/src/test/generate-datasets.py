@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# SPDX-FileCopyrightText: 2022-2024 Alexey Rochev
+# SPDX-FileCopyrightText: 2022-2025 Alexey Rochev
 #
 # SPDX-License-Identifier: MIT
 
