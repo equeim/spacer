@@ -15,7 +15,6 @@ import org.equeim.spacer.retrofit.JsonConverterFactory
 import org.equeim.spacer.retrofit.createOkHttpClient
 import org.equeim.spacer.retrofit.createRetrofit
 import retrofit2.Converter
-import retrofit2.HttpException
 import retrofit2.Retrofit
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
@@ -36,13 +35,10 @@ fun createDonkiOkHttpClient(): OkHttpClient = createOkHttpClient("DonkiHttp") {
 
 internal val DONKI_BASE_URL = "https://api.nasa.gov/DONKI/".toHttpUrl()
 
-internal fun createDonkiRetrofit(okHttpClient: OkHttpClient, baseUrl: HttpUrl) = createRetrofit(
-    baseUrl = baseUrl,
-    okHttpClient = okHttpClient,
-    configureRetrofit = {
+internal fun createDonkiRetrofit(okHttpClient: OkHttpClient, baseUrl: HttpUrl) =
+    createRetrofit(baseUrl = baseUrl, okHttpClient = okHttpClient, configureRetrofit = {
         addConverterFactory(DonkiJsonConverterFactory(DonkiJson))
-    }
-)
+    })
 
 private class DonkiJsonConverterFactory(json: Json) : JsonConverterFactory(json) {
     override fun responseBodyConverter(
@@ -71,27 +67,4 @@ private class RemainingRequestsInterceptor : Interceptor {
         }
         return response
     }
-}
-
-class InvalidApiKeyError(cause: HttpException) : RuntimeException("Invalid API key", cause)
-class TooManyRequestsError(cause: HttpException) : RuntimeException("Too many requests", cause)
-class HttpErrorResponse private constructor(val status: String, cause: HttpException) : RuntimeException(status, cause) {
-    constructor(cause: HttpException) : this(cause.message().let {
-        if (it.isEmpty()) {
-            cause.code().toString()
-        } else {
-            "${cause.code()} $it"
-        }
-    }, cause)
-}
-
-internal fun Exception.toDonkiException(): Exception? {
-    if (this is HttpException) {
-        return when (code()) {
-            403 -> InvalidApiKeyError(this)
-            429 -> TooManyRequestsError(this)
-            else -> HttpErrorResponse(this)
-        }
-    }
-    return null
 }

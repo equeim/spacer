@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.equeim.spacer.donki.CoroutineDispatchers
 import org.equeim.spacer.donki.data.common.DateRange
+import org.equeim.spacer.donki.data.common.DonkiCacheDataSourceException
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.common.intersect
 import org.equeim.spacer.donki.data.notifications.NotificationId
@@ -71,6 +72,9 @@ internal class NotificationsDataSourceCache(
 
     data class WeekThatNeedsRefresh(val week: Week, val cachedRecently: Boolean)
 
+    /**
+     * Returned flow throws [DonkiCacheDataSourceException]
+     */
     fun getWeeksThatNeedRefresh(dateRange: DateRange?): Flow<List<WeekThatNeedsRefresh>> {
         Log.d(
             TAG,
@@ -98,10 +102,13 @@ internal class NotificationsDataSourceCache(
                 Log.d(TAG, "getWeeksThatNeedRefresh() returned:\n${it.joinToString("\n")}")
             }
         }.catch {
-            Log.e(TAG, "getWeeksThatNeedRefresh: db error with: dateRange = $dateRange", it)
+            throw DonkiCacheDataSourceException("getWeeksThatNeedRefresh with: dateRange = $dateRange failed", it)
         }
     }
 
+    /**
+     * @throws DonkiCacheDataSourceException
+     */
     suspend fun getNotificationSummariesForWeek(
         week: Week,
         types: List<NotificationType>,
@@ -116,7 +123,7 @@ internal class NotificationsDataSourceCache(
             if (!db.cachedWeeks().isWeekCached(week.getFirstDayInstant())) {
                 Log.d(
                     TAG,
-                    "getNotificationSummariesForWeek: no cache for week = $week, returning null"
+                    "getNotificationSummariesForWeek: no cache for week = $week, dateRange = $dateRange, returning null"
                 )
                 return null
             }
@@ -133,55 +140,51 @@ internal class NotificationsDataSourceCache(
             db.cachedNotifications().getNotificationSummaries(startTime, endTime, types).also {
                 Log.d(
                     TAG,
-                    "getNotificationSummariesForWeek: returning ${it.size} events for week = $week, types = $types"
+                    "getNotificationSummariesForWeek: returning ${it.size} events for week = $week, types = $types, dateRange = $dateRange"
                 )
             }
-        } catch (e: Exception) {
-            if (e !is CancellationException) {
-                Log.e(
-                    TAG,
-                    "getNotificationSummariesForWeek: db error with: week = $week, types = $types",
-                    e
-                )
-            }
+        } catch (e: CancellationException) {
             throw e
+        } catch (e: Exception) {
+            throw DonkiCacheDataSourceException("getNotificationSummariesForWeek with: week = $week, types = $types, dateRange = $dateRange failed", e)
         }
     }
 
+    /**
+     * Returned flow catches exceptions
+     */
     fun getNumberOfUnreadNotifications(): Flow<Int> = flow {
         emitAll(db.await().cachedNotifications().getNumberOfUnreadNotifications())
     }.catch {
-        Log.e(
-            TAG,
-            "getNumberOfUnreadNotifications: failed to get number of unread notifications",
-            it
-        )
+        // Don't propagate exceptions
+        Log.e(TAG, "getNumberOfUnreadNotifications failed", it)
         emit(0)
     }
 
+    /**
+     * @throws DonkiCacheDataSourceException
+     */
     suspend fun getCachedNotificationByIdAndMarkAsRead(id: NotificationId): CachedNotification? {
-        Log.d(TAG, "getNotificationById() called with: id = $id")
-        try {
+        Log.d(TAG, "getCachedNotificationByIdAndMarkAsRead() called with: id = $id")
+        val notification = try {
             val dao = db.await().cachedNotifications()
-            val notification = dao.getNotificationById(id)
-            return if (notification != null && !notification.read) {
-                coroutineScope.launch { markNotificationAsRead(id) }
-                notification.copy(read = true)
-            } else {
-                notification
-            }
-        } catch (e: Exception) {
-            if (e !is CancellationException) {
-                Log.e(
-                    TAG,
-                    "getNotificationById: failed to get notification $id",
-                    e
-                )
-            }
+            dao.getNotificationById(id)
+        } catch (e: CancellationException) {
             throw e
+        } catch (e: Exception) {
+            throw DonkiCacheDataSourceException("getCachedNotificationByIdAndMarkAsRead with: id = $id failed", e)
+        }
+        return if (notification != null && !notification.read) {
+            coroutineScope.launch { markNotificationAsRead(id) }
+            notification.copy(read = true)
+        } else {
+            notification
         }
     }
 
+    /**
+     * Catches exceptions
+     */
     private suspend fun markNotificationAsRead(id: NotificationId) {
         Log.d(TAG, "markNotificationAsRead() called with: id = $id")
         try {
@@ -191,10 +194,14 @@ internal class NotificationsDataSourceCache(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Log.e(TAG, "markNotificationAsRead: failed to mark notification $id as read", e)
+            // Don't propagate exceptions
+            Log.e(TAG, "markNotificationAsRead with: id = $id failed", e)
         }
     }
 
+    /**
+     * Catches exceptions
+     */
     suspend fun markAllNotificationsAsRead() {
         Log.d(TAG, "markAllNotificationsAsRead() called")
         try {
@@ -204,10 +211,14 @@ internal class NotificationsDataSourceCache(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Log.e(TAG, "markAllNotificationsAsRead: failed to mark notifications as read", e)
+            // Don't propagate exceptions
+            Log.e(TAG, "markAllNotificationsAsRead: failed", e)
         }
     }
 
+    /**
+     * Catches exceptions
+     */
     suspend fun cacheWeek(
         week: Week,
         notifications: List<CachedNotification>,
@@ -217,20 +228,27 @@ internal class NotificationsDataSourceCache(
             TAG,
             "cacheWeek() called with: week = $week, notifications count = ${notifications.size}, loadTime = $loadTime"
         )
-        val db = this.db.await()
-        db.withTransaction {
-            Log.d(TAG, "cacheWeek: starting transaction for $week")
-            db.cachedWeeks()
-                .updateWeek(
-                    CachedNotificationsWeek(
-                        week.getFirstDayInstant(),
-                        loadTime
+        try {
+            val db = this.db.await()
+            db.withTransaction {
+                Log.d(TAG, "cacheWeek: starting transaction for $week")
+                db.cachedWeeks()
+                    .updateWeek(
+                        CachedNotificationsWeek(
+                            week.getFirstDayInstant(),
+                            loadTime
+                        )
                     )
-                )
-            if (notifications.isNotEmpty()) {
-                db.cachedNotifications().storeNotifications(notifications)
+                if (notifications.isNotEmpty()) {
+                    db.cachedNotifications().storeNotifications(notifications)
+                }
+                Log.d(TAG, "cacheWeek: completing transaction for $week")
             }
-            Log.d(TAG, "cacheWeek: completing transaction for $week")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Don't propagate exceptions
+            Log.e(TAG, "cacheWeek with: week = $week, notifications count = ${notifications.size}, loadTime = $loadTime failed", e)
         }
     }
 

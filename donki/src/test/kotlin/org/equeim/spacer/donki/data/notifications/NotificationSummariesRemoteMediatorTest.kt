@@ -26,9 +26,7 @@ import org.equeim.spacer.donki.TEST_WEEK
 import org.equeim.spacer.donki.allExceptions
 import org.equeim.spacer.donki.createInMemoryTestDatabase
 import org.equeim.spacer.donki.data.common.DateRange
-import org.equeim.spacer.donki.data.common.HttpErrorResponse
-import org.equeim.spacer.donki.data.common.InvalidApiKeyError
-import org.equeim.spacer.donki.data.common.TooManyRequestsError
+import org.equeim.spacer.donki.data.common.DonkiNetworkDataSourceException
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.common.createDonkiOkHttpClient
 import org.equeim.spacer.donki.data.notifications.cache.NotificationsDatabase
@@ -263,7 +261,7 @@ class NotificationSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
         server.respond = { MockResponse().setResponseCode(403) }
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Error>(result)
-        assertIs<InvalidApiKeyError>(result.throwable)
+        assertIs<DonkiNetworkDataSourceException.InvalidApiKey>(result.throwable)
     }
 
     @Test
@@ -272,7 +270,7 @@ class NotificationSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
         server.respond = { MockResponse().setResponseCode(429) }
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Error>(result)
-        assertIs<TooManyRequestsError>(result.throwable)
+        assertIs<DonkiNetworkDataSourceException.TooManyRequests>(result.throwable)
     }
 
     @Test
@@ -281,7 +279,7 @@ class NotificationSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
         server.respond = { MockResponse().setResponseCode(500) }
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Error>(result)
-        assertIs<HttpErrorResponse>(result.throwable)
+        assertIs<DonkiNetworkDataSourceException.HttpErrorResponse>(result.throwable)
     }
 
     @Test
