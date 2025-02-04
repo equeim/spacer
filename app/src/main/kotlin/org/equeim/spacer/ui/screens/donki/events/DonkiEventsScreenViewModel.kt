@@ -23,11 +23,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.job
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
@@ -220,13 +219,12 @@ class DonkiEventsScreenViewModel(
         }
     }
 
+    /**
+     * Returned flow catches exceptions
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun getNeedToRefreshState(): Flow<NeedToRefreshState> {
-        return eventFilters.transformLatest {
-            emit(NeedToRefreshState.DontNeedToRefresh)
-            emitAll(repository.getNeedToRefreshState(it))
-        }
-    }
+    fun getNeedToRefreshState(): Flow<NeedToRefreshState> =
+        eventFilters.flatMapLatest(repository::getNeedToRefreshState)
 
     data class EventPresentation(
         val id: EventId,

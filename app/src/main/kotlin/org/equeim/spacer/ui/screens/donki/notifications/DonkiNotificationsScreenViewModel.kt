@@ -23,11 +23,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import org.equeim.spacer.AppSettings
@@ -197,14 +196,16 @@ class DonkiNotificationsScreenViewModel(
         return notificationTypesStringsCache.computeIfAbsent(type) { getString(type.displayStringResId) }
     }
 
+    /**
+     * Returned flow catches exceptions
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun getNeedToRefreshState(): Flow<NeedToRefreshState> {
-        return notificationFilters.transformLatest {
-            emit(NeedToRefreshState.DontNeedToRefresh)
-            emitAll(repository.getNeedToRefreshState(it))
-        }
-    }
+    fun getNeedToRefreshState(): Flow<NeedToRefreshState> =
+        notificationFilters.flatMapLatest(repository::getNeedToRefreshState)
 
+    /**
+     * Catches exceptions
+     */
     fun markAllNotificationsAsRead() {
         Log.d(TAG, "markAllNotificationsAsRead() called")
         viewModelScope.launch {

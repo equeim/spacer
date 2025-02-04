@@ -33,6 +33,7 @@ import kotlinx.coroutines.runInterruptible
 import kotlinx.serialization.json.JsonObject
 import org.equeim.spacer.donki.CoroutineDispatchers
 import org.equeim.spacer.donki.data.common.DateRange
+import org.equeim.spacer.donki.data.common.DonkiCacheDataSourceException
 import org.equeim.spacer.donki.data.common.DonkiJson
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.common.intersect
@@ -62,7 +63,6 @@ import java.nio.file.WatchService
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
-import kotlin.time.toKotlinDuration
 
 internal class EventsDataSourceCache(
     private val context: Context,
@@ -148,6 +148,9 @@ internal class EventsDataSourceCache(
         return checkNotNull(eventsCacheDb)
     }
 
+    /**
+     * @throws DonkiCacheDataSourceException
+     */
     suspend fun getEventSummariesForWeek(
         week: Week,
         eventType: EventType,
@@ -155,14 +158,14 @@ internal class EventsDataSourceCache(
     ): List<EventSummary>? {
         Log.d(
             TAG,
-            "getEventSummariesForWeek() called with: week = $week, eventType = $eventType, timeRange = $dateRange"
+            "getEventSummariesForWeek() called with: week = $week, eventType = $eventType, dateRange = $dateRange"
         )
         val db = awaitDb()
         return try {
             if (!db.cachedWeeks().isWeekCached(week.getFirstDayInstant(), eventType)) {
                 Log.d(
                     TAG,
-                    "getEventSummariesForWeek: no cache for week = $week, eventType = $eventType, returning null"
+                    "getEventSummariesForWeek: no cache for week = $week, eventType = $eventType, dateRange = $dateRange, returning null"
                 )
                 return null
             }
@@ -192,18 +195,13 @@ internal class EventsDataSourceCache(
             }.also {
                 Log.d(
                     TAG,
-                    "getEventSummariesForWeek: returning ${it.size} events for week = $week, eventType = $eventType"
+                    "getEventSummariesForWeek: returning ${it.size} events for week = $week, eventType = $eventType, dateRange = $dateRange"
                 )
             }
-        } catch (e: Exception) {
-            if (e !is CancellationException) {
-                Log.e(
-                    TAG,
-                    "getEventSummariesForWeek: db error with: week = $week, eventType = $eventType",
-                    e
-                )
-            }
+        } catch (e: CancellationException) {
             throw e
+        } catch (e: Exception) {
+            throw DonkiCacheDataSourceException("getEventSummariesForWeek with: week = $week, eventType = $eventType, dateRange = $dateRange failed", e)
         }
     }
 
@@ -213,6 +211,9 @@ internal class EventsDataSourceCache(
         val cachedRecently: Boolean
     )
 
+    /**
+     * Returned flow throws [DonkiCacheDataSourceException]
+     */
     fun getWeeksThatNeedRefresh(
         eventTypes: List<EventType>,
         dateRange: DateRange?
@@ -250,11 +251,13 @@ internal class EventsDataSourceCache(
                 Log.d(TAG, "getWeeksThatNeedRefresh() returned:\n${it.joinToString("\n")}")
             }
         }.catch {
-            Log.e(TAG, "getWeeksThatNeedRefresh: db error with: eventTypes = $eventTypes, dateRange = $dateRange", it)
-            throw it
+            throw DonkiCacheDataSourceException("getWeeksThatNeedRefresh with: eventTypes = $eventTypes, dateRange = $dateRange failed", it)
         }
     }
 
+    /**
+     * @throws DonkiCacheDataSourceException
+     */
     suspend fun getEventById(
         id: EventId,
         eventType: EventType,
@@ -284,35 +287,34 @@ internal class EventsDataSourceCache(
             ).also {
                 Log.d(TAG, "getEventById: returning event $id")
             }
-        } catch (e: Exception) {
-            if (e !is CancellationException) {
-                Log.e(
-                    TAG,
-                    "getEventById: db error with: id = $id, week = $week, eventType = $eventType",
-                    e
-                )
-            }
+        } catch (e: CancellationException) {
             throw e
+        } catch (e: Exception) {
+            throw DonkiCacheDataSourceException("getEventById with: id = $id, week = $week, eventType = $eventType failed", e)
         }
     }
 
+    /**
+     * Catches exceptions
+     */
     suspend fun isWeekNotCachedOrNeedsRefreshingNow(week: Week, eventType: EventType): Boolean {
         Log.d(
             TAG,
             "isWeekNotCachedOrNeedsRefreshingNow() called with: week = $week, eventType = $eventType"
         )
-        try {
+        return try {
             val db = awaitDb()
             val weekLoadTime = db.cachedWeeks()
                 .getWeekLoadTime(week.getFirstDayInstant(), eventType)
-            return (weekLoadTime == null || week.needsRefreshNow(weekLoadTime)).also {
-                Log.d(TAG, "isWeekNotCachedOrNeedsRefreshingNow() returned: $it")
-            }
-        } catch (e: Exception) {
-            if (e !is CancellationException) {
-                Log.e(TAG, "isWeekNotCachedOrNeedsRefreshingNow: db error with: week = $week, eventType = $eventType", e)
-            }
+            weekLoadTime == null || week.needsRefreshNow(weekLoadTime)
+        } catch (e: CancellationException) {
             throw e
+        } catch (e: Exception) {
+            // Don't propagate exceptions
+            Log.e(TAG, "isWeekNotCachedOrNeedsRefreshingNow with: week = $week, eventType = $eventType failed", e)
+            false
+        }.also {
+            Log.d(TAG, "isWeekNotCachedOrNeedsRefreshingNow() returned: $it")
         }
     }
 
@@ -320,6 +322,9 @@ internal class EventsDataSourceCache(
         loadTime < (getFirstDayInstant().plusSeconds(EVENTS_DONT_NEED_REFRESH_THRESHOLD_SECONDS)) &&
                 Duration.between(loadTime, Instant.now(clock)) >= RECENTLY_CACHED_INTERVAL
 
+    /**
+     * Catches exceptions
+     */
     suspend fun cacheWeek(
         week: Week,
         eventType: EventType,
@@ -330,37 +335,44 @@ internal class EventsDataSourceCache(
             TAG,
             "cacheWeek() called with: week = $week, eventType = $eventType, events count = ${events.size}, loadTime = $loadTime"
         )
-        if (events.isEmpty()) {
-            Log.d(TAG, "cacheWeek: no events, mark as cached without transaction")
-            updateCachedWeek(week, eventType, loadTime)
-        } else {
-            val db = awaitDb()
-            db.withTransaction {
-                Log.d(TAG, "cacheWeek: starting transaction for $week")
+        try {
+            if (events.isEmpty()) {
+                Log.d(TAG, "cacheWeek: no events, mark as cached without transaction")
                 updateCachedWeek(week, eventType, loadTime)
-                db.events()
-                    .updateEvents(events.asSequence().map { it.toCachedEvent() }.asIterable())
-                for (event in events) {
-                    when (eventType) {
-                        EventType.CoronalMassEjection ->
-                            db.coronalMassEjection()
-                                .updateExtras((event.first as CoronalMassEjection).toExtras())
+            } else {
+                val db = awaitDb()
+                db.withTransaction {
+                    Log.d(TAG, "cacheWeek: starting transaction for $week")
+                    updateCachedWeek(week, eventType, loadTime)
+                    db.events()
+                        .updateEvents(events.asSequence().map { it.toCachedEvent() }.asIterable())
+                    for (event in events) {
+                        when (eventType) {
+                            EventType.CoronalMassEjection ->
+                                db.coronalMassEjection()
+                                    .updateExtras((event.first as CoronalMassEjection).toExtras())
 
-                        EventType.GeomagneticStorm ->
-                            db.geomagneticStorm()
-                                .updateExtras((event.first as GeomagneticStorm).toExtras())
+                            EventType.GeomagneticStorm ->
+                                db.geomagneticStorm()
+                                    .updateExtras((event.first as GeomagneticStorm).toExtras())
 
-                        EventType.InterplanetaryShock -> db.interplanetaryShock()
-                            .updateExtras((event.first as InterplanetaryShock).toExtras())
+                            EventType.InterplanetaryShock -> db.interplanetaryShock()
+                                .updateExtras((event.first as InterplanetaryShock).toExtras())
 
-                        EventType.SolarFlare -> db.solarFlare()
-                            .updateExtras((event.first as SolarFlare).toExtras())
+                            EventType.SolarFlare -> db.solarFlare()
+                                .updateExtras((event.first as SolarFlare).toExtras())
 
-                        else -> Unit
+                            else -> Unit
+                        }
                     }
+                    Log.d(TAG, "cacheWeek: completing transaction for $week")
                 }
-                Log.d(TAG, "cacheWeek: completing transaction for $week")
             }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Don't propagate exceptions
+            Log.e(TAG, "cacheWeek with: week = $week, eventType = $eventType, events count = ${events.size}, loadTime = $loadTime failed", e)
         }
     }
 

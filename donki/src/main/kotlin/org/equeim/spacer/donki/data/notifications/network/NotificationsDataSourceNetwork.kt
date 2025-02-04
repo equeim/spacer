@@ -13,9 +13,10 @@ import kotlinx.coroutines.flow.mapLatest
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
+import org.equeim.spacer.donki.data.common.DonkiNetworkDataSourceException
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.common.createDonkiRetrofit
-import org.equeim.spacer.donki.data.common.toDonkiException
+import org.equeim.spacer.donki.data.common.toDonkiNetworkDataSourceException
 import retrofit2.create
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -26,6 +27,9 @@ internal class NotificationsDataSourceNetwork(
 ) {
     private val api = createDonkiRetrofit(okHttpClient, baseUrl).create<NotificationsApi>()
 
+    /**
+     * @throws DonkiNetworkDataSourceException
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun getNotifications(week: Week): List<NotificationJson> =
         customNasaApiKey.map { it ?: DEFAULT_NASA_API_KEY }.mapLatest { apiKey ->
@@ -40,9 +44,7 @@ internal class NotificationsDataSourceNetwork(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                val error = e.toDonkiException() ?: e
-                Log.e(TAG, "getNotifications: failed to get notifications for week = $week", error)
-                throw error
+                throw e.toDonkiNetworkDataSourceException("getNotifications with: week = $week failed")
             }
         }.first()
 

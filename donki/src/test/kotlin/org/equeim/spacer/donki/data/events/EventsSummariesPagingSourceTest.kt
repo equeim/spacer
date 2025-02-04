@@ -31,9 +31,7 @@ import org.equeim.spacer.donki.TEST_WEEK_NEAREST_FUTURE
 import org.equeim.spacer.donki.TEST_WEEK_NEAREST_PAST
 import org.equeim.spacer.donki.createInMemoryTestDatabase
 import org.equeim.spacer.donki.data.common.DateRange
-import org.equeim.spacer.donki.data.common.HttpErrorResponse
-import org.equeim.spacer.donki.data.common.InvalidApiKeyError
-import org.equeim.spacer.donki.data.common.TooManyRequestsError
+import org.equeim.spacer.donki.data.common.DonkiNetworkDataSourceException
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.common.createDonkiOkHttpClient
 import org.equeim.spacer.donki.data.events.cache.EventsCacheDatabase
@@ -47,7 +45,6 @@ import org.junit.Rule
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.annotation.Config
-import java.io.IOException
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.Instant
@@ -314,7 +311,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         server.respond = { MockResponse().setResponseCode(403) }
         val result = pagingSource.load(params).assertIsError()
-        assertIs<InvalidApiKeyError>(result.throwable)
+        assertIs<DonkiNetworkDataSourceException.InvalidApiKey>(result.throwable)
     }
 
     @Test
@@ -322,7 +319,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         server.respond = { MockResponse().setResponseCode(429) }
         val result = pagingSource.load(params).assertIsError()
-        assertIs<TooManyRequestsError>(result.throwable)
+        assertIs<DonkiNetworkDataSourceException.TooManyRequests>(result.throwable)
     }
 
     @Test
@@ -330,7 +327,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         server.respond = { MockResponse().setResponseCode(500) }
         val result = pagingSource.load(params).assertIsError()
-        assertIs<HttpErrorResponse>(result.throwable)
+        assertIs<DonkiNetworkDataSourceException.HttpErrorResponse>(result.throwable)
     }
 
     @Test
@@ -338,7 +335,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         server.respond = { MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST) }
         val result = pagingSource.load(params).assertIsError()
-        assertIs<IOException>(result.throwable)
+        assertIs<DonkiNetworkDataSourceException.NetworkError>(result.throwable)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

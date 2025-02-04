@@ -11,7 +11,6 @@ import androidx.compose.runtime.Immutable
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -31,6 +30,8 @@ import org.equeim.spacer.donki.CoroutineDispatchers
 import org.equeim.spacer.donki.data.common.BasePagingSource
 import org.equeim.spacer.donki.data.common.DONKI_BASE_URL
 import org.equeim.spacer.donki.data.common.DateRange
+import org.equeim.spacer.donki.data.common.DonkiCacheDataSourceException
+import org.equeim.spacer.donki.data.common.DonkiNetworkDataSourceException
 import org.equeim.spacer.donki.data.common.NeedToRefreshState
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.notifications.cache.CachedNotification
@@ -122,19 +123,19 @@ class DonkiNotificationsRepository internal constructor(
             clock = clock
         )
 
+    /**
+     * @throws DonkiCacheDataSourceException on database error
+     * @throws RuntimeException if the notification does not exist in database
+     */
     suspend fun getCachedNotificationByIdAndMarkAsRead(id: NotificationId): CachedNotification {
         Log.d(TAG, "getNotificationById() called with: id = $id")
-        return try {
-            cacheDataSource.getCachedNotificationByIdAndMarkAsRead(id)
-                ?: throw RuntimeException("Notification $id does not exist in the database")
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            Log.e(TAG, "getCachedNotificationById: failed to get notification $id", e)
-            throw e
-        }
+        return cacheDataSource.getCachedNotificationByIdAndMarkAsRead(id)
+            ?: throw RuntimeException("getCachedNotificationById: notification $id does not exist in the database")
     }
 
+    /**
+     * Returned flow catches exceptions
+     */
     fun getNeedToRefreshState(filters: Filters): Flow<NeedToRefreshState> {
         Log.d(TAG, "getNeedToRefreshState() called with: filters = $filters")
         return if (filters.types.isEmpty()) {
@@ -142,26 +143,34 @@ class DonkiNotificationsRepository internal constructor(
         } else {
             cacheDataSource.getWeeksThatNeedRefresh(
                 filters.dateRange
-            ).map { weeks ->
+            ).catch {
+                Log.e(TAG, "getWeeksThatNeedRefresh failed", it)
+                emit(emptyList())
+            }.map { weeks ->
                 when {
                     weeks.isEmpty() -> NeedToRefreshState.DontNeedToRefresh
                     weeks.all { it.cachedRecently } -> NeedToRefreshState.HaveWeeksThatNeedRefreshButAllCachedRecently
                     else -> NeedToRefreshState.HaveWeeksThatNeedRefreshNow
                 }
-            }.catch {
-                Log.e(TAG, "haveWeeksThatNeedRefresh: NotificationsDataSourceCache error", it)
-                emit(NeedToRefreshState.DontNeedToRefresh)
             }
         }.onEach {
             Log.d(TAG, "getNeedToRefreshState: emitting $it")
         }
     }
 
+    /**
+     * @throws DonkiNetworkDataSourceException on network error
+     * @throws DonkiCacheDataSourceException on database error
+     */
     internal suspend fun updateNotificationsForWeek(week: Week) {
         Log.d(TAG, "updateNotificationsForWeek() called with: week = $week")
         updateNotificationsForWeekImpl(week, cacheAsync = false)
     }
 
+    /**
+     * @throws DonkiNetworkDataSourceException on network error
+     * @throws DonkiCacheDataSourceException on database error
+     */
     internal suspend fun getNotificationSummariesForWeek(
         week: Week,
         types: List<NotificationType>,
@@ -258,9 +267,15 @@ class DonkiNotificationsRepository internal constructor(
         }
     }
 
+    /**
+     * Returned flow catches exceptions
+     */
     fun getNumberOfUnreadNotifications(): Flow<Int> =
         cacheDataSource.getNumberOfUnreadNotifications()
 
+    /**
+     * Catches exceptions
+     */
     suspend fun markAllNotificationsAsRead() {
         Log.d(TAG, "markAllNotificationsAsRead() called")
         cacheDataSource.markAllNotificationsAsRead()

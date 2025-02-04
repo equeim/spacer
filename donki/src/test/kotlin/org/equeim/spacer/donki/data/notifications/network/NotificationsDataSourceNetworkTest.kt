@@ -16,8 +16,7 @@ import org.equeim.spacer.donki.CoroutinesRule
 import org.equeim.spacer.donki.MockkLogRule
 import org.equeim.spacer.donki.apiKey
 import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
-import org.equeim.spacer.donki.data.common.InvalidApiKeyError
-import org.equeim.spacer.donki.data.common.TooManyRequestsError
+import org.equeim.spacer.donki.data.common.DonkiNetworkDataSourceException
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.common.createDonkiOkHttpClient
 import org.junit.Rule
@@ -76,7 +75,7 @@ class NotificationsDataSourceNetworkTest {
     @Test
     fun `Validate 403 error handling`() = runTest {
         server.enqueue(MockResponse().setResponseCode(403))
-        assertFailsWith<InvalidApiKeyError> {
+        assertFailsWith<DonkiNetworkDataSourceException.InvalidApiKey> {
             dataSource.getNotifications(Week(LocalDate.of(2016, 8, 29)))
         }
     }
@@ -84,7 +83,7 @@ class NotificationsDataSourceNetworkTest {
     @Test
     fun `Validate 429 error handling`() = runTest {
         server.enqueue(MockResponse().setResponseCode(429))
-        assertFailsWith<TooManyRequestsError> {
+        assertFailsWith<DonkiNetworkDataSourceException.TooManyRequests> {
             dataSource.getNotifications(Week(LocalDate.of(2016, 8, 29)))
         }
     }

@@ -16,9 +16,10 @@ import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import org.equeim.spacer.donki.data.DEFAULT_NASA_API_KEY
 import org.equeim.spacer.donki.data.common.DonkiJson
+import org.equeim.spacer.donki.data.common.DonkiNetworkDataSourceException
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.common.createDonkiRetrofit
-import org.equeim.spacer.donki.data.common.toDonkiException
+import org.equeim.spacer.donki.data.common.toDonkiNetworkDataSourceException
 import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.donki.data.events.network.json.Event
 import org.equeim.spacer.donki.data.events.network.json.eventSerializer
@@ -31,6 +32,9 @@ internal class EventsDataSourceNetwork(
 ) {
     private val api = createDonkiRetrofit(okHttpClient, baseUrl).create<EventsApi>()
 
+    /**
+     * @throws DonkiNetworkDataSourceException
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
     suspend fun getEvents(
         week: Week,
@@ -99,13 +103,7 @@ internal class EventsDataSourceNetwork(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            val error = e.toDonkiException() ?: e
-            Log.e(
-                TAG,
-                "getEvents: failed to get event for week = $week, eventType = $eventType",
-                error
-            )
-            throw error
+            throw e.toDonkiNetworkDataSourceException("getEvents with: week = $week, eventType = $eventType failed")
         }
     }.first()
 
