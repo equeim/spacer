@@ -217,43 +217,54 @@ class DonkiNotificationsRepository internal constructor(
             types = NotificationType.entries,
             dateRange = null
         ).orEmpty()
-        val notificationsToCache = ArrayList<CachedNotification>(
-            (notificationJsons.size - cachedNotifications.size).coerceAtLeast(0)
-        )
 
-        for (notification in notificationJsons) {
-            if (cachedNotifications.find { it.id == notification.id } == null) {
-                notificationsToCache.add(
-                    CachedNotification(
-                        id = notification.id,
-                        type = notification.type,
-                        time = notification.time,
-                        title = notification.body.findTitle(),
-                        subtitle = notification.body.findSubtitle(),
-                        body = notification.body.trim(),
-                        link = notification.link,
-                        read = Duration.between(notification.time, weekLoadTime) > UNREAD_THRESHOLD
-                    )
+        val newNotificationJsons = notificationJsons.asSequence()
+            .filter { notification -> cachedNotifications.find { it.id == notification.id } == null }
+            .toList()
+
+        val newNotifications = if (newNotificationJsons.isNotEmpty()) {
+            val latestCachedWeekTimeAtStartOfFirstDay =
+                cacheDataSource.getLatestCachedWeekTimeAtStartOfFirstDay()
+            val shouldMarkAsUnread: (Instant) -> Boolean = when {
+                latestCachedWeekTimeAtStartOfFirstDay == null -> { notificationTime ->
+                    Duration.between(notificationTime, weekLoadTime) <= INITIAL_UNREAD_THRESHOLD
+                }
+
+                week.getFirstDayInstant() >= latestCachedWeekTimeAtStartOfFirstDay -> { _ -> true }
+                else -> { _ -> false }
+            }
+            newNotificationJsons.map { notification ->
+                CachedNotification(
+                    id = notification.id,
+                    type = notification.type,
+                    time = notification.time,
+                    title = notification.body.findTitle(),
+                    subtitle = notification.body.findSubtitle(),
+                    body = notification.body.trim(),
+                    link = notification.link,
+                    read = !shouldMarkAsUnread(notification.time)
                 )
             }
+        } else {
+            emptyList()
         }
 
         if (cacheAsync) {
             coroutineScope.launch {
                 cacheDataSource.cacheWeek(
                     week,
-                    notificationsToCache,
+                    newNotifications,
                     weekLoadTime
                 )
             }
         } else {
-            cacheDataSource.cacheWeek(week, notificationsToCache, weekLoadTime)
+            cacheDataSource.cacheWeek(week, newNotifications, weekLoadTime)
         }
 
-        return buildList(cachedNotifications.size + notificationsToCache.size) {
+        return buildList(cachedNotifications.size + newNotifications.size) {
             addAll(cachedNotifications)
             addAll(
-                notificationsToCache.asSequence().map {
+                newNotifications.asSequence().map {
                     CachedNotificationSummary(
                         id = it.id,
                         type = it.type,
@@ -284,7 +295,7 @@ class DonkiNotificationsRepository internal constructor(
     private companion object {
         const val TAG = "DonkiNotificationsRepository"
 
-        // If notification is doesn't exist in db and is less than 12 hours old then mark it as unread
-        val UNREAD_THRESHOLD: Duration = Duration.ofHours(12)
+        // If db is empty and notification is less than 12 hours old then mark it as unread
+        val INITIAL_UNREAD_THRESHOLD: Duration = Duration.ofHours(12)
     }
 }

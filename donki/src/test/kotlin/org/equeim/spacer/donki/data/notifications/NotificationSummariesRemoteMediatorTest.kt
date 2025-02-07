@@ -8,6 +8,7 @@ package org.equeim.spacer.donki.data.notifications
 
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
+import androidx.paging.PagingSource
 import androidx.paging.RemoteMediator
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.CoroutineScope
@@ -29,7 +30,9 @@ import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.common.DonkiNetworkDataSourceException
 import org.equeim.spacer.donki.data.common.Week
 import org.equeim.spacer.donki.data.common.createDonkiOkHttpClient
+import org.equeim.spacer.donki.data.notifications.cache.CachedNotificationSummary
 import org.equeim.spacer.donki.data.notifications.cache.NotificationsDatabase
+import org.equeim.spacer.donki.getTestResourceInputStream
 import org.equeim.spacer.donki.timeZoneParameters
 import org.junit.Rule
 import org.junit.runner.RunWith
@@ -59,7 +62,8 @@ class NotificationSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
         dispatcher = MockWebServerDispatcher()
         start()
     }
-    private val db: NotificationsDatabase = createInMemoryTestDatabase(coroutinesRule.coroutineDispatchers)
+    private val db: NotificationsDatabase =
+        createInMemoryTestDatabase(coroutinesRule.coroutineDispatchers)
     private val repository = DonkiNotificationsRepository(
         customNasaApiKey = flowOf(null),
         okHttpClient = createDonkiOkHttpClient(),
@@ -70,8 +74,16 @@ class NotificationSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
         clock = clock
     )
     private val filters =
-        MutableStateFlow(DonkiNotificationsRepository.Filters(types = NotificationType.entries, dateRange = null))
+        MutableStateFlow(
+            DonkiNotificationsRepository.Filters(
+                types = NotificationType.entries,
+                dateRange = null
+            )
+        )
     private val mediator: NotificationsRemoteMediator = repository.createRemoteMediator(filters)
+    private val pagingSource: NotificationSummariesPagingSource = repository.createPagingSource(
+        DonkiNotificationsRepository.Filters(NotificationType.entries, null)
+    )
 
     private lateinit var actualRefreshedEventsScope: CoroutineScope
     private var actualRefreshedEvents = 0
@@ -141,7 +153,6 @@ class NotificationSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
             )
             clock.instant = TEST_WEEK.getInstantAfterLastDay() - Duration.ofDays(1)
             prepareInitialState(TEST_WEEK, clock.instant - Duration.ofMinutes(59))
-
             assertEquals(
                 RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH,
                 mediator.initialize()
@@ -151,67 +162,64 @@ class NotificationSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
     @Test
     fun `initialize returns LAUNCH_INITIAL_REFRESH when last week was cached more than an hour ago`() =
         runTest {
-            // Initial state
             prepareInitialState(TEST_WEEK, clock.instant - Duration.ofMinutes(61))
-
-            // Checking initialize
             assertEquals(
                 RemoteMediator.InitializeAction.LAUNCH_INITIAL_REFRESH,
                 mediator.initialize()
             )
-
-            // Checking load after LAUNCH_INITIAL_REFRESH
-            server.respondWithSampleNotification()
-            val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
-            assertIs<RemoteMediator.MediatorResult.Success>(result)
-            assertFalse(result.endOfPaginationReached)
-            assertEquals(1, actualRefreshedEvents)
-            assertEquals(RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH, mediator.initialize())
+            checkRefresh()
         }
 
     @Test
     fun `initialize returns LAUNCH_INITIAL_REFRESH when with date range filter and its last week was loaded before its last day but more than an hour ago`() =
         runTest {
-            // Initial state
             filters.value = DonkiNotificationsRepository.Filters(
                 types = NotificationType.entries,
-                dateRange = DateRange(TEST_WEEK.getFirstDayInstant(), TEST_WEEK.getInstantAfterLastDay())
+                dateRange = DateRange(
+                    TEST_WEEK.getFirstDayInstant(),
+                    TEST_WEEK.getInstantAfterLastDay()
+                )
             )
             prepareInitialState(TEST_WEEK, clock.instant - Duration.ofMinutes(61))
-
-            // Checking initialize
             assertEquals(
                 RemoteMediator.InitializeAction.LAUNCH_INITIAL_REFRESH,
                 mediator.initialize()
             )
-
-            // Checking load after LAUNCH_INITIAL_REFRESH
-            server.respondWithSampleNotification()
-            val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
-            assertIs<RemoteMediator.MediatorResult.Success>(result)
-            assertFalse(result.endOfPaginationReached)
-            assertEquals(1, actualRefreshedEvents)
+            checkRefresh()
         }
 
     @Test
     fun `Manual refresh when last week was loaded less than an hour ago`() = runTest {
         prepareInitialState(TEST_WEEK, clock.instant - Duration.ofMinutes(59))
-        checkManualRefresh()
+        checkRefresh()
     }
 
     @Test
     fun `Manual refresh when last week was loaded more than an hour ago`() = runTest {
         prepareInitialState(TEST_WEEK, clock.instant - Duration.ofMinutes(61))
-        checkManualRefresh()
+        checkRefresh()
     }
 
-    private suspend fun checkManualRefresh() {
-        server.respondWithSampleNotification()
+    private suspend fun checkRefresh() {
+        server.respond = {
+            MockResponse().setBody(
+                NotificationsParsingTest::class.java.getTestResourceInputStream("new_notifications.json")
+                    .use { it.reader().readText() }
+            )
+        }
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Success>(result)
         assertFalse(result.endOfPaginationReached)
         assertEquals(1, actualRefreshedEvents)
         assertEquals(RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH, mediator.initialize())
+
+        server.respondWithError()
+        val pagingSourceResult = pagingSource.load(PagingSource.LoadParams.Refresh<Week>(null, 20, false))
+        assertIs<PagingSource.LoadResult.Page<Week, CachedNotificationSummary>>(pagingSourceResult)
+        assertEquals(
+            listOf("20241002-AL-003" to false, "20241002-AL-002" to true),
+            pagingSourceResult.data.map { it.id.stringValue to it.read }
+        )
     }
 
     private suspend fun prepareInitialState(week: Week, loadTime: Instant) {

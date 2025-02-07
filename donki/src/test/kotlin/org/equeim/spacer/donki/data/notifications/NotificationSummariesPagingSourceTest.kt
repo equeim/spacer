@@ -141,20 +141,31 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
         assertNull(pagingSource.getRefreshKey(EMPTY_PAGING_STATE))
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `Loading first page when current week is not cached`() = runTest {
+    fun `Loading first page when cache is empty and notification is older than 12 hours`() = runTest {
+        loadingFirstPageWithoutCache(TEST_INSTANT_INSIDE_TEST_WEEK, notificationShouldBeUnread = false)
+    }
+
+    @Test
+    fun `Loading first page when cache is empty and notification is newer than 12 hours`() = runTest {
+        loadingFirstPageWithoutCache(instantOf(2022, 1, 19, 20, 0), notificationShouldBeUnread = true)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private suspend fun TestScope.loadingFirstPageWithoutCache(currentTime: Instant, notificationShouldBeUnread: Boolean) {
+        clock.instant = currentTime
+
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         server.respondWithSampleNotification()
         val result = pagingSource.load(params).assertIsPage()
         assertNull(result.prevKey)
         assertNotNull(result.nextKey).validate()
         assertEquals(weekOf(2022, 1, 10), result.nextKey)
-        result.data.validateSampleNotification()
+        result.data.validateSampleNotification(shouldBeUnread = notificationShouldBeUnread)
 
         advanceUntilIdle()
 
-        loadingFirstPageFromCache()
+        loadingFirstPageFromCache(notificationShouldBeUnread = notificationShouldBeUnread)
     }
 
     @Test
@@ -164,7 +175,7 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
             loadTime = TEST_INSTANT_INSIDE_TEST_WEEK - Duration.ofMinutes(59),
             emptyResponse = false
         )
-        loadingFirstPageFromCache()
+        loadingFirstPageFromCache(notificationShouldBeUnread = false)
     }
 
     @Test
@@ -174,17 +185,17 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
             loadTime = TEST_INSTANT_INSIDE_TEST_WEEK - Duration.ofMinutes(61),
             emptyResponse = false
         )
-        loadingFirstPageFromCache()
+        loadingFirstPageFromCache(notificationShouldBeUnread = false)
     }
 
-    private suspend fun loadingFirstPageFromCache() {
+    private suspend fun loadingFirstPageFromCache(notificationShouldBeUnread: Boolean) {
         server.respondWithError()
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         val result = pagingSource.load(params).assertIsPage()
         assertNull(result.prevKey)
         assertNotNull(result.nextKey).validate()
         assertEquals(TEST_WEEK_NEAREST_PAST, result.nextKey)
-        result.data.validateSampleNotification()
+        result.data.validateSampleNotification(shouldBeUnread = notificationShouldBeUnread)
     }
 
     @Test
@@ -274,7 +285,7 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
         if (shouldBeEmpty) {
             assertTrue(result.data.isEmpty())
         } else {
-            result.data.validateSampleNotification()
+            result.data.validateSampleNotification(shouldBeUnread = false)
         }
     }
 
@@ -462,8 +473,11 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
         private fun PagingSource.LoadResult<Week, CachedNotificationSummary>.assertIsError() =
             assertIs<PagingSource.LoadResult.Error<Week, CachedNotificationSummary>>(this)
 
-        private fun List<CachedNotificationSummary>.validateSampleNotification() {
-            assertEquals(SAMPLE_NOTIFICATION_ID, this.single().id)
+        private fun List<CachedNotificationSummary>.validateSampleNotification(shouldBeUnread: Boolean) {
+            assertEquals(1, size)
+            val notification = first()
+            assertEquals(SAMPLE_NOTIFICATION_ID, notification.id)
+            assertEquals(!shouldBeUnread, notification.read)
         }
     }
 }
