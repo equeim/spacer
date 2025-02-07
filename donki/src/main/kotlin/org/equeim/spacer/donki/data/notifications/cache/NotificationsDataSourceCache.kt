@@ -252,6 +252,11 @@ internal class NotificationsDataSourceCache(
         }
     }
 
+    /**
+     * @throws DonkiCacheDataSourceException
+     */
+    suspend fun getLatestCachedWeekTimeAtStartOfFirstDay(): Instant? = db.await().cachedWeeks().getLatestCachedWeekTimeAtStartOfFirstDay()
+
     private companion object {
         const val TAG = "DonkiNotificationsDataSourceCache"
         val RECENTLY_CACHED_INTERVAL: Duration = Duration.ofHours(1)

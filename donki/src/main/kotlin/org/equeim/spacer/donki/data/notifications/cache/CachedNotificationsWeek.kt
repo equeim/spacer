@@ -53,6 +53,15 @@ internal interface CachedNotificationsWeeksDao {
 
     @Insert(onConflict = REPLACE)
     suspend fun updateWeek(cachedWeek: CachedNotificationsWeek)
+
+    @Query(
+        """
+            SELECT time_at_start_of_first_day FROM cached_weeks
+            ORDER BY time_at_start_of_first_day DESC
+            LIMIT 1
+        """
+    )
+    suspend fun getLatestCachedWeekTimeAtStartOfFirstDay(): Instant?
 }
 
 // Duration in seconds between start of the week and the time week doesn't need refresh anymore
