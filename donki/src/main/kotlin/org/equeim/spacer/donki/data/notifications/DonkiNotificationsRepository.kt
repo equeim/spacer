@@ -12,12 +12,14 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
@@ -43,6 +45,8 @@ import java.io.Closeable
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.cancellation.CancellationException
 
 class DonkiNotificationsRepository internal constructor(
     customNasaApiKey: Flow<String?>,
@@ -76,6 +80,8 @@ class DonkiNotificationsRepository internal constructor(
         NotificationsDataSourceCache(context, db, coroutineDispatchers, clock)
 
     private val coroutineScope = CoroutineScope(SupervisorJob() + coroutineDispatchers.Default)
+
+    private val backgroundUpdateJob = AtomicReference<Job?>(null)
 
     override fun close() {
         coroutineScope.cancel()
@@ -164,6 +170,7 @@ class DonkiNotificationsRepository internal constructor(
      */
     internal suspend fun updateNotificationsForWeek(week: Week) {
         Log.d(TAG, "updateNotificationsForWeek() called with: week = $week")
+        backgroundUpdateJob.get()?.join()
         updateNotificationsForWeekImpl(week, cacheAsync = false)
     }
 
@@ -180,6 +187,8 @@ class DonkiNotificationsRepository internal constructor(
             TAG,
             "getNotificationsForWeek() called with: week = $week, types = $types, dateRange = $dateRange"
         )
+
+        backgroundUpdateJob.get()?.join()
 
         val cachedNotifications = cacheDataSource.getNotificationSummariesForWeek(
             week = week,
@@ -204,6 +213,40 @@ class DonkiNotificationsRepository internal constructor(
             filtered = filtered.filter { types.contains(it.type) }
         }
         return filtered.toList()
+    }
+
+    internal fun isPerformingBackgroundUpdate(): Boolean = backgroundUpdateJob.get() != null
+
+    fun performBackgroundUpdate() {
+        Log.d(TAG, "performBackgroundUpdate() called")
+        if (backgroundUpdateJob.get() != null) {
+            Log.w(TAG, "performBackgroundUpdate: already updating")
+            return
+        }
+        coroutineScope.launch {
+            performBackgroundUpdateImpl()
+        }.also { job ->
+            backgroundUpdateJob.set(job)
+            job.invokeOnCompletion {
+                Log.d(TAG, "performBackgroundUpdate: completed")
+                backgroundUpdateJob.compareAndSet(job, null)
+            }
+        }
+    }
+
+    private suspend fun performBackgroundUpdateImpl() {
+        try {
+            for ((week, cachedRecently) in cacheDataSource.getWeeksThatNeedRefresh(dateRange = null).first()) {
+                if (!cachedRecently) {
+                    updateNotificationsForWeekImpl(week, cacheAsync = false)
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Don't propagate exceptions
+            Log.e(TAG, "performBackgroundUpdateImpl failed", e)
+        }
     }
 
     private suspend fun updateNotificationsForWeekImpl(
