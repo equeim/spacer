@@ -97,7 +97,9 @@ class DonkiEventsScreenViewModel(
 
     val eventsTimeZone: StateFlow<ZoneId?>
 
-    val numberOfUnreadNotifications: StateFlow<Int> = getDonkiNotificationsRepositoryInstance(application)
+    private val notificationsRepository = getDonkiNotificationsRepositoryInstance(application)
+
+    val numberOfUnreadNotifications: StateFlow<Int> = notificationsRepository
         .getNumberOfUnreadNotifications()
         .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
@@ -225,6 +227,11 @@ class DonkiEventsScreenViewModel(
     @OptIn(ExperimentalCoroutinesApi::class)
     fun getNeedToRefreshState(): Flow<NeedToRefreshState> =
         eventFilters.flatMapLatest(repository::getNeedToRefreshState)
+
+    fun onActivityStarted() {
+        Log.d(TAG, "onActivityStarted() called")
+        notificationsRepository.performBackgroundUpdate()
+    }
 
     data class EventPresentation(
         val id: EventId,
