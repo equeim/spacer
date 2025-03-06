@@ -115,7 +115,7 @@ internal abstract class BasePagingSource<Item : Any>(
             coroutineScope.launch {
                 invalidationEvents.collect {
                     lastPagingSource?.get()?.apply {
-                        m("Invalidating")
+                        Log.d(TAG, m("Invalidating"))
                         invalidate()
                     }
                 }
