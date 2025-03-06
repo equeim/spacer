@@ -82,8 +82,17 @@ internal class NotificationsDataSourceCache(
         )
         return flow { emitAll(db.await().cachedWeeks().getWeeksThatNeedRefresh()) }.map { weeks ->
             if (weeks.isEmpty()) {
-                Log.d(TAG, "getWeeksThatNeedRefresh: no weeks need refresh")
-                return@map emptyList()
+                val currentWeek = Week.getCurrentWeek(clock)
+                return@map if (dateRange == null || dateRange.lastWeek == currentWeek) {
+                    Log.d(TAG, "getWeeksThatNeedRefresh: no weeks need refresh, return current week")
+                    listOf(WeekThatNeedsRefresh(
+                        week = Week.getCurrentWeek(clock),
+                        cachedRecently = false
+                    ))
+                } else {
+                    Log.d(TAG, "getWeeksThatNeedRefresh: no weeks need refresh")
+                    emptyList()
+                }
             }
             Log.d(TAG, "getWeeksThatNeedRefresh: all weeks that need refresh:\n${weeks.joinToString("\n") { it.toLogString(clock) }}")
             var filtered: Sequence<CachedNotificationsWeek> = weeks.asSequence()

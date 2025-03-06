@@ -104,7 +104,7 @@ class NotificationSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
 
     @Test
     fun `initialize returns SKIP_INITIAL_REFRESH when last week is not cached`() = runTest {
-        assertEquals(RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH, mediator.initialize())
+        assertEquals(RemoteMediator.InitializeAction.LAUNCH_INITIAL_REFRESH, mediator.initialize())
     }
 
     @Test
