@@ -4,7 +4,7 @@
 
 package org.equeim.spacer.donki.data.notifications
 
-enum class NotificationType(internal val stringValue: String) {
+enum class NotificationType(val stringValue: String) {
     Report("Report"),
     CoronalMassEjection("CME"),
     GeomagneticStorm("GST"),

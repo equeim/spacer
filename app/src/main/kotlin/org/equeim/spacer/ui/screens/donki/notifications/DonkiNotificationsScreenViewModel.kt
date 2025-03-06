@@ -188,7 +188,7 @@ class DonkiNotificationsScreenViewModel(
             time = eventTimeFormatter.format(time),
             title = title ?: getTypeDisplayString(notificationTypesStringsCache),
             subtitle = subtitle,
-            read = read
+            read = read,
         )
     }
 
@@ -210,6 +210,17 @@ class DonkiNotificationsScreenViewModel(
         Log.d(TAG, "markAllNotificationsAsRead() called")
         viewModelScope.launch {
             repository.markAllNotificationsAsRead()
+        }
+    }
+
+    suspend fun shouldAskAboutEnablingNotifications(): Boolean {
+        return !settings.askedAboutEnablingNotifications.get()
+    }
+
+    fun askedAboutEnabledNotifications(enable: Boolean) {
+        settings.askedAboutEnablingNotifications.set(true)
+        if (enable) {
+            settings.backgroundNotificationsEnabledTypes.set(NotificationType.entries.toSet())
         }
     }
 

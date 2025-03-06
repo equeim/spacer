@@ -9,6 +9,8 @@ SPDX-License-Identifier: MIT
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".SpacerApplication"
         android:allowBackup="true"
@@ -21,6 +23,7 @@ SPDX-License-Identifier: MIT
         <activity
             android:name=".ui.MainActivity"
             android:configChanges="density|layoutDirection|locale|orientation|screenLayout|screenSize|smallestScreenSize|uiMode|keyboard"
+            android:launchMode="singleTop"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

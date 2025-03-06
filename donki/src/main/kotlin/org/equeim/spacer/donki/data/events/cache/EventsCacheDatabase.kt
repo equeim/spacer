@@ -12,7 +12,6 @@ import org.equeim.spacer.donki.data.events.cache.entities.CachedEvent
 import org.equeim.spacer.donki.data.events.cache.entities.CachedEventsDao
 import org.equeim.spacer.donki.data.events.cache.entities.CachedEventsWeek
 import org.equeim.spacer.donki.data.events.cache.entities.CachedEventsWeeksDao
-import org.equeim.spacer.donki.data.notifications.cache.CachedNotificationsWeek
 import org.equeim.spacer.donki.data.events.cache.entities.CoronalMassEjectionDao
 import org.equeim.spacer.donki.data.events.cache.entities.CoronalMassEjectionExtras
 import org.equeim.spacer.donki.data.events.cache.entities.GeomagneticStormDao

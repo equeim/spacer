@@ -4,24 +4,34 @@
 
 package org.equeim.spacer.ui.screens.donki.notifications
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -30,6 +40,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
@@ -65,10 +76,12 @@ import org.equeim.spacer.ui.screens.donki.notifications.DonkiNotificationsScreen
 import org.equeim.spacer.ui.screens.donki.notifications.details.NotificationDetailsScreen
 import org.equeim.spacer.ui.screens.donki.rememberBaseEventsListStateHolder
 import org.equeim.spacer.ui.screens.donki.shouldShowFiltersAsDialog
+import org.equeim.spacer.ui.screens.settings.DonkiNotificationsSettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.DoneAll
 import org.equeim.spacer.ui.theme.FilterList
 import org.equeim.spacer.ui.utils.rememberIntegerFormatter
+import org.equeim.spacer.utils.safeLaunch
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -108,9 +121,15 @@ private fun DonkiNotificationsScreen(
         eventsTimeZone = model.notificationsTimeZone.collectAsStateWithLifecycle(),
         numberOfUnreadNotifications = model.numberOfUnreadNotifications.collectAsStateWithLifecycle(),
         markAllNotificationsAsRead = model::markAllNotificationsAsRead,
+        shouldAskAboutEnablingNotifications = model::shouldAskAboutEnablingNotifications,
+        askedAboutEnablingNotification = {
+            model.askedAboutEnabledNotifications(it)
+            if (it) navController.navigate(DonkiNotificationsSettingsScreen)
+        },
         navigateToDetailsScreen = { navController.navigate(NotificationDetailsScreen(it)) },
+        navigateToNotificationsSettings = { navController.navigate(DonkiNotificationsSettingsScreen) },
         popBackStack = navController::pop,
-        navHostEntries = { navHostEntries }
+        navHostEntries = { navHostEntries },
     )
 }
 
@@ -123,7 +142,10 @@ private fun DonkiNotificationsScreen(
     eventsTimeZone: State<ZoneId?>,
     numberOfUnreadNotifications: State<Int>,
     markAllNotificationsAsRead: () -> Unit,
+    shouldAskAboutEnablingNotifications: suspend () -> Boolean,
+    askedAboutEnablingNotification: (Boolean) -> Unit,
     navigateToDetailsScreen: (NotificationId) -> Unit,
+    navigateToNotificationsSettings: () -> Unit,
     popBackStack: () -> Unit,
     navHostEntries: () -> List<NavHostEntry<Destination>>,
 ) {
@@ -153,6 +175,7 @@ private fun DonkiNotificationsScreen(
                         dialogNavController.navigate(NotificationFiltersDialog)
                     }
                 }
+                ToolbarIcon(Icons.Filled.Settings, R.string.notifications_settings, navigateToNotificationsSettings)
             }
         }
     ) { contentPadding ->
@@ -183,6 +206,9 @@ private fun DonkiNotificationsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.elevatedCardElevation(2.dp)
             ) {
+                Box(Modifier
+                    .fillMaxWidth(0.5f)
+                    .height(100.dp))
                 Column {
                     Row {
                         Text(text = item.time, modifier = Modifier.weight(1.0f))
@@ -211,6 +237,29 @@ private fun DonkiNotificationsScreen(
                             modifier = Modifier.padding(top = Dimens.SpacingSmall)
                         )
                     }
+                }
+            }
+        }
+
+
+        val requestPermissionLauncher = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission(), askedAboutEnablingNotification)
+        } else {
+            null
+        }
+        val context = LocalContext.current
+        LaunchedEffect(LocalDefaultLocale.current) {
+            if (shouldAskAboutEnablingNotifications()) {
+                val result = snackbarHostState.showSnackbar(
+                    context.getString(R.string.system_notifications_question),
+                    context.getString(R.string.yes),
+                    withDismissAction = true,
+                    duration = SnackbarDuration.Indefinite
+                )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && result == SnackbarResult.ActionPerformed) {
+                    checkNotNull(requestPermissionLauncher).safeLaunch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    askedAboutEnablingNotification(result == SnackbarResult.ActionPerformed)
                 }
             }
         }
@@ -256,21 +305,21 @@ fun DonkiNotificationsScreenPreview() {
                         time = LocalDateTime.now().toString(),
                         title = "Flare intensity has crossed the threshold of M5.0",
                         subtitle = "Significant flare detected by GOES.  Flare intensity has crossed the threshold of M5.0.",
-                        read = false
+                        read = false,
                     ),
                     DonkiNotificationsScreenViewModel.NotificationPresentation(
                         id = NotificationId("1"),
                         time = LocalDateTime.now().toString(),
                         title = "Weekly Space Weather Summary Report for October 02, 2024 - October 08, 2024",
                         subtitle = "Solar activity was at low levels during this reporting period. There were no significant flares or CMEs.",
-                        read = true
+                        read = true,
                     ),
                     DonkiNotificationsScreenViewModel.NotificationPresentation(
                         id = NotificationId("2"),
                         time = LocalDateTime.now().toString(),
                         title = stringResource(NotificationType.MagnetopauseCrossing.displayStringResId),
                         subtitle = null,
-                        read = true
+                        read = true,
                     )
                 ),
             )
@@ -288,8 +337,11 @@ fun DonkiNotificationsScreenPreview() {
             updateFilters = {},
             eventsTimeZone = remember { mutableStateOf(ZoneId.systemDefault()) },
             numberOfUnreadNotifications = remember { mutableIntStateOf(42) },
-            markAllNotificationsAsRead = { },
-            navigateToDetailsScreen = { },
+            markAllNotificationsAsRead = {},
+            shouldAskAboutEnablingNotifications = { true },
+            askedAboutEnablingNotification = { },
+            navigateToDetailsScreen = {},
+            navigateToNotificationsSettings = {},
             popBackStack = {},
             navHostEntries = { emptyList() }
         )
