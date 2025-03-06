@@ -32,10 +32,7 @@ internal class NotificationsRemoteMediator(
 
     override suspend fun getRefreshData(initialRefresh: Boolean): List<Week>? {
         Log.d(TAG, "getRefreshData() called with: initialRefresh = $initialRefresh")
-        if (repository.isPerformingBackgroundUpdate()) {
-            Log.w(TAG, "getRefreshData: performing background update, returning null")
-            return null
-        }
+        repository.waitUntilBackgroundUpdateIsCompleted()
         val weeks = cacheDataSource.getWeeksThatNeedRefresh(filters.value.dateRange).first()
         var filtered = weeks.asSequence()
         if (initialRefresh) {

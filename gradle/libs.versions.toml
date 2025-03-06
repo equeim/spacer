@@ -20,6 +20,7 @@ androidx-lifecycle = "2.8.7"
 androidx-paging = "3.3.5"
 androidx-room = "2.6.1"
 androidx-test-core = "1.6.1"
+androidx-work = "2.10.0"
 
 coroutines = "1.10.1"
 junit = "4.13.2"
@@ -51,6 +52,7 @@ androidx-paging-compose = { module = "androidx.paging:paging-compose", version.r
 androidx-room = { module = "androidx.room:room-ktx", version.ref = "androidx-room" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "androidx-room" }
 androidx-test-core = { module = "androidx.test:core-ktx", version.ref = "androidx-test-core" }
+androidx-work = { module = "androidx.work:work-runtime", version.ref = "androidx-work" }
 
 coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }

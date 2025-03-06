@@ -128,4 +128,28 @@ SPDX-License-Identifier: MIT
     <string name="date_range_string">%1$s - %2$s %3$s</string>
     <string name="date_range_picker_headline">Time zone: %s</string>
     <string name="mark_all_as_read">Mark all notifications as read</string>
+    <string name="notifications_settings">Notifications settings</string>
+    <string name="system_notifications_question">Show DONKI notifications as system notifications?</string>
+    <string name="show_system_notifications_types">Show system notifications for following DONKI notifications:</string>
+    <string name="notifications_background_update_interval">Background update interval:</string>
+    <plurals name="duration_hours">
+        <item quantity="one">%1$d hour</item>
+        <item quantity="other">%1$d hours</item>
+    </plurals>
+    <plurals name="duration_minutes">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
+    <string name="no_notifications_permission">Notifications permission is not granted</string>
+    <string name="notifications_disabled">Notifications are disabled</string>
+    <string name="notification_channel_disabled">Notification channel is disabled</string>
+    <string name="grant_permission">Grant permission</string>
+    <string name="enable_notifications">Enable notifications</string>
+    <string name="enable_notification_channel">Enable notification channel</string>
+    <string name="not_ignoring_battery_optimization">Battery optimization is enabled for this app\nNotification updates will not be performed when device is idle</string>
+    <string name="disable_battery_optimization">Disable battery optimization</string>
+    <string name="restricted_background_data_usage">Background data usage is restricted\nNotification updates will not be performed on metered networks</string>
+    <string name="allow_background_data_usage">Allow background data usage</string>
+    <string name="update_interval_warning">Actual update interval may be greater when device is idle</string>
+    <string name="notifications_update_error">Failed to update DONKI notifications</string>
 </resources>

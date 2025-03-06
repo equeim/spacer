@@ -228,11 +228,6 @@ class DonkiEventsScreenViewModel(
     fun getNeedToRefreshState(): Flow<NeedToRefreshState> =
         eventFilters.flatMapLatest(repository::getNeedToRefreshState)
 
-    fun onActivityStarted() {
-        Log.d(TAG, "onActivityStarted() called")
-        notificationsRepository.performBackgroundUpdate()
-    }
-
     data class EventPresentation(
         val id: EventId,
         val title: String,

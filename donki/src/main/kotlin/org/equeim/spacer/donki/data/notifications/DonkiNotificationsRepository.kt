@@ -12,19 +12,24 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.launch
 import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
@@ -45,14 +50,12 @@ import java.io.Closeable
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.coroutines.cancellation.CancellationException
 
 class DonkiNotificationsRepository internal constructor(
     customNasaApiKey: Flow<String?>,
     okHttpClient: OkHttpClient,
     baseUrl: HttpUrl,
-    context: Context,
+    private val context: Context,
     db: NotificationsDatabase?,
     private val coroutineDispatchers: CoroutineDispatchers,
     private val clock: Clock,
@@ -81,7 +84,10 @@ class DonkiNotificationsRepository internal constructor(
 
     private val coroutineScope = CoroutineScope(SupervisorJob() + coroutineDispatchers.Default)
 
-    private val backgroundUpdateJob = AtomicReference<Job?>(null)
+    private val backgroundUpdateInProgress = MutableStateFlow(false)
+    private val backgroundUpdateCompleted: Flow<Unit> get() = backgroundUpdateInProgress
+        .dropWhile { inProgress -> !inProgress }
+        .transform { inProgress -> if (!inProgress) emit(Unit) }
 
     override fun close() {
         coroutineScope.cancel()
@@ -102,6 +108,7 @@ class DonkiNotificationsRepository internal constructor(
                 mediator.refreshed,
                 filters.drop(1),
                 cacheDataSource.markedNotificationsAsRead.receiveAsFlow(),
+                backgroundUpdateCompleted,
             ),
             coroutineDispatchers = coroutineDispatchers,
             createPagingSource = { createPagingSource(filters.value) }
@@ -170,7 +177,7 @@ class DonkiNotificationsRepository internal constructor(
      */
     internal suspend fun updateNotificationsForWeek(week: Week) {
         Log.d(TAG, "updateNotificationsForWeek() called with: week = $week")
-        backgroundUpdateJob.get()?.join()
+        waitUntilBackgroundUpdateIsCompleted()
         updateNotificationsForWeekImpl(week, cacheAsync = false)
     }
 
@@ -188,7 +195,7 @@ class DonkiNotificationsRepository internal constructor(
             "getNotificationsForWeek() called with: week = $week, types = $types, dateRange = $dateRange"
         )
 
-        backgroundUpdateJob.get()?.join()
+        waitUntilBackgroundUpdateIsCompleted()
 
         val cachedNotifications = cacheDataSource.getNotificationSummariesForWeek(
             week = week,
@@ -198,11 +205,11 @@ class DonkiNotificationsRepository internal constructor(
         if (cachedNotifications != null) {
             return cachedNotifications
         }
-        val notifications = updateNotificationsForWeekImpl(week, cacheAsync = true)
+        val (notificationSummaries, _) = updateNotificationsForWeekImpl(week, cacheAsync = true)
         if (types == NotificationType.entries && dateRange == null) {
-            return notifications
+            return notificationSummaries
         }
-        var filtered = notifications.asSequence()
+        var filtered = notificationSummaries.asSequence()
         if (dateRange != null) {
             filtered = filtered
                 .dropWhile { it.time >= dateRange.instantAfterLastDay }
@@ -215,44 +222,60 @@ class DonkiNotificationsRepository internal constructor(
         return filtered.toList()
     }
 
-    internal fun isPerformingBackgroundUpdate(): Boolean = backgroundUpdateJob.get() != null
-
-    fun performBackgroundUpdate() {
-        Log.d(TAG, "performBackgroundUpdate() called")
-        if (backgroundUpdateJob.get() != null) {
-            Log.w(TAG, "performBackgroundUpdate: already updating")
-            return
-        }
-        coroutineScope.launch {
-            performBackgroundUpdateImpl()
-        }.also { job ->
-            backgroundUpdateJob.set(job)
-            job.invokeOnCompletion {
-                Log.d(TAG, "performBackgroundUpdate: completed")
-                backgroundUpdateJob.compareAndSet(job, null)
-            }
+    internal suspend fun waitUntilBackgroundUpdateIsCompleted() {
+        if (backgroundUpdateInProgress.value) {
+            Log.d(TAG, "waitUntilBackgroundUpdateIsCompleted: waiting until background update is completed")
+            backgroundUpdateInProgress.first { inProgress -> !inProgress }
         }
     }
 
-    private suspend fun performBackgroundUpdateImpl() {
-        try {
-            for ((week, cachedRecently) in cacheDataSource.getWeeksThatNeedRefresh(dateRange = null).first()) {
-                if (!cachedRecently) {
-                    updateNotificationsForWeekImpl(week, cacheAsync = false)
+    data class SucessfulBackgroundUpdateResult(val newUnreadNotifications: List<CachedNotification>)
+
+    /**
+     * Returned job throws [DonkiCacheDataSourceException] and [DonkiNetworkDataSourceException]
+     */
+    suspend fun performBackgroundUpdate(includingCachedRecently: Boolean): SucessfulBackgroundUpdateResult? {
+        Log.d(
+            TAG,
+            "performBackgroundUpdate() called with: includingCachedRecently = $includingCachedRecently"
+        )
+        if (!backgroundUpdateInProgress.compareAndSet(expect = false, update = true)) {
+            Log.w(TAG, "performBackgroundUpdate: already updating, return null")
+            return null
+        }
+        return try {
+            performBackgroundUpdateImpl(includingCachedRecently)
+        } finally {
+            backgroundUpdateInProgress.value = false
+        }
+    }
+
+    private suspend fun performBackgroundUpdateImpl(includingCachedRecently: Boolean): SucessfulBackgroundUpdateResult {
+        val weeksThatNeedRefresh =
+            cacheDataSource.getWeeksThatNeedRefresh(dateRange = null).first()
+        val newUnreadNotifications = coroutineScope {
+            weeksThatNeedRefresh
+                .run {
+                    if (includingCachedRecently) this else filter { !it.cachedRecently }
                 }
-            }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            // Don't propagate exceptions
-            Log.e(TAG, "performBackgroundUpdateImpl failed", e)
+                .map { (week, _) ->
+                    async { updateNotificationsForWeekImpl(week, cacheAsync = false) }
+                }
+                .awaitAll()
+                .flatMap { it.newUnreadNotifications }
         }
+        return SucessfulBackgroundUpdateResult(newUnreadNotifications)
     }
+
+    private data class UpdateWeekResult(
+        val notificationSummaries: List<CachedNotificationSummary>,
+        val newUnreadNotifications: List<CachedNotification>
+    )
 
     private suspend fun updateNotificationsForWeekImpl(
         week: Week,
         cacheAsync: Boolean
-    ): List<CachedNotificationSummary> {
+    ): UpdateWeekResult {
         val weekLoadTime = Instant.now(clock)
         val notificationJsons = networkDataSource.getNotifications(week)
         val cachedNotifications = cacheDataSource.getNotificationSummariesForWeek(
@@ -304,7 +327,7 @@ class DonkiNotificationsRepository internal constructor(
             cacheDataSource.cacheWeek(week, newNotifications, weekLoadTime)
         }
 
-        return buildList(cachedNotifications.size + newNotifications.size) {
+        val notificationSummaries = buildList(cachedNotifications.size + newNotifications.size) {
             addAll(cachedNotifications)
             addAll(
                 newNotifications.asSequence().map {
@@ -319,6 +342,8 @@ class DonkiNotificationsRepository internal constructor(
                 })
             sortByDescending { it.time }
         }
+        val newUnreadNotifications = newNotifications.filter { !it.read }
+        return UpdateWeekResult(notificationSummaries, newUnreadNotifications)
     }
 
     /**

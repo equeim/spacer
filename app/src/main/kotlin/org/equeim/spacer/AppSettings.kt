@@ -11,7 +11,9 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -24,7 +26,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
+import org.equeim.spacer.donki.data.notifications.NotificationType
 import java.io.IOException
+import java.time.Duration
 
 private const val TAG = "Settings"
 
@@ -76,6 +80,27 @@ class AppSettings(private val context: Context) {
         .transformLatest { useCustomNasaApiKey ->
             if (useCustomNasaApiKey) emitAll(customNasaApiKey.flow()) else emit(null)
         }
+
+    val askedAboutEnablingNotifications: Preference<Boolean> =
+        preference(booleanPreferencesKey("askedAboutEnablingNotifications")) { false }
+
+    val backgroundNotificationsEnabledTypes: Preference<Set<NotificationType>> = preference(
+        stringSetPreferencesKey("backgroundNotificationsEnabledTypes")
+    ) { emptySet() }
+        .map(
+            fromOriginalToMapped = { types ->
+                types.mapNotNullTo(mutableSetOf()) { type -> NotificationType.entries.find { it.stringValue == type } }
+            },
+            fromMappedToOriginal = { types -> types.mapTo(mutableSetOf(), NotificationType::stringValue) }
+        )
+
+    val backgroundNotificationsUpdateInterval: Preference<Duration> =
+        preference(longPreferencesKey("backgroundNotificationsUpdateInterval")) {
+            DonkiSystemNotificationsWorker.DEFAULT_INTERVAL.seconds
+        }.map(
+            fromOriginalToMapped = Duration::ofSeconds,
+            fromMappedToOriginal = Duration::getSeconds
+        )
 
     interface Preference<T : Any> {
         suspend fun get(): T

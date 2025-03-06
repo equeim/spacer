@@ -32,8 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.PagingData
@@ -103,7 +101,6 @@ private fun DonkiEventsScreen(
     val eventsTimeZone = model.eventsTimeZone.collectAsStateWithLifecycle()
     val numberOfUnreadNotifications =
         model.numberOfUnreadNotifications.collectAsStateWithLifecycle()
-    LifecycleEventEffect(Lifecycle.Event.ON_START, onEvent = model::onActivityStarted)
     DonkiEventsScreen(
         holder = holder,
         filtersUiState = filters,

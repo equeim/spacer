@@ -30,6 +30,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.olshevski.navigation.reimagined.NavController
@@ -62,7 +64,10 @@ object SettingsScreen : Destination {
 }
 
 @Composable
-private fun SettingsScreen(navController: NavController<Destination>, navHostEntries: () -> List<NavHostEntry<Destination>>) {
+private fun SettingsScreen(
+    navController: NavController<Destination>,
+    navHostEntries: () -> List<NavHostEntry<Destination>>
+) {
     val dialogNavController =
         rememberNavController<Destination>(initialBackstack = emptyList())
     DialogDestinationNavHost(dialogNavController, navHostEntries)
@@ -178,6 +183,23 @@ private fun SettingsScreen(navController: NavController<Destination>, navHostEnt
                 enabled = useCustomApiKey
             ) {
                 Text(stringResource(R.string.generate_nasa_api_key))
+            }
+
+            SectionHeader(
+                stringResource(R.string.notifications),
+                Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
+            )
+
+            val notificationsSettingsScreenViewModel = viewModel<DonkiNotificationsSettingsScreenViewModel>()
+            LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) { notificationsSettingsScreenViewModel.onActivityResumed() }
+            if (notificationsSettingsScreenViewModel.loadedSettings.value) {
+                DonkiNotificationsSettings(
+                    backgroundNotificationsEnabledTypes = notificationsSettingsScreenViewModel.backgroundNotificationsEnabledTypes.collectAsStateWithLifecycle(),
+                    setBackgroundNotificationsEnabledTypes = notificationsSettingsScreenViewModel::setBackgroundNotificationsEnabledTypes,
+                    backgroundNotificationsUpdateInterval = notificationsSettingsScreenViewModel.backgroundNotificationsUpdateInterval.collectAsStateWithLifecycle(),
+                    setBackgroundNotificationsUpdateInterval = notificationsSettingsScreenViewModel::setBackgroundNotificationsUpdateInterval,
+                    issues = notificationsSettingsScreenViewModel.issues,
+                )
             }
 
             HorizontalDivider()

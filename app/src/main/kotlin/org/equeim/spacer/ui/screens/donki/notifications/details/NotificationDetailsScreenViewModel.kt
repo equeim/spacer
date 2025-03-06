@@ -20,8 +20,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.equeim.spacer.AppSettings
+import org.equeim.spacer.DonkiSystemNotificationsManager
 import org.equeim.spacer.donki.data.events.EventType
-import org.equeim.spacer.donki.data.notifications.DonkiNotificationsRepository
 import org.equeim.spacer.donki.data.notifications.NotificationId
 import org.equeim.spacer.donki.data.notifications.cache.CachedNotification
 import org.equeim.spacer.donki.data.notifications.findLinkedEvents
@@ -44,6 +44,7 @@ class NotificationDetailsScreenViewModel(
 ) : AndroidViewModel(application) {
     private val settings = AppSettings(application)
     private val repository = getDonkiNotificationsRepositoryInstance(application)
+    private val systemNotificationsManager = DonkiSystemNotificationsManager(application)
 
     private val _contentState = MutableStateFlow<ContentState>(ContentState.Empty)
     val contentState: StateFlow<ContentState> by ::_contentState
@@ -63,6 +64,7 @@ class NotificationDetailsScreenViewModel(
             _contentState.value = ContentState.ErrorPlaceholder(e.donkiErrorToString(getApplication()))
             return
         }
+        systemNotificationsManager.removeNotification(notificationId)
         notification.mapToPresentation().collect {
             _contentState.value = it
         }
