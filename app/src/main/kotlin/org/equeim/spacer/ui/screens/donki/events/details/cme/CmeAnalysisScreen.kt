@@ -57,6 +57,7 @@ import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.utils.rememberCoordinatesFormatter
 import org.equeim.spacer.ui.utils.rememberIntegerFormatter
+import org.equeim.spacer.utils.safeOpenUri
 import java.text.NumberFormat
 import java.time.Duration
 import java.time.format.DateTimeFormatter
@@ -140,7 +141,7 @@ private fun ScreenContent(
                             contentDescription = stringResource(R.string.go_to_donki_website)
                         )
                     },
-                    onClick = { uriHandler.openUri(link) }
+                    onClick = { uriHandler.safeOpenUri(link) }
                 )
             }
         }
@@ -386,7 +387,7 @@ private fun EnlilModelCard(
                     )
                 }
                 val uriHandler = LocalUriHandler.current
-                OutlinedButton({ uriHandler.openUri(simulation.link) }) {
+                OutlinedButton({ uriHandler.safeOpenUri(simulation.link) }) {
                     Text(stringResource(R.string.enlil_website))
                 }
             }
