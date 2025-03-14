@@ -84,6 +84,7 @@ import org.equeim.spacer.ui.screens.donki.events.details.cme.CoronalMassEjection
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.theme.SatelliteAlt
+import org.equeim.spacer.utils.safeOpenUri
 import java.time.format.DateTimeFormatter
 
 @Parcelize
@@ -139,7 +140,7 @@ private fun ScreenContent(
                             contentDescription = stringResource(R.string.go_to_donki_website)
                         )
                     },
-                    onClick = { uriHandler.openUri(link) }
+                    onClick = { uriHandler.safeOpenUri(link) }
                 )
             }
         }

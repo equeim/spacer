@@ -48,6 +48,7 @@ import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.DialogDestinationNavHost
 import org.equeim.spacer.ui.screens.current
 import org.equeim.spacer.ui.theme.Dimens
+import org.equeim.spacer.utils.safeOpenUri
 
 @Parcelize
 object SettingsScreen : Destination {
@@ -172,7 +173,7 @@ private fun SettingsScreen(navController: NavController<Destination>, navHostEnt
 
             val uriHandler = LocalUriHandler.current
             Button(
-                onClick = { uriHandler.openUri(GENERATE_NASA_API_KEY_URL) },
+                onClick = { uriHandler.safeOpenUri(GENERATE_NASA_API_KEY_URL) },
                 modifier = Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal()),
                 enabled = useCustomApiKey
             ) {

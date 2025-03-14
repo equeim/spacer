@@ -66,6 +66,7 @@ import org.equeim.spacer.ui.screens.donki.notifications.details.NotificationDeta
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.utils.createEventDateTimeFormatter
+import org.equeim.spacer.utils.safeOpenUri
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.Locale
@@ -124,7 +125,7 @@ private fun ScreenContent(
                             contentDescription = stringResource(R.string.go_to_donki_website)
                         )
                     },
-                    onClick = { uriHandler.openUri(link) }
+                    onClick = { uriHandler.safeOpenUri(link) }
                 )
             }
         }
