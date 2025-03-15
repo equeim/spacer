@@ -16,7 +16,6 @@ import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import org.equeim.spacer.donki.data.events.EventId
-import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.donki.data.events.network.json.GeomagneticStorm
 import org.equeim.spacer.donki.data.events.network.json.GeomagneticStormSummary
 import java.time.Instant

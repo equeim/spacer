@@ -18,7 +18,6 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.donki.data.common.DonkiNetworkStats
-import org.equeim.spacer.donki.data.notifications.NotificationType
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
@@ -36,8 +35,6 @@ class SettingsScreenViewModel(application: Application) : AndroidViewModel(appli
     val useCustomApiKey: StateFlow<Boolean> by PreferenceStateFlow(settings.useCustomNasaApiKey)
     private val _apiKeyTextFieldContent = mutableStateOf("")
     val apiKeyTextFieldContent: String by _apiKeyTextFieldContent
-
-    val enabledDonkiNotifications: StateFlow<Set<NotificationType>> by PreferenceStateFlow(settings.backgroundNotificationsEnabledTypes)
 
     val rateLimit: Int? = DonkiNetworkStats.rateLimit
     val remainingRequests: Int? = DonkiNetworkStats.remainingRequests
