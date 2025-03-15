@@ -16,7 +16,6 @@ import androidx.room.OnConflictStrategy.Companion.REPLACE
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import org.equeim.spacer.donki.data.events.EventId
-import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.donki.data.events.network.json.SolarFlare
 import org.equeim.spacer.donki.data.events.network.json.SolarFlareSummary
 import java.time.Instant

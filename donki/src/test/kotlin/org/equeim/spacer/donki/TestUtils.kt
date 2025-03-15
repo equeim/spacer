@@ -4,26 +4,16 @@
 
 package org.equeim.spacer.donki
 
-import android.content.Context
-import android.util.Log
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.test.core.app.ApplicationProvider
-import io.mockk.Answer
-import io.mockk.Call
-import io.mockk.MockKMatcherScope
-import io.mockk.every
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
 import kotlinx.coroutines.asExecutor
 import okhttp3.HttpUrl
 import okhttp3.mockwebserver.RecordedRequest
 import okio.Buffer
 import org.equeim.spacer.donki.data.common.Week
-import org.equeim.spacer.donki.data.events.cache.EventsCacheDatabase
 import java.io.InputStream
 import java.net.URL
-import java.nio.file.Path
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -31,7 +21,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
-import kotlin.io.path.inputStream
 import kotlin.test.assertNotNull
 
 internal val TEST_WEEK: Week = Week(LocalDate.of(2022, 1, 17))
@@ -50,8 +39,6 @@ internal fun instantOf(
     zoneOffset: ZoneOffset = ZoneOffset.UTC
 ): Instant =
     LocalDateTime.of(year, month, dayOfMonth, hour, minute).toInstant(zoneOffset)
-
-internal fun MockKMatcherScope.anyWeek(): Week = Week(any())
 
 internal fun timeZoneParameters(): List<ZoneId> = setOf(
     ZoneId.ofOffset("UTC", ZoneOffset.UTC),

@@ -13,13 +13,12 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import org.equeim.spacer.donki.data.common.DonkiJson
-import org.equeim.spacer.donki.data.events.network.json.Event
 import org.equeim.spacer.donki.data.events.EventId
-import org.equeim.spacer.donki.data.events.network.json.EventSummary
 import org.equeim.spacer.donki.data.events.EventType
+import org.equeim.spacer.donki.data.events.network.json.Event
+import org.equeim.spacer.donki.data.events.network.json.EventSummary
 import java.time.Instant
 
 @Entity(tableName = "events")
