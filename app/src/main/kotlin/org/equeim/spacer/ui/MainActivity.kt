@@ -53,7 +53,6 @@ import org.equeim.spacer.ui.screens.donki.notifications.details.NotificationDeta
 import org.equeim.spacer.ui.theme.ApplicationTheme
 import org.equeim.spacer.ui.utils.defaultLocale
 import org.equeim.spacer.ui.utils.defaultLocaleFlow
-import org.equeim.spacer.utils.getApplicationOrThrow
 import java.util.Locale
 
 private const val TAG = "MainActivity"
@@ -134,7 +133,7 @@ private fun MainActivityScreen(
             Log.d(TAG, "Default locale is $it")
         }
     }.collectAsState(activity.defaultLocale)
-    val settings = remember { AppSettings(activity.getApplicationOrThrow()) }
+    val settings = remember { AppSettings(activity) }
 
     CompositionLocalProvider(
         LocalDefaultLocale provides defaultLocale,
@@ -182,13 +181,8 @@ private fun setDarkThemeWindowProperties(window: Window, view: View, isDarkTheme
 }
 
 @Composable
-private fun isDarkTheme(activity: MainActivity): State<Boolean> {
-    val colorsSettingsProvider = remember {
-        ColorsSettingsProvider.init(activity.getApplicationOrThrow())
-    }
-    val darkThemeMode by remember {
-        colorsSettingsProvider.darkThemeModeMode
-    }.collectAsState()
+private fun isDarkTheme(context: Context): State<Boolean> {
+    val darkThemeMode by ColorsSettingsProvider.init(context).darkThemeModeMode.collectAsState()
     LaunchedEffect(null) {
         snapshotFlow { darkThemeMode }
             .collect { Log.d(TAG, "darkThemeMode is $it") }

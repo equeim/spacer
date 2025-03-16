@@ -34,7 +34,7 @@ private const val TAG = "Settings"
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
 
-class AppSettings(private val context: Context) {
+class AppSettings(context: Context) {
     enum class DarkThemeMode {
         FollowSystem,
         On,
@@ -56,6 +56,11 @@ class AppSettings(private val context: Context) {
             val stringToEnum = enumToString.entries.associate { (k, v) -> v to k }
         }
     }
+
+    private val dataStore = context.dataStore
+
+    private fun <T : Any> preference(key: Preferences.Key<T>, defaultValueProducer: () -> T): Preference<T> =
+        PreferenceImpl(dataStore, key, defaultValueProducer)
 
     val darkThemeMode: Preference<DarkThemeMode> =
         preference(stringPreferencesKey("darkTheme")) { DarkThemeMode.enumToString[DarkThemeMode.Default]!! }
@@ -107,9 +112,6 @@ class AppSettings(private val context: Context) {
         fun set(value: T)
         fun flow(): Flow<T>
     }
-
-    private fun <T : Any> preference(key: Preferences.Key<T>, defaultValueProducer: () -> T): Preference<T> =
-        PreferenceImpl(context.dataStore, key, defaultValueProducer)
 }
 
 private class PreferenceImpl<T : Any>(
