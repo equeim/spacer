@@ -46,7 +46,6 @@ import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.common.NeedToRefreshState
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
-import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.components.CARD_CONTENT_PADDING
 import org.equeim.spacer.ui.components.RootScreenTopAppBar
 import org.equeim.spacer.ui.components.ToolbarIcon
@@ -67,11 +66,11 @@ import org.equeim.spacer.ui.screens.settings.SettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.FilterList
 import org.equeim.spacer.ui.theme.NotificationsNone
+import org.equeim.spacer.ui.theme.ScreenPreview
 import org.equeim.spacer.ui.utils.rememberIntegerFormatter
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
-import java.util.Locale
 
 @Parcelize
 data object DonkiEventsScreen : Destination {
@@ -249,7 +248,7 @@ private val ListItem.lazyListContentType: ContentType
 @PreviewScreenSizes
 @Composable
 fun DonkiEventsScreenPreview() {
-    CompositionLocalProvider(LocalDefaultLocale provides Locale.getDefault()) {
+    ScreenPreview {
         val filters = remember {
             mutableStateOf(
                 FiltersUiState(

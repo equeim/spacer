@@ -32,7 +32,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -61,7 +60,9 @@ import org.equeim.spacer.donki.data.notifications.NotificationType
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.donki.notifications.DonkiNotificationsScreenViewModel.Companion.displayStringResId
+import org.equeim.spacer.ui.theme.ComponentPreview
 import org.equeim.spacer.ui.theme.Dimens
+import org.equeim.spacer.ui.theme.ScreenPreview
 import org.equeim.spacer.utils.safeStartActivity
 import java.time.Duration
 
@@ -272,7 +273,7 @@ fun DonkiNotificationsSettings(
 @Preview
 @Composable
 private fun NotificationsSettingsPreview() {
-    Surface(color = MaterialTheme.colorScheme.background) {
+    ComponentPreview {
         DonkiNotificationsSettings(
             backgroundNotificationsEnabledTypes = remember { mutableStateOf(setOf(NotificationType.GeomagneticStorm)) },
             setBackgroundNotificationsEnabledTypes = {},
@@ -286,7 +287,7 @@ private fun NotificationsSettingsPreview() {
 @Preview
 @Composable
 private fun NotificationsSettingsScreenPreview() {
-    Surface(color = MaterialTheme.colorScheme.background) {
+    ScreenPreview {
         DonkiNotificationsSettingsScreen(
             backgroundNotificationsEnabledTypes = remember { mutableStateOf(setOf(NotificationType.GeomagneticStorm)) },
             setBackgroundNotificationsEnabledTypes = {},

@@ -30,7 +30,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
@@ -80,12 +79,12 @@ import org.equeim.spacer.ui.screens.settings.DonkiNotificationsSettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.DoneAll
 import org.equeim.spacer.ui.theme.FilterList
+import org.equeim.spacer.ui.theme.ScreenPreview
 import org.equeim.spacer.ui.utils.rememberIntegerFormatter
 import org.equeim.spacer.utils.safeLaunch
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.util.Locale
 
 @Parcelize
 data object DonkiNotificationsScreen : Destination {
@@ -286,7 +285,7 @@ private val ListItem.lazyListContentType: Any
 @PreviewScreenSizes
 @Composable
 fun DonkiNotificationsScreenPreview() {
-    CompositionLocalProvider(LocalDefaultLocale provides Locale.getDefault()) {
+    ScreenPreview {
         val filters = remember {
             mutableStateOf(
                 FiltersUiState(
