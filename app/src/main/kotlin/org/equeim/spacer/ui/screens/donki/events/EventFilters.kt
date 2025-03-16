@@ -5,7 +5,6 @@
 package org.equeim.spacer.ui.screens.donki.events
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,7 +18,6 @@ import dev.olshevski.navigation.reimagined.pop
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.events.EventType
-import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.current
 import org.equeim.spacer.ui.screens.donki.BaseEventFiltersDialogContent
@@ -27,9 +25,9 @@ import org.equeim.spacer.ui.screens.donki.BaseEventFiltersSideSheet
 import org.equeim.spacer.ui.screens.donki.DateRangePickerDialogContent
 import org.equeim.spacer.ui.screens.donki.FiltersUiState
 import org.equeim.spacer.ui.screens.donki.events.DonkiEventsScreenViewModel.Companion.displayStringResId
+import org.equeim.spacer.ui.theme.ComponentPreview
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.Locale
 
 @Parcelize
 data object EventFiltersDialog : Destination {
@@ -80,7 +78,7 @@ data object EventsDateRangePickerDialog : Destination {
 @Preview
 @Composable
 private fun EventsFiltersDateRangePickerDialogPreview() {
-    CompositionLocalProvider(LocalDefaultLocale provides Locale.getDefault()) {
+    ComponentPreview {
         DateRangePickerDialogContent<EventType>(
             initialFilters = FiltersUiState(EventType.entries, null, true),
             updateFilters = {},
@@ -93,7 +91,7 @@ private fun EventsFiltersDateRangePickerDialogPreview() {
 @Preview
 @Composable
 private fun EventFiltersSideSheetPreview() {
-    CompositionLocalProvider(LocalDefaultLocale provides Locale.getDefault()) {
+    ComponentPreview {
         BaseEventFiltersSideSheet(
             filtersUiState = remember {
                 mutableStateOf(
@@ -120,7 +118,7 @@ private fun EventFiltersSideSheetPreview() {
 @Preview
 @Composable
 private fun EventFiltersDialogPreview() {
-    CompositionLocalProvider(LocalDefaultLocale provides Locale.getDefault()) {
+    ComponentPreview {
         BaseEventFiltersDialogContent(
             filtersUiState = remember {
                 mutableStateOf(

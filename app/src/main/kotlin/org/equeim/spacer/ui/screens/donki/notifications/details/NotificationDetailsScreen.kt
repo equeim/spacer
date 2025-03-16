@@ -52,7 +52,6 @@ import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.donki.data.notifications.NotificationId
-import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.donki.LinkedEventPresentation
@@ -64,6 +63,7 @@ import org.equeim.spacer.ui.screens.donki.notifications.details.NotificationDeta
 import org.equeim.spacer.ui.screens.donki.notifications.details.NotificationDetailsScreenViewModel.ContentState.NotificationData
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
+import org.equeim.spacer.ui.theme.ScreenPreview
 import org.equeim.spacer.ui.utils.createEventDateTimeFormatter
 import org.equeim.spacer.utils.safeOpenUri
 import java.time.ZoneId
@@ -276,7 +276,7 @@ fun NotificationDetailsScreenPreview() {
         R-type: Rare 2000-2999 km/s
         ER-type: Extremely Rare >3000 km/s
     """.trimIndent()
-    CompositionLocalProvider(LocalDefaultLocale provides Locale.getDefault()) {
+    ScreenPreview {
         ScreenContent(
             state = NotificationData(
                 title = "CME update (Lucy, Solar Orbiter, STEREO A, Missions Near Earth)",

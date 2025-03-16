@@ -5,20 +5,26 @@
 package org.equeim.spacer.ui.theme
 
 import android.os.Build
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import org.equeim.spacer.ui.ColorsSettingsProvider
+import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.utils.getApplicationOrThrow
+import java.util.Locale
 
 private val lightScheme = lightColorScheme(
     primary = Colors.primaryLight,
@@ -102,18 +108,28 @@ fun ApplicationTheme(
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
-    val useSystemColors by remember {
-        ColorsSettingsProvider.init(context.getApplicationOrThrow()).useSystemColors
-    }.collectAsState()
+    val colorsSettingsProvider = remember(context) {
+        ColorsSettingsProvider.init(context.getApplicationOrThrow())
+    }
+    val useSystemColors = colorsSettingsProvider.useSystemColors.collectAsState()
+    ApplicationThemeImpl(darkTheme, useSystemColors.value, content)
+}
+
+@Composable
+private fun ApplicationThemeImpl(
+    darkTheme: Boolean,
+    useSystemColors: Boolean,
+    content: @Composable () -> Unit
+) {
     val colors = if (darkTheme) {
         if (useSystemColors && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            dynamicDarkColorScheme(context)
+            dynamicDarkColorScheme(LocalContext.current)
         } else {
             darkScheme
         }
     } else {
         if (useSystemColors && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            dynamicLightColorScheme(context)
+            dynamicLightColorScheme(LocalContext.current)
         } else {
             lightScheme
         }
@@ -125,4 +141,30 @@ fun ApplicationTheme(
         shapes = Shapes(),
         content = content
     )
+}
+
+@Composable
+fun ScreenPreview(content: @Composable () -> Unit) {
+    BasePreview(fillMaxSize = true, content = content)
+}
+
+@Composable
+fun ComponentPreview(content: @Composable () -> Unit) {
+    BasePreview(fillMaxSize = false, content = content)
+}
+
+@Composable
+private fun BasePreview(fillMaxSize: Boolean, content: @Composable () -> Unit) {
+    ApplicationThemeImpl(
+        darkTheme = isSystemInDarkTheme(),
+        useSystemColors = false,
+    ) {
+        CompositionLocalProvider(LocalDefaultLocale provides Locale.getDefault()) {
+            Surface(
+                modifier = if (fillMaxSize) Modifier.fillMaxSize() else Modifier,
+                color = MaterialTheme.colorScheme.background,
+                content = content
+            )
+        }
+    }
 }

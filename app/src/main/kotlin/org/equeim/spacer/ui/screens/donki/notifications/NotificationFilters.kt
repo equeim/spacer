@@ -5,7 +5,6 @@
 package org.equeim.spacer.ui.screens.donki.notifications
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,7 +19,6 @@ import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.donki.data.notifications.NotificationType
-import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.current
 import org.equeim.spacer.ui.screens.donki.BaseEventFiltersDialogContent
@@ -29,10 +27,9 @@ import org.equeim.spacer.ui.screens.donki.DateRangePickerDialogContent
 import org.equeim.spacer.ui.screens.donki.FiltersUiState
 import org.equeim.spacer.ui.screens.donki.events.DonkiEventsScreenViewModel.Companion.displayStringResId
 import org.equeim.spacer.ui.screens.donki.notifications.DonkiNotificationsScreenViewModel.Companion.displayStringResId
+import org.equeim.spacer.ui.theme.ComponentPreview
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.Locale
-
 
 
 @Parcelize
@@ -83,7 +80,7 @@ data object NotificationsDateRangePickerDialog : Destination {
 @Preview
 @Composable
 private fun NotificationFiltersDateRangePickerDialogPreview() {
-    CompositionLocalProvider(LocalDefaultLocale provides Locale.getDefault()) {
+    ComponentPreview {
         DateRangePickerDialogContent<EventType>(
             initialFilters = FiltersUiState(EventType.entries, null, true),
             updateFilters = {},
@@ -96,7 +93,7 @@ private fun NotificationFiltersDateRangePickerDialogPreview() {
 @Preview
 @Composable
 private fun NotificationFiltersSideSheetPreview() {
-    CompositionLocalProvider(LocalDefaultLocale provides Locale.getDefault()) {
+    ComponentPreview {
         BaseEventFiltersSideSheet(
             filtersUiState = remember {
                 mutableStateOf(
@@ -123,7 +120,7 @@ private fun NotificationFiltersSideSheetPreview() {
 @Preview
 @Composable
 private fun NotificationFiltersDialogPreview() {
-    CompositionLocalProvider(LocalDefaultLocale provides Locale.getDefault()) {
+    ComponentPreview {
         BaseEventFiltersDialogContent(
             filtersUiState = remember {
                 mutableStateOf(
