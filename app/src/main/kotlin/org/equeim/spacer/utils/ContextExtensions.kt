@@ -19,11 +19,6 @@ fun Context.getApplicationOrThrow(): Application {
         ?: throw IllegalStateException("Failed to retrieve Application instance from context $this")
 }
 
-fun Context.getActivityOrThrow(): Activity {
-    if (this is Activity) return this
-    return findInstanceOf() ?: throw IllegalStateException("Failed to retrieve Activity instance from context $this")
-}
-
 private inline fun <reified T : Context> Context.findInstanceOf(): T? {
     var context: Context? = this
     while (context is ContextWrapper) {
