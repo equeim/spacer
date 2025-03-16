@@ -4,7 +4,7 @@
 
 package org.equeim.spacer.ui
 
-import android.app.Application
+import android.content.Context
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
@@ -25,10 +25,10 @@ object ColorsSettingsProvider {
     lateinit var useSystemColors: StateFlow<Boolean>
         private set
 
-    fun init(application: Application): ColorsSettingsProvider {
+    fun init(context: Context): ColorsSettingsProvider {
         if (::darkThemeModeMode.isInitialized) return this
         runBlocking {
-            val settings = AppSettings(application)
+            val settings = AppSettings(context)
             darkThemeModeMode = settings.darkThemeMode.flow().stateIn(collectingScope)
             useSystemColors = settings.useSystemColors.flow().stateIn(collectingScope)
         }

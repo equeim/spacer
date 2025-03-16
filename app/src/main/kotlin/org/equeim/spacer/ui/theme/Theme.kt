@@ -18,12 +18,10 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import org.equeim.spacer.ui.ColorsSettingsProvider
 import org.equeim.spacer.ui.LocalDefaultLocale
-import org.equeim.spacer.utils.getApplicationOrThrow
 import java.util.Locale
 
 private val lightScheme = lightColorScheme(
@@ -108,10 +106,7 @@ fun ApplicationTheme(
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
-    val colorsSettingsProvider = remember(context) {
-        ColorsSettingsProvider.init(context.getApplicationOrThrow())
-    }
-    val useSystemColors = colorsSettingsProvider.useSystemColors.collectAsState()
+    val useSystemColors = ColorsSettingsProvider.init(context).useSystemColors.collectAsState()
     ApplicationThemeImpl(darkTheme, useSystemColors.value, content)
 }
 
