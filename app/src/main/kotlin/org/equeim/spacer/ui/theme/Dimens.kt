@@ -5,6 +5,7 @@
 package org.equeim.spacer.ui.theme
 
 import android.annotation.SuppressLint
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
@@ -13,13 +14,11 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
-import org.equeim.spacer.utils.getActivityOrThrow
 
 object Dimens {
     private val SmallScreenContentPadding = 16.dp
@@ -92,7 +91,7 @@ object Dimens {
             val config = LocalConfiguration.current
             return WindowSizeClass.calculateFromSize(DpSize(config.screenWidthDp.dp, config.screenHeightDp.dp))
         } else {
-            calculateWindowSizeClass(LocalContext.current.getActivityOrThrow())
+            calculateWindowSizeClass(checkNotNull(LocalActivity.current))
         }
     }
 }
