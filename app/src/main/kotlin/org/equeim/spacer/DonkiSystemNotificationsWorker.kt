@@ -33,13 +33,11 @@ class DonkiSystemNotificationsWorker(appContext: Context, params: WorkerParamete
         Log.d(TAG, "doWork: updating notifications")
         var newUnreadNotifications: List<CachedNotification>?
         var error: DonkiException?
-        var result: Result
         try {
             newUnreadNotifications = getDonkiNotificationsRepositoryInstance(applicationContext)
                 .performBackgroundUpdate(includingCachedRecently = true)
                 ?.newUnreadNotifications
             error = null
-            result = Result.success()
             if (newUnreadNotifications != null) {
                 Log.d(
                     TAG,
@@ -52,15 +50,21 @@ class DonkiSystemNotificationsWorker(appContext: Context, params: WorkerParamete
             Log.e(TAG, "doWork: update failed", e)
             newUnreadNotifications = null
             error = e
-            // We are unlikely to recover from something other than a network error, so stop the worker in that case
-            result = if (e is DonkiNetworkDataSourceException) Result.retry() else Result.failure()
         }
-        when {
-            newUnreadNotifications?.isNotEmpty() == true ->
+
+        return if (error == null) {
+            if (newUnreadNotifications?.isNotEmpty() == true) {
                 notificationsManager.showNotifications(newUnreadNotifications)
-            error != null -> notificationsManager.showFailedUpdateNotification(error)
+            }
+            Result.success()
+        } else {
+            // We are unlikely to recover from something other than a network error, so stop the worker in that case
+            val fatalError = error !is DonkiNetworkDataSourceException
+            if (fatalError || runAttemptCount > 0) {
+                notificationsManager.showFailedUpdateNotification(error)
+            }
+            if (fatalError) Result.failure() else Result.retry()
         }
-        return result
     }
 
     enum class BackgroundUpdateIssue {
