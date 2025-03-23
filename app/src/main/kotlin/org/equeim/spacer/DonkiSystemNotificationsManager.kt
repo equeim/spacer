@@ -123,12 +123,13 @@ class DonkiSystemNotificationsManager(private val context: Context) {
             return
         }
         notificationManager.notify(
-            0,
+            Random.Default.nextInt(),
             Notification.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.warning_24px)
                 .setContentTitle(context.getText(R.string.notifications_update_error))
                 .setContentText(error.donkiErrorToString(context))
                 .setContentIntent(
+                    // TODO: show error details in a dialog
                     PendingIntent.getActivity(
                         context,
                         Random.Default.nextInt(),
