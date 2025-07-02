@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 // SPDX-FileCopyrightText: 2022-2025 Alexey Rochev
 //
 // SPDX-License-Identifier: MIT
@@ -18,8 +20,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
 }
+
+kotlin.compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
 
 dependencies {
     api(libs.okhttp)
