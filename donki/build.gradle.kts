@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 // SPDX-FileCopyrightText: 2022-2025 Alexey Rochev
 //
 // SPDX-License-Identifier: MIT
@@ -21,11 +23,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_11.toString()
     testOptions.unitTests.all {
         it.systemProperties("robolectric.logging" to "stdout")
     }
 }
+
+kotlin.compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
 
 ksp {
     arg("room.incremental", "true")

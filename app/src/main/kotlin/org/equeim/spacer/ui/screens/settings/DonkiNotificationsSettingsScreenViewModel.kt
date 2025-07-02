@@ -46,8 +46,8 @@ class DonkiNotificationsSettingsScreenViewModel(application: Application) :
 
     @Immutable
     data class Issue(
-        @StringRes val text: Int,
-        @StringRes val actionText: Int,
+        @param:StringRes val text: Int,
+        @param:StringRes val actionText: Int,
         val actionIntent: Intent
     ) {
         override fun equals(other: Any?): Boolean = if (other is Issue) {
