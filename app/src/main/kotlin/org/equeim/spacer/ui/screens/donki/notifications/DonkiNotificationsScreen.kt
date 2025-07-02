@@ -174,7 +174,11 @@ private fun DonkiNotificationsScreen(
                         dialogNavController.navigate(NotificationFiltersDialog)
                     }
                 }
-                IconButtonWithTooltip(Icons.Filled.Settings, R.string.notifications_settings, navigateToNotificationsSettings)
+                IconButtonWithTooltip(
+                    icon = Icons.Filled.Settings,
+                    textId = R.string.notifications_settings,
+                    onClick = navigateToNotificationsSettings
+                )
             }
         }
     ) { contentPadding ->

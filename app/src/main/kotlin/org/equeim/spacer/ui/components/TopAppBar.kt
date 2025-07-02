@@ -59,7 +59,11 @@ fun SubScreenTopAppBar(
         title = { Text(text = title) },
         modifier = modifier,
         navigationIcon = {
-            IconButtonWithTooltip(Icons.AutoMirrored.Filled.ArrowBack, R.string.navigate_up, popBackStack)
+            IconButtonWithTooltip(
+                icon = Icons.AutoMirrored.Filled.ArrowBack,
+                textId = R.string.navigate_up,
+                onClick = popBackStack
+            )
         },
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(

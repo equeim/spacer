@@ -4,6 +4,7 @@
 
 package org.equeim.spacer.ui.components
 
+import android.view.HapticFeedbackConstants
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,27 +28,19 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun IconButtonWithTooltip(icon: ImageVector, @StringRes textId: Int, onClick: () -> Unit) {
-    val text = stringResource(textId)
-    TooltipBox(
-        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
-        tooltip = {
-            PlainTooltip {
-                Text(text)
-            }
-        },
-        state = rememberTooltipState(),
-        focusable = false
-    ) {
+fun IconButtonWithTooltip(icon: ImageVector, @StringRes textId: Int, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    BaseButtonWithTooltip(textId, modifier) { text ->
         IconButton(onClick) {
             Icon(icon, text)
         }
@@ -60,25 +53,41 @@ fun IconButtonWithTooltipAndBadge(
     icon: ImageVector,
     @StringRes textId: Int,
     badgeText: () -> String,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val text = stringResource(textId)
-    TooltipBox(
-        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
-        tooltip = {
-            PlainTooltip {
-                Text(text)
-            }
-        },
-        state = rememberTooltipState(),
-        focusable = false
-    ) {
-        NonClippingIconButton(onClick, Modifier) {
+    BaseButtonWithTooltip(textId, modifier) { text ->
+        NonClippingIconButton(onClick) {
             BadgedBox(
                 badge = { Badge { Text(badgeText()) } }
             ) {
                 Icon(icon, text)
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BaseButtonWithTooltip(
+    @StringRes tooltipText: Int,
+    modifier: Modifier = Modifier,
+    button: @Composable (tooltipText: String) -> Unit
+) {
+    val tooltipTextString = stringResource(tooltipText)
+    // Passing modifier to TooltipBox is broken
+    Box(modifier) {
+        TooltipBox(
+            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
+            tooltip = {
+                PlainTooltip { Text(tooltipTextString) }
+                val view = LocalView.current
+                LaunchedEffect(null) { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
+            },
+            state = rememberTooltipState(),
+            focusable = false
+        ) {
+            button(tooltipTextString)
         }
     }
 }

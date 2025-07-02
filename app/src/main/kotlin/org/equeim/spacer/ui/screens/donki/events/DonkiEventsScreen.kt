@@ -164,7 +164,11 @@ private fun DonkiEventsScreen(
                             onClick = navigateToNotificationsScreen
                         )
                     }
-                    IconButtonWithTooltip(Icons.Filled.Settings, R.string.filters, navigateToSettingsScreen)
+                    IconButtonWithTooltip(
+                        icon = Icons.Filled.Settings,
+                        textId = R.string.filters,
+                        onClick = navigateToSettingsScreen
+                    )
                 }
             )
         }
