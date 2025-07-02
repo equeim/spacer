@@ -19,7 +19,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -46,6 +45,7 @@ import org.equeim.spacer.ui.components.Dialog
 import org.equeim.spacer.ui.components.RadioButtonListItem
 import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
+import org.equeim.spacer.ui.components.SwitchWithText
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.DialogDestinationNavHost
 import org.equeim.spacer.ui.screens.current
@@ -88,15 +88,16 @@ private fun SettingsScreen(
                 .consumeWindowInsets(contentPadding),
             verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
         ) {
+            val horizontalPadding = Dimens.ScreenContentPaddingHorizontal()
+
             SectionHeader(
                 stringResource(R.string.appearance),
-                Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal()),
+                Modifier.padding(horizontal = horizontalPadding),
                 topPadding = 0.dp
             )
 
             val listItemHorizontalPadding =
-                (Dimens.ScreenContentPaddingHorizontal() - LIST_ITEM_HORIZONTAL_PADDING)
-                    .coerceAtLeast(0.dp)
+                (horizontalPadding - LIST_ITEM_HORIZONTAL_PADDING).coerceAtLeast(0.dp)
 
             val darkThemeMode: AppSettings.DarkThemeMode by model.darkThemeMode.collectAsStateWithLifecycle()
             ListItem(
@@ -121,47 +122,41 @@ private fun SettingsScreen(
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val useSystemColors: Boolean by model.useSystemColors.collectAsStateWithLifecycle()
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.use_system_colors)) },
-                    trailingContent = { Switch(useSystemColors, onCheckedChange = null) },
-                    modifier = Modifier
-                        .clickable {
-                            model.settings.useSystemColors.set(!useSystemColors)
-                        }
-                        .padding(horizontal = listItemHorizontalPadding)
+                SwitchWithText(
+                    checked = useSystemColors,
+                    onCheckedChange = { model.settings.useSystemColors.set(!useSystemColors) },
+                    text = R.string.use_system_colors,
+                    horizontalContentPadding = horizontalPadding,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
             SectionHeader(
                 stringResource(R.string.behaviour),
-                Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
+                Modifier.padding(horizontal = horizontalPadding)
             )
 
             val displayEventsTimeInUTC: Boolean by model.displayEventsTimeInUTC.collectAsStateWithLifecycle()
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.display_events_in_utc)) },
-                trailingContent = { Switch(displayEventsTimeInUTC, onCheckedChange = null) },
-                modifier = Modifier
-                    .clickable {
-                        model.settings.displayEventsTimeInUTC.set(!displayEventsTimeInUTC)
-                    }
-                    .padding(horizontal = listItemHorizontalPadding)
+            SwitchWithText(
+                checked = displayEventsTimeInUTC,
+                onCheckedChange = { model.settings.displayEventsTimeInUTC.set(!displayEventsTimeInUTC) },
+                text = R.string.display_events_in_utc,
+                horizontalContentPadding = horizontalPadding,
+                modifier = Modifier.fillMaxWidth()
             )
 
             SectionHeader(
                 stringResource(R.string.connection),
-                Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
+                Modifier.padding(horizontal = horizontalPadding)
             )
 
             val useCustomApiKey: Boolean by model.useCustomApiKey.collectAsStateWithLifecycle()
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.custom_nasa_api_key)) },
-                trailingContent = { Switch(useCustomApiKey, onCheckedChange = null) },
-                modifier = Modifier
-                    .clickable {
-                        model.settings.useCustomNasaApiKey.set(!useCustomApiKey)
-                    }
-                    .padding(horizontal = listItemHorizontalPadding)
+            SwitchWithText(
+                checked = useCustomApiKey,
+                onCheckedChange = { model.settings.useCustomNasaApiKey.set(!useCustomApiKey) },
+                text = R.string.custom_nasa_api_key,
+                horizontalContentPadding = horizontalPadding,
+                modifier = Modifier.fillMaxWidth()
             )
 
             val apiKeyIsBlank: Boolean by remember { derivedStateOf { model.apiKeyTextFieldContent.isBlank() } }
@@ -170,7 +165,7 @@ private fun SettingsScreen(
                 onValueChange = model::setNasaApiKey,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Dimens.ScreenContentPaddingHorizontal()),
+                    .padding(horizontal = horizontalPadding),
                 enabled = useCustomApiKey,
                 label = { Text(stringResource(R.string.nasa_api_key)) },
                 isError = apiKeyIsBlank
@@ -179,7 +174,7 @@ private fun SettingsScreen(
             val uriHandler = LocalUriHandler.current
             Button(
                 onClick = { uriHandler.safeOpenUri(GENERATE_NASA_API_KEY_URL) },
-                modifier = Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal()),
+                modifier = Modifier.padding(horizontal = horizontalPadding),
                 enabled = useCustomApiKey
             ) {
                 Text(stringResource(R.string.generate_nasa_api_key))
@@ -187,7 +182,7 @@ private fun SettingsScreen(
 
             SectionHeader(
                 stringResource(R.string.notifications),
-                Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
+                Modifier.padding(horizontal = horizontalPadding)
             )
 
             val notificationsSettingsScreenViewModel = viewModel<DonkiNotificationsSettingsScreenViewModel>()
@@ -208,7 +203,7 @@ private fun SettingsScreen(
                 text = model.rateLimit?.let { stringResource(R.string.rate_limit, it) }
                     ?: stringResource(R.string.rate_limit_unknown),
                 modifier = Modifier
-                    .padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
+                    .padding(horizontal = horizontalPadding)
                     .padding(top = Dimens.SpacingSmall)
             )
 
@@ -220,7 +215,7 @@ private fun SettingsScreen(
                     )
                 }
                     ?: stringResource(R.string.remaining_requests_unknown),
-                modifier = Modifier.padding(horizontal = Dimens.ScreenContentPaddingHorizontal())
+                modifier = Modifier.padding(horizontal = horizontalPadding)
             )
         }
     }

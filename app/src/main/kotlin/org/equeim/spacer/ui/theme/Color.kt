@@ -79,3 +79,5 @@ object Colors {
     val surfaceContainerHighDark = Color(0xFF2B292F)
     val surfaceContainerHighestDark = Color(0xFF36343A)
 }
+
+fun Color.applyDisabledAlpha(enabled: Boolean): Color = if (enabled) this else copy(alpha = 0.38f)
