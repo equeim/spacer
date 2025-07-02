@@ -62,8 +62,8 @@ import org.equeim.spacer.donki.data.notifications.NotificationType
 import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.components.ElevatedCardWithPadding
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
-import org.equeim.spacer.ui.components.ToolbarIcon
-import org.equeim.spacer.ui.components.ToolbarIconWithBadge
+import org.equeim.spacer.ui.components.IconButtonWithTooltip
+import org.equeim.spacer.ui.components.IconButtonWithTooltipAndBadge
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.DialogDestinationNavHost
 import org.equeim.spacer.ui.screens.donki.BaseEventsList
@@ -162,7 +162,7 @@ private fun DonkiNotificationsScreen(
                 val haveUnreadNotifications = remember { derivedStateOf { numberOfUnreadNotifications.value != 0 } }
                 AnimatedVisibility(haveUnreadNotifications.value) {
                     val formatter = rememberIntegerFormatter()
-                    ToolbarIconWithBadge(
+                    IconButtonWithTooltipAndBadge(
                         icon = Icons.Filled.DoneAll,
                         textId = R.string.mark_all_as_read,
                         badgeText = { formatter.format(numberOfUnreadNotifications.value.toLong()) },
@@ -170,11 +170,11 @@ private fun DonkiNotificationsScreen(
                     )
                 }
                 if (showFiltersAsDialog.value) {
-                    ToolbarIcon(Icons.Filled.FilterList, R.string.filters) {
+                    IconButtonWithTooltip(Icons.Filled.FilterList, R.string.filters) {
                         dialogNavController.navigate(NotificationFiltersDialog)
                     }
                 }
-                ToolbarIcon(Icons.Filled.Settings, R.string.notifications_settings, navigateToNotificationsSettings)
+                IconButtonWithTooltip(Icons.Filled.Settings, R.string.notifications_settings, navigateToNotificationsSettings)
             }
         }
     ) { contentPadding ->

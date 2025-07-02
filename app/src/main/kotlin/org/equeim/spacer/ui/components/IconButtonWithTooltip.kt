@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ToolbarIcon(icon: ImageVector, @StringRes textId: Int, onClick: () -> Unit) {
+fun IconButtonWithTooltip(icon: ImageVector, @StringRes textId: Int, onClick: () -> Unit) {
     val text = stringResource(textId)
     TooltipBox(
         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
@@ -56,7 +56,7 @@ fun ToolbarIcon(icon: ImageVector, @StringRes textId: Int, onClick: () -> Unit) 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ToolbarIconWithBadge(
+fun IconButtonWithTooltipAndBadge(
     icon: ImageVector,
     @StringRes textId: Int,
     badgeText: () -> String,
