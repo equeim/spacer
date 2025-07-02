@@ -24,12 +24,12 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -245,7 +245,7 @@ fun DonkiNotificationsSettings(
                 colors = ExposedDropdownMenuDefaults.textFieldColors(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled.value),
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled.value),
                 enabled = enabled.value,
             )
             ExposedDropdownMenu(

@@ -39,7 +39,7 @@ import androidx.compose.ui.unit.dp
 fun ToolbarIcon(icon: ImageVector, @StringRes textId: Int, onClick: () -> Unit) {
     val text = stringResource(textId)
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
         tooltip = {
             PlainTooltip {
                 Text(text)
@@ -64,7 +64,7 @@ fun ToolbarIconWithBadge(
 ) {
     val text = stringResource(textId)
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
         tooltip = {
             PlainTooltip {
                 Text(text)
