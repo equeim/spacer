@@ -48,8 +48,8 @@ import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.ui.components.CARD_CONTENT_PADDING
 import org.equeim.spacer.ui.components.RootScreenTopAppBar
-import org.equeim.spacer.ui.components.ToolbarIcon
-import org.equeim.spacer.ui.components.ToolbarIconWithBadge
+import org.equeim.spacer.ui.components.IconButtonWithTooltip
+import org.equeim.spacer.ui.components.IconButtonWithTooltipAndBadge
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.DialogDestinationNavHost
 import org.equeim.spacer.ui.screens.donki.BaseEventsList
@@ -143,7 +143,7 @@ private fun DonkiEventsScreen(
                 scrollBehavior,
                 startActions = {
                     if (showFiltersAsDialog.value) {
-                        ToolbarIcon(Icons.Filled.FilterList, R.string.filters) {
+                        IconButtonWithTooltip(Icons.Filled.FilterList, R.string.filters) {
                             dialogNavController.navigate(EventFiltersDialog)
                         }
                     }
@@ -151,20 +151,20 @@ private fun DonkiEventsScreen(
                 endActions = {
                     if (numberOfUnreadNotifications.value > 0) {
                         val formatter = rememberIntegerFormatter()
-                        ToolbarIconWithBadge(
+                        IconButtonWithTooltipAndBadge(
                             icon = Icons.Filled.NotificationsNone,
                             textId = R.string.notifications,
                             badgeText = { formatter.format(numberOfUnreadNotifications.value.toLong()) },
                             onClick = navigateToNotificationsScreen
                         )
                     } else {
-                        ToolbarIcon(
+                        IconButtonWithTooltip(
                             icon = Icons.Filled.NotificationsNone,
                             textId = R.string.notifications,
                             onClick = navigateToNotificationsScreen
                         )
                     }
-                    ToolbarIcon(Icons.Filled.Settings, R.string.filters, navigateToSettingsScreen)
+                    IconButtonWithTooltip(Icons.Filled.Settings, R.string.filters, navigateToSettingsScreen)
                 }
             )
         }
