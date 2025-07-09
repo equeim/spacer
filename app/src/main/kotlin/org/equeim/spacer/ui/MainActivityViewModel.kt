@@ -19,8 +19,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.DonkiSystemNotificationsManager
@@ -31,7 +31,7 @@ import kotlin.time.toKotlinDuration
 
 class MainActivityViewModel(application: Application) : AndroidViewModel(application) {
     val activityLifecycleState = MutableStateFlow(Lifecycle.State.INITIALIZED)
-    val isOnDonkiNotificationsScreen = MutableStateFlow(false)
+    var isOnDonkiNotificationsScreen = false
 
     private var initialized = false
 
@@ -43,13 +43,19 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     }
 
     suspend fun updateDonkiNotificationsOnLifecycleStart() {
-        activityLifecycleState.filter { it == Lifecycle.State.STARTED }.collect {
-            Log.d(TAG, "updateDonkiNotificationsOnLifecycleStart: activity $it")
-            if (!isOnDonkiNotificationsScreen.value) {
-                updateDonkiNotifications()
-            } else {
-                Log.d(TAG, "updateDonkiNotificationsOnLifecycleStart: on notifications screen, don't update notifications")
-            }
+        activityLifecycleState.map { it.isAtLeast(Lifecycle.State.STARTED) }.distinctUntilChanged()
+            .collect {
+                if (it) {
+                    Log.d(TAG, "updateDonkiNotificationsOnLifecycleStart: activity started")
+                    if (!isOnDonkiNotificationsScreen) {
+                        updateDonkiNotifications()
+                    } else {
+                        Log.d(
+                            TAG,
+                            "updateDonkiNotificationsOnLifecycleStart: on notifications screen, don't update notifications"
+                        )
+                    }
+                }
         }
     }
 
@@ -72,7 +78,7 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
             TAG,
             "updateDonkiNotifications: new unread notifications = ${result.newUnreadNotifications.map { it.id }}"
         )
-        if (isOnDonkiNotificationsScreen.value) {
+        if (isOnDonkiNotificationsScreen) {
             Log.d(TAG, "updateDonkiNotifications: on notifications screen, don't show system notifications")
             return
         }

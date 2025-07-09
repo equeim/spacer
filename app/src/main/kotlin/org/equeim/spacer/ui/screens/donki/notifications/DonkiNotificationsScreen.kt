@@ -6,6 +6,8 @@ package org.equeim.spacer.ui.screens.donki.notifications
 
 import android.Manifest
 import android.os.Build
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -20,6 +22,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.BottomAppBarDefaults
+import androidx.compose.material3.BottomAppBarScrollBehavior
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -29,12 +33,11 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -51,19 +54,19 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import dev.olshevski.navigation.reimagined.NavController
 import dev.olshevski.navigation.reimagined.NavHostEntry
 import dev.olshevski.navigation.reimagined.navigate
-import dev.olshevski.navigation.reimagined.pop
 import dev.olshevski.navigation.reimagined.rememberNavController
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.common.NeedToRefreshState
 import org.equeim.spacer.donki.data.notifications.NotificationId
 import org.equeim.spacer.donki.data.notifications.NotificationType
 import org.equeim.spacer.ui.LocalDefaultLocale
+import org.equeim.spacer.ui.MainActivityViewModel
 import org.equeim.spacer.ui.components.ElevatedCardWithPadding
-import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.components.IconButtonWithTooltip
-import org.equeim.spacer.ui.components.IconButtonWithTooltipAndBadge
+import org.equeim.spacer.ui.components.RootScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.DialogDestinationNavHost
 import org.equeim.spacer.ui.screens.donki.BaseEventsList
@@ -80,34 +83,25 @@ import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.DoneAll
 import org.equeim.spacer.ui.theme.FilterList
 import org.equeim.spacer.ui.theme.ScreenPreview
-import org.equeim.spacer.ui.utils.rememberIntegerFormatter
 import org.equeim.spacer.utils.safeLaunch
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 
-@Parcelize
-data object DonkiNotificationsScreen : Destination {
-    @Composable
-    override fun Content(
-        navController: NavController<Destination>,
-        navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntries: List<NavHostEntry<Destination>>?
-    ) =
-        DonkiNotificationsScreen(navController, navHostEntries)
-}
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DonkiNotificationsScreen(
+fun DonkiNotificationsScreen(
     navController: NavController<Destination>,
-    navHostEntries: List<NavHostEntry<Destination>>
+    navHostEntries: List<NavHostEntry<Destination>>,
+    bottomAppBarScrollBehavior: BottomAppBarScrollBehavior,
+    scrollToTopEvents: Flow<Unit>
 ) {
     val model = viewModel<DonkiNotificationsScreenViewModel>()
     val filters = model.filtersUiState.collectAsStateWithLifecycle()
-    model.filtersUiState.collectAsState()
     val holder = rememberBaseEventsListStateHolder(
         items = model.pagingData.collectAsLazyPagingItems(),
         listState = rememberLazyListState(),
+        scrollToTopEvents = scrollToTopEvents,
         filters = filters,
         getNeedToRefreshState = model::getNeedToRefreshState,
         allEventTypesAreDisabledErrorString = R.string.all_notification_types_are_disabled,
@@ -118,7 +112,7 @@ private fun DonkiNotificationsScreen(
         filtersUiState = filters,
         updateFilters = model::updateFilters,
         eventsTimeZone = model.notificationsTimeZone.collectAsStateWithLifecycle(),
-        numberOfUnreadNotifications = model.numberOfUnreadNotifications.collectAsStateWithLifecycle(),
+        haveUnreadNotifications = model.haveUnreadNotifications.collectAsStateWithLifecycle(),
         markAllNotificationsAsRead = model::markAllNotificationsAsRead,
         shouldAskAboutEnablingNotifications = model::shouldAskAboutEnablingNotifications,
         askedAboutEnablingNotification = {
@@ -127,9 +121,16 @@ private fun DonkiNotificationsScreen(
         },
         navigateToDetailsScreen = { navController.navigate(NotificationDetailsScreen(it)) },
         navigateToNotificationsSettings = { navController.navigate(DonkiNotificationsSettingsScreen) },
-        popBackStack = navController::pop,
         navHostEntries = { navHostEntries },
+        bottomAppBarScrollBehavior = bottomAppBarScrollBehavior
     )
+
+    val activityViewModel =
+        viewModel<MainActivityViewModel>(viewModelStoreOwner = checkNotNull(LocalActivity.current) as ComponentActivity)
+    DisposableEffect(activityViewModel) {
+        activityViewModel.isOnDonkiNotificationsScreen = true
+        onDispose { activityViewModel.isOnDonkiNotificationsScreen = false }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -139,15 +140,16 @@ private fun DonkiNotificationsScreen(
     filtersUiState: State<FiltersUiState<NotificationType>>,
     updateFilters: (FiltersUiState<NotificationType>) -> Unit,
     eventsTimeZone: State<ZoneId?>,
-    numberOfUnreadNotifications: State<Int>,
+    haveUnreadNotifications: State<Boolean>,
     markAllNotificationsAsRead: () -> Unit,
     shouldAskAboutEnablingNotifications: suspend () -> Boolean,
     askedAboutEnablingNotification: (Boolean) -> Unit,
     navigateToDetailsScreen: (NotificationId) -> Unit,
     navigateToNotificationsSettings: () -> Unit,
-    popBackStack: () -> Unit,
     navHostEntries: () -> List<NavHostEntry<Destination>>,
+    bottomAppBarScrollBehavior: BottomAppBarScrollBehavior
 ) {
+    val topAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val snackbarHostState = remember { SnackbarHostState() }
 
     val dialogNavController = rememberNavController<Destination>(initialBackstack = emptyList())
@@ -158,28 +160,30 @@ private fun DonkiNotificationsScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            SubScreenTopAppBar(stringResource(R.string.notifications), popBackStack) {
-                val haveUnreadNotifications = remember { derivedStateOf { numberOfUnreadNotifications.value != 0 } }
-                AnimatedVisibility(haveUnreadNotifications.value) {
-                    val formatter = rememberIntegerFormatter()
-                    IconButtonWithTooltipAndBadge(
-                        icon = Icons.Filled.DoneAll,
-                        textId = R.string.mark_all_as_read,
-                        badgeText = { formatter.format(numberOfUnreadNotifications.value.toLong()) },
-                        onClick = markAllNotificationsAsRead
-                    )
-                }
-                if (showFiltersAsDialog.value) {
-                    IconButtonWithTooltip(Icons.Filled.FilterList, R.string.filters) {
-                        dialogNavController.navigate(NotificationFiltersDialog)
+            RootScreenTopAppBar(
+                title = stringResource(R.string.notifications),
+                scrollBehavior = topAppBarScrollBehavior,
+                startActions = {
+                    if (showFiltersAsDialog.value) {
+                        IconButtonWithTooltip(Icons.Filled.FilterList, R.string.filters) {
+                            dialogNavController.navigate(NotificationFiltersDialog)
+                        }
                     }
-                }
-                IconButtonWithTooltip(
-                    icon = Icons.Filled.Settings,
-                    textId = R.string.notifications_settings,
-                    onClick = navigateToNotificationsSettings
-                )
-            }
+                },
+                endActions = {
+                    AnimatedVisibility(haveUnreadNotifications.value) {
+                        IconButtonWithTooltip(
+                            icon = Icons.Filled.DoneAll,
+                            textId = R.string.mark_all_as_read,
+                            onClick = markAllNotificationsAsRead
+                        )
+                    }
+                    IconButtonWithTooltip(
+                        icon = Icons.Filled.Settings,
+                        textId = R.string.notifications_settings,
+                        onClick = navigateToNotificationsSettings
+                    )
+                })
         }
     ) { contentPadding ->
         BaseEventsList(
@@ -187,7 +191,10 @@ private fun DonkiNotificationsScreen(
 
             contentPadding = contentPadding,
             snackbarHostState = snackbarHostState,
-            topAppBarScrollBehavior = null,
+            mainContentNestedScrollConnections = listOf(
+                topAppBarScrollBehavior.nestedScrollConnection,
+                bottomAppBarScrollBehavior.nestedScrollConnection
+            ),
 
             filtersUiState = filtersUiState,
             updateFilters = updateFilters,
@@ -209,9 +216,11 @@ private fun DonkiNotificationsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.elevatedCardElevation(2.dp)
             ) {
-                Box(Modifier
-                    .fillMaxWidth(0.5f)
-                    .height(100.dp))
+                Box(
+                    Modifier
+                        .fillMaxWidth(0.5f)
+                        .height(100.dp)
+                )
                 Column {
                     Row {
                         Text(text = item.time, modifier = Modifier.weight(1.0f))
@@ -246,7 +255,10 @@ private fun DonkiNotificationsScreen(
 
 
         val requestPermissionLauncher = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission(), askedAboutEnablingNotification)
+            rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission(),
+                askedAboutEnablingNotification
+            )
         } else {
             null
         }
@@ -286,6 +298,7 @@ private val ListItem.lazyListContentType: Any
         else -> ContentType.Notification
     }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @PreviewScreenSizes
 @Composable
 fun DonkiNotificationsScreenPreview() {
@@ -331,6 +344,7 @@ fun DonkiNotificationsScreenPreview() {
             holder = rememberBaseEventsListStateHolder(
                 items = items,
                 listState = rememberLazyListState(),
+                scrollToTopEvents = remember { emptyFlow() },
                 filters = filters,
                 getNeedToRefreshState = { flowOf(NeedToRefreshState.DontNeedToRefresh) },
                 allEventTypesAreDisabledErrorString = R.string.all_notification_types_are_disabled,
@@ -339,14 +353,14 @@ fun DonkiNotificationsScreenPreview() {
             filtersUiState = filters,
             updateFilters = {},
             eventsTimeZone = remember { mutableStateOf(ZoneId.systemDefault()) },
-            numberOfUnreadNotifications = remember { mutableIntStateOf(42) },
+            haveUnreadNotifications = remember { mutableStateOf(true) },
             markAllNotificationsAsRead = {},
             shouldAskAboutEnablingNotifications = { true },
             askedAboutEnablingNotification = { },
             navigateToDetailsScreen = {},
             navigateToNotificationsSettings = {},
-            popBackStack = {},
-            navHostEntries = { emptyList() }
+            navHostEntries = { emptyList() },
+            bottomAppBarScrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
         )
     }
 }

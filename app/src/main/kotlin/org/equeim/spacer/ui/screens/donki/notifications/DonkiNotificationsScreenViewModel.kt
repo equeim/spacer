@@ -100,8 +100,9 @@ class DonkiNotificationsScreenViewModel(
                 )
             )
 
-    val numberOfUnreadNotifications: StateFlow<Int> = repository.getNumberOfUnreadNotifications()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+    val haveUnreadNotifications: StateFlow<Boolean> = repository.getNumberOfUnreadNotifications()
+        .map { it > 0 }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     val pagingData: Flow<PagingData<ListItem>>
 
