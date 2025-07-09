@@ -38,11 +38,10 @@ import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.getSelectedEndDate
 import androidx.compose.material3.getSelectedStartDate
 import androidx.compose.material3.rememberDateRangePickerState
-import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -61,6 +60,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.flowWithLifecycle
+import androidx.window.core.layout.WindowSizeClass
 import dev.olshevski.navigation.reimagined.NavController
 import dev.olshevski.navigation.reimagined.navEntry
 import kotlinx.coroutines.flow.SharingStarted
@@ -157,10 +157,10 @@ fun <EventType : Enum<EventType>> BaseEventFiltersDialogContent(
 
 @Composable
 fun shouldShowFiltersAsDialog(): State<Boolean> {
-    val windowSizeClass = rememberUpdatedState(Dimens.calculateWindowSizeClass())
+    val windowSizeClass = rememberUpdatedState(currentWindowAdaptiveInfo().windowSizeClass)
     return remember {
         derivedStateOf {
-            windowSizeClass.value.widthSizeClass == WindowWidthSizeClass.Compact
+            !windowSizeClass.value.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
         }
     }
 }
@@ -376,13 +376,13 @@ fun <EventType : Enum<EventType>> DateRangePickerDialogContent(
     eventsTimeZone: ZoneId,
     closeDialog: () -> Unit,
 ) {
-    val heightSizeClass = Dimens.calculateWindowSizeClass().heightSizeClass
+    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
     val initialDisplayMode: DisplayMode by remember {
         derivedStateOf {
-            if (heightSizeClass == WindowHeightSizeClass.Compact) {
-                DisplayMode.Input
-            } else {
+            if (windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)) {
                 DisplayMode.Picker
+            } else {
+                DisplayMode.Input
             }
         }
     }

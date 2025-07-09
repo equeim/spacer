@@ -5,20 +5,13 @@
 package org.equeim.spacer.ui.theme
 
 import android.annotation.SuppressLint
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
-import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
-import androidx.compose.material3.windowsizeclass.WindowSizeClass
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowSizeClass
 
 object Dimens {
     private val SmallScreenContentPadding = 16.dp
@@ -32,7 +25,7 @@ object Dimens {
         end: Boolean = true,
         bottom: Boolean = true,
     ): PaddingValues {
-        val windowSizeClass = calculateWindowSizeClass()
+        val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
         val horizontal = ScreenContentPaddingHorizontal(windowSizeClass)
         val vertical = ScreenContentPaddingVertical(windowSizeClass)
         return PaddingValues(
@@ -45,24 +38,24 @@ object Dimens {
 
     @SuppressLint("ComposableNaming")
     @Composable
-    fun ScreenContentPaddingHorizontal(): Dp = ScreenContentPaddingHorizontal(calculateWindowSizeClass())
+    fun ScreenContentPaddingHorizontal(): Dp = ScreenContentPaddingHorizontal(currentWindowAdaptiveInfo().windowSizeClass)
 
     @SuppressLint("ComposableNaming")
     @Composable
-    fun ScreenContentPaddingVertical(): Dp = ScreenContentPaddingVertical(calculateWindowSizeClass())
+    fun ScreenContentPaddingVertical(): Dp = ScreenContentPaddingVertical(currentWindowAdaptiveInfo().windowSizeClass)
 
     private fun ScreenContentPaddingHorizontal(windowSizeClass: WindowSizeClass): Dp =
-        if (windowSizeClass.widthSizeClass == WindowWidthSizeClass.Compact) {
-            SmallScreenContentPadding
-        } else {
+        if (windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)) {
             BigScreenContentPadding
+        } else {
+            SmallScreenContentPadding
         }
 
     private fun ScreenContentPaddingVertical(windowSizeClass: WindowSizeClass): Dp =
-        if (windowSizeClass.heightSizeClass == WindowHeightSizeClass.Compact) {
-            SmallScreenContentPadding
-        } else {
+        if (windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)) {
             BigScreenContentPadding
+        } else {
+            SmallScreenContentPadding
         }
 
 
@@ -82,16 +75,5 @@ object Dimens {
     fun listItemHorizontalPadding(horizontalPadding: Dp): Dp {
         // 16dp is ListItem's own hardcoded padding
         return (horizontalPadding - 16.dp).coerceAtLeast(0.dp)
-    }
-
-    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
-    @Composable
-    fun calculateWindowSizeClass(): WindowSizeClass {
-        return if (LocalInspectionMode.current) {
-            val config = LocalConfiguration.current
-            return WindowSizeClass.calculateFromSize(DpSize(config.screenWidthDp.dp, config.screenHeightDp.dp))
-        } else {
-            calculateWindowSizeClass(checkNotNull(LocalActivity.current))
-        }
     }
 }

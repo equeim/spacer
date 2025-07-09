@@ -39,7 +39,7 @@ androidx-core = { module = "androidx.core:core-ktx", version.ref = "androidx-cor
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "androidx-compose" }
 androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "androidx-compose-material3" }
 androidx-compose-material3-adaptiveNavigationSuite = { module = "androidx.compose.material3:material3-adaptive-navigation-suite", version.ref = "androidx-compose-material3" }
-androidx-compose-material3-window = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "androidx-compose-material3" }
+androidx-compose-material3-adaptive = { module = "androidx.compose.material3.adaptive:adaptive" }
 androidx-compose-material-icons = { module = "androidx.compose.material:material-icons-core" }
 androidx-compose-runtime = { module = "androidx.compose.runtime:runtime" }
 androidx-compose-ui = { module = "androidx.compose.ui:ui" }
