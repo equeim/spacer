@@ -60,6 +60,7 @@ dependencies {
     implementation(libs.androidx.core)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material3.adaptiveNavigationSuite)
     implementation(libs.androidx.compose.material3.window)
     implementation(libs.androidx.compose.material.icons)
     implementation(libs.androidx.compose.ui)

@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.BottomAppBarDefaults
+import androidx.compose.material3.BottomAppBarScrollBehavior
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
@@ -40,16 +43,16 @@ import dev.olshevski.navigation.reimagined.NavController
 import dev.olshevski.navigation.reimagined.NavHostEntry
 import dev.olshevski.navigation.reimagined.navigate
 import dev.olshevski.navigation.reimagined.rememberNavController
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.common.NeedToRefreshState
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.ui.components.CARD_CONTENT_PADDING
-import org.equeim.spacer.ui.components.RootScreenTopAppBar
 import org.equeim.spacer.ui.components.IconButtonWithTooltip
-import org.equeim.spacer.ui.components.IconButtonWithTooltipAndBadge
+import org.equeim.spacer.ui.components.RootScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.DialogDestinationNavHost
 import org.equeim.spacer.ui.screens.donki.BaseEventsList
@@ -59,57 +62,45 @@ import org.equeim.spacer.ui.screens.donki.FiltersUiState
 import org.equeim.spacer.ui.screens.donki.ListItem
 import org.equeim.spacer.ui.screens.donki.events.DonkiEventsScreenViewModel.Companion.displayStringResId
 import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreen
-import org.equeim.spacer.ui.screens.donki.notifications.DonkiNotificationsScreen
 import org.equeim.spacer.ui.screens.donki.rememberBaseEventsListStateHolder
 import org.equeim.spacer.ui.screens.donki.shouldShowFiltersAsDialog
 import org.equeim.spacer.ui.screens.settings.SettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.FilterList
-import org.equeim.spacer.ui.theme.NotificationsNone
 import org.equeim.spacer.ui.theme.ScreenPreview
-import org.equeim.spacer.ui.utils.rememberIntegerFormatter
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 
-@Parcelize
-data object DonkiEventsScreen : Destination {
-    @Composable
-    override fun Content(
-        navController: NavController<Destination>,
-        navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntries: List<NavHostEntry<Destination>>?
-    ) = DonkiEventsScreen(navController, navHostEntries)
-}
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DonkiEventsScreen(
+fun DonkiEventsScreen(
     navController: NavController<Destination>,
-    navHostEntries: List<NavHostEntry<Destination>>
+    navHostEntries: List<NavHostEntry<Destination>>,
+    bottomAppBarScrollBehavior: BottomAppBarScrollBehavior,
+    scrollToTopEvents: Flow<Unit>
 ) {
     val model = viewModel<DonkiEventsScreenViewModel>()
     val filters = model.filtersUiState.collectAsStateWithLifecycle()
     val holder = rememberBaseEventsListStateHolder(
         items = model.pagingData.collectAsLazyPagingItems(),
         listState = rememberLazyListState(),
+        scrollToTopEvents = scrollToTopEvents,
         filters = filters,
         getNeedToRefreshState = model::getNeedToRefreshState,
         allEventTypesAreDisabledErrorString = R.string.all_event_types_are_disabled,
         noEventsInDateRangeErrorString = R.string.no_events_in_date_range,
     )
     val eventsTimeZone = model.eventsTimeZone.collectAsStateWithLifecycle()
-    val numberOfUnreadNotifications =
-        model.numberOfUnreadNotifications.collectAsStateWithLifecycle()
     DonkiEventsScreen(
         holder = holder,
         filtersUiState = filters,
         updateFilters = model::updateFilters,
         eventsTimeZone = eventsTimeZone,
-        numberOfUnreadNotifications = numberOfUnreadNotifications,
         navHostEntries = { navHostEntries },
         navigateToDetailsScreen = { navController.navigate(DonkiEventDetailsScreen(it)) },
-        navigateToNotificationsScreen = { navController.navigate(DonkiNotificationsScreen) },
-        navigateToSettingsScreen = { navController.navigate(SettingsScreen) }
+        navigateToSettingsScreen = { navController.navigate(SettingsScreen) },
+        bottomAppBarScrollBehavior = bottomAppBarScrollBehavior
     )
 }
 
@@ -120,14 +111,12 @@ private fun DonkiEventsScreen(
     filtersUiState: State<FiltersUiState<EventType>>,
     updateFilters: (FiltersUiState<EventType>) -> Unit,
     eventsTimeZone: State<ZoneId?>,
-    numberOfUnreadNotifications: State<Int>,
     navHostEntries: () -> List<NavHostEntry<Destination>>,
     navigateToDetailsScreen: (EventId) -> Unit,
-    navigateToNotificationsScreen: () -> Unit,
     navigateToSettingsScreen: () -> Unit,
+    bottomAppBarScrollBehavior: BottomAppBarScrollBehavior
 ) {
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-
+    val topAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val snackbarHostState = remember { SnackbarHostState() }
 
     val dialogNavController = rememberNavController<Destination>(initialBackstack = emptyList())
@@ -140,7 +129,7 @@ private fun DonkiEventsScreen(
         topBar = {
             RootScreenTopAppBar(
                 stringResource(R.string.space_weather_events),
-                scrollBehavior,
+                topAppBarScrollBehavior,
                 startActions = {
                     if (showFiltersAsDialog.value) {
                         IconButtonWithTooltip(Icons.Filled.FilterList, R.string.filters) {
@@ -149,21 +138,6 @@ private fun DonkiEventsScreen(
                     }
                 },
                 endActions = {
-                    if (numberOfUnreadNotifications.value > 0) {
-                        val formatter = rememberIntegerFormatter()
-                        IconButtonWithTooltipAndBadge(
-                            icon = Icons.Filled.NotificationsNone,
-                            textId = R.string.notifications,
-                            badgeText = { formatter.format(numberOfUnreadNotifications.value.toLong()) },
-                            onClick = navigateToNotificationsScreen
-                        )
-                    } else {
-                        IconButtonWithTooltip(
-                            icon = Icons.Filled.NotificationsNone,
-                            textId = R.string.notifications,
-                            onClick = navigateToNotificationsScreen
-                        )
-                    }
                     IconButtonWithTooltip(
                         icon = Icons.Filled.Settings,
                         textId = R.string.filters,
@@ -178,7 +152,10 @@ private fun DonkiEventsScreen(
 
             contentPadding = contentPadding,
             snackbarHostState = snackbarHostState,
-            topAppBarScrollBehavior = scrollBehavior,
+            mainContentNestedScrollConnections = listOf(
+                topAppBarScrollBehavior.nestedScrollConnection,
+                bottomAppBarScrollBehavior.nestedScrollConnection
+            ),
 
             filtersUiState = filtersUiState,
             updateFilters = updateFilters,
@@ -249,6 +226,7 @@ private val ListItem.lazyListContentType: ContentType
         }
     }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @PreviewScreenSizes
 @Composable
 fun DonkiEventsScreenPreview() {
@@ -291,6 +269,7 @@ fun DonkiEventsScreenPreview() {
             holder = rememberBaseEventsListStateHolder(
                 items = items,
                 listState = rememberLazyListState(),
+                scrollToTopEvents = remember { emptyFlow() },
                 filters = filters,
                 getNeedToRefreshState = { flowOf(NeedToRefreshState.DontNeedToRefresh) },
                 allEventTypesAreDisabledErrorString = R.string.all_event_types_are_disabled,
@@ -299,11 +278,10 @@ fun DonkiEventsScreenPreview() {
             filtersUiState = filters,
             updateFilters = {},
             eventsTimeZone = remember { mutableStateOf(ZoneId.systemDefault()) },
-            numberOfUnreadNotifications = remember { mutableStateOf(69) },
             navHostEntries = { emptyList() },
             navigateToDetailsScreen = {},
-            navigateToNotificationsScreen = {},
-            navigateToSettingsScreen = {}
+            navigateToSettingsScreen = {},
+            bottomAppBarScrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
         )
     }
 }

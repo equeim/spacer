@@ -53,6 +53,7 @@ import kotlin.time.Duration.Companion.milliseconds
 fun rememberBaseEventsListStateHolder(
     items: LazyPagingItems<ListItem>,
     listState: LazyListState,
+    scrollToTopEvents: Flow<Unit>,
     filters: State<FiltersUiState<*>>,
     getNeedToRefreshState: () -> Flow<NeedToRefreshState>,
     @StringRes allEventTypesAreDisabledErrorString: Int,
@@ -66,6 +67,7 @@ fun rememberBaseEventsListStateHolder(
         BaseEventsListStateHolder(
             items,
             listState,
+            scrollToTopEvents,
             filters,
             getNeedToRefreshState,
             allEventTypesAreDisabledErrorString,
@@ -81,13 +83,14 @@ fun rememberBaseEventsListStateHolder(
 class BaseEventsListStateHolder(
     val items: LazyPagingItems<ListItem>,
     val listState: LazyListState,
+    scrollToTopEvents: Flow<Unit>,
     filters: State<FiltersUiState<*>>,
     getNeedToRefreshState: () -> Flow<NeedToRefreshState>,
     @StringRes allEventTypesAreDisabledErrorString: Int,
     @StringRes noEventsInDateRangeErrorString: Int,
     context: Context,
     lifecycleOwner: LifecycleOwner,
-    coroutineScope: CoroutineScope,
+    private val coroutineScope: CoroutineScope,
     saveableStateRegistry: SaveableStateRegistry
 ) : RememberObserver {
     private val loading: StateFlow<Boolean> = snapshotFlow {
@@ -102,7 +105,8 @@ class BaseEventsListStateHolder(
         }
     }.stateIn(coroutineScope, SharingStarted.Eagerly, false)
 
-    private var refreshingManually: Boolean = (saveableStateRegistry.consumeRestored(::refreshingManually.name) as Boolean?) ?: false
+    private var refreshingManually: Boolean =
+        (saveableStateRegistry.consumeRestored(::refreshingManually.name) as Boolean?) ?: false
     private val registryEntry = saveableStateRegistry.registerProvider(::refreshingManually.name) { refreshingManually }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -158,7 +162,12 @@ class BaseEventsListStateHolder(
     val snackbarError: String? by derivedStateOf {
         if (filters.value.types.isNotEmpty()) {
             with(items.loadState) {
-                firstErrorOrNull(source.refresh, mediator?.refresh, source.append, source.prepend)?.error?.donkiErrorToString(context)
+                firstErrorOrNull(
+                    source.refresh,
+                    mediator?.refresh,
+                    source.append,
+                    source.prepend
+                )?.error?.donkiErrorToString(context)
             }
         } else {
             null
@@ -166,7 +175,9 @@ class BaseEventsListStateHolder(
     }
 
     init {
-        scrollToTopAfterSourceRefresh(coroutineScope)
+        scrollToTopAfterSourceRefresh()
+
+        scrollToTopEvents.onEach { listState.scrollToItem(0) }.launchIn(coroutineScope)
 
         snapshotFlow { filters }.drop(1).onEach {
             listState.scrollToItem(0)
@@ -205,8 +216,8 @@ class BaseEventsListStateHolder(
         refreshingManually = true
     }
 
-    private fun scrollToTopAfterSourceRefresh(coroutineScope: CoroutineScope) {
-        Log.d(TAG, "scrollToTopAfterSourceRefresh() called with: coroutineScope = $coroutineScope")
+    private fun scrollToTopAfterSourceRefresh() {
+        Log.d(TAG, "scrollToTopAfterSourceRefresh() called")
         val sourceFinishedRefreshing: Flow<Unit> = snapshotFlow { items.loadState.source.refresh }
             .onEach { Log.d(TAG, "scrollToTopAfterSourceRefresh: source refresh state = $it") }
             .dropWhile { it is LoadState.Loading }

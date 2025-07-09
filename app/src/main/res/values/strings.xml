@@ -152,4 +152,6 @@ SPDX-License-Identifier: MIT
     <string name="allow_background_data_usage">Allow background data usage</string>
     <string name="update_interval_warning">Actual update interval may be greater when device is idle</string>
     <string name="notifications_update_error">Failed to update DONKI notifications</string>
+
+    <string name="events">Events</string>
 </resources>

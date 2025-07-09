@@ -27,7 +27,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -39,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -64,7 +64,7 @@ fun <EventType : Enum<EventType>> BaseEventsList(
 
     contentPadding: PaddingValues,
     snackbarHostState: SnackbarHostState,
-    topAppBarScrollBehavior: TopAppBarScrollBehavior?,
+    mainContentNestedScrollConnections: List<NestedScrollConnection>,
 
     filtersUiState: State<FiltersUiState<EventType>>,
     updateFilters: (FiltersUiState<EventType>) -> Unit,
@@ -104,7 +104,9 @@ fun <EventType : Enum<EventType>> BaseEventsList(
                 .fillMaxHeight()
                 .weight(1.0f)
                 .run {
-                    topAppBarScrollBehavior?.let { nestedScroll(it.nestedScrollConnection) } ?: this
+                    mainContentNestedScrollConnections.fold(this) { modifier, connection ->
+                        modifier.nestedScroll(connection)
+                    }
                 }
                 .pullToRefresh(
                     isRefreshing = showPullToRefreshIndicator,

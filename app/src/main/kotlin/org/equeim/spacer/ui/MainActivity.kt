@@ -36,9 +36,9 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.IntentCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
-import dev.olshevski.navigation.reimagined.NavController
+import dev.olshevski.navigation.reimagined.navigate
+import dev.olshevski.navigation.reimagined.popUpTo
 import dev.olshevski.navigation.reimagined.rememberNavController
-import dev.olshevski.navigation.reimagined.replaceAll
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -46,9 +46,8 @@ import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.notifications.NotificationId
 import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.MainScreen
 import org.equeim.spacer.ui.screens.ScreenDestinationNavHost
-import org.equeim.spacer.ui.screens.donki.events.DonkiEventsScreen
-import org.equeim.spacer.ui.screens.donki.notifications.DonkiNotificationsScreen
 import org.equeim.spacer.ui.screens.donki.notifications.details.NotificationDetailsScreen
 import org.equeim.spacer.ui.theme.ApplicationTheme
 import org.equeim.spacer.ui.utils.defaultLocale
@@ -70,7 +69,7 @@ class MainActivity : ComponentActivity() {
             handleDeepLink(intent)
         }
         setContent {
-            MainActivityScreen(this, viewModel, notificationsDeepLinks)
+            MainActivityScreen(this, notificationsDeepLinks)
         }
 
         viewModel.init()
@@ -115,7 +114,6 @@ val LocalAppSettings = staticCompositionLocalOf<AppSettings> { throw IllegalStat
 @Composable
 private fun MainActivityScreen(
     activity: MainActivity,
-    viewModel: MainActivityViewModel,
     notificationsDeepLinks: Channel<NotificationId>
 ) {
 
@@ -145,27 +143,18 @@ private fun MainActivityScreen(
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                val navController = rememberNavController<Destination>(DonkiEventsScreen)
+                val navController = rememberNavController<Destination>(MainScreen)
                 LaunchedEffect(navController) {
                     for (notificationId in notificationsDeepLinks) {
-                        navController.replaceAll(notificationId.createBackStack())
+                        navController.popUpTo { it is MainScreen }
+                        navController.navigate(NotificationDetailsScreen(notificationId))
                     }
-                }
-                LaunchedEffect(navController) {
-                    snapshotFlow { navController.isOnDonkiNotificationsScreen }
-                        .collect(viewModel.isOnDonkiNotificationsScreen)
                 }
                 ScreenDestinationNavHost(navController)
             }
         }
     }
 }
-
-private fun NotificationId.createBackStack(): List<Destination> =
-    listOf(DonkiEventsScreen, DonkiNotificationsScreen, NotificationDetailsScreen(this))
-
-private val NavController<Destination>.isOnDonkiNotificationsScreen: Boolean
-    get() = backstack.entries.lastOrNull()?.destination is DonkiNotificationsScreen
 
 private fun setDarkThemeWindowProperties(window: Window, view: View, isDarkTheme: Boolean) {
     WindowCompat.getInsetsController(window, view).apply {
