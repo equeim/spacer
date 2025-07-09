@@ -38,6 +38,8 @@ import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.getSelectedEndDate
+import androidx.compose.material3.getSelectedStartDate
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -80,11 +82,9 @@ import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.utils.isUTC
 import org.equeim.spacer.ui.utils.plus
-import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatterBuilder
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
@@ -387,12 +387,8 @@ fun <EventType : Enum<EventType>> DateRangePickerDialogContent(
         }
     }
     val state = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = initialFilters.dateRange?.firstDayInstant?.let {
-            instantToPickerDate(it, eventsTimeZone)
-        },
-        initialSelectedEndDateMillis = initialFilters.dateRange?.lastDayInstant?.let {
-            instantToPickerDate(it, eventsTimeZone)
-        },
+        initialSelectedStartDate = initialFilters.dateRange?.firstDayInstant?.atZone(eventsTimeZone)?.toLocalDate(),
+        initialSelectedEndDate = initialFilters.dateRange?.lastDayInstant?.atZone(eventsTimeZone)?.toLocalDate(),
         yearRange = DatePickerDefaults.YearRange.first..LocalDate.now(eventsTimeZone).year,
         selectableDates = DateRangePickerSelectableDates(eventsTimeZone),
         initialDisplayMode = initialDisplayMode
@@ -404,10 +400,9 @@ fun <EventType : Enum<EventType>> DateRangePickerDialogContent(
             TextButton(
                 onClick = {
                     val firstDayInstant =
-                        state.selectedStartDateMillis?.let { instantFromPickerDate(it, eventsTimeZone) }
+                        state.getSelectedStartDate()?.atStartOfDay(eventsTimeZone)?.toInstant()
                     val instantAfterLastDay =
-                        state.selectedEndDateMillis?.let { instantFromPickerDate(it, eventsTimeZone) }
-                            ?.plus(Duration.ofDays(1))
+                        state.getSelectedEndDate()?.plusDays(1)?.atStartOfDay(eventsTimeZone)?.toInstant()
                     if (firstDayInstant != null && instantAfterLastDay != null) {
                         closeDialog()
                         updateFilters(initialFilters.copy(dateRange = DateRange(firstDayInstant, instantAfterLastDay)))
@@ -444,29 +439,20 @@ fun <EventType : Enum<EventType>> DateRangePickerDialogContent(
 @OptIn(ExperimentalMaterial3Api::class)
 private class DateRangePickerSelectableDates(private val eventsTimeZone: ZoneId) : SelectableDates {
     override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-        return instantFromPickerDate(utcTimeMillis, eventsTimeZone) < Instant.now()
+        // utcTimeMillis is not an actual time but a way to represent a date as a number
+        // I.e. it's an epoch time at the start of day as-if it was in the UTC timezone
+        // To get an actual time in the desired timezone we need to subtract its offset
+        val actualUtcTimeMillis = if (eventsTimeZone.isUTC) {
+            utcTimeMillis
+        } else {
+            val offsetSeconds = eventsTimeZone.rules.getOffset(Instant.ofEpochMilli(utcTimeMillis)).totalSeconds
+            utcTimeMillis - (offsetSeconds * 1000)
+        }
+        return actualUtcTimeMillis < System.currentTimeMillis()
     }
 
     override fun isSelectableYear(year: Int): Boolean {
         return year <= LocalDate.now(eventsTimeZone).year
-    }
-}
-
-private fun instantFromPickerDate(pickerTimeMillis: Long, eventsTimeZone: ZoneId): Instant {
-    val actualUtcTimeMillis = if (eventsTimeZone.isUTC) {
-        pickerTimeMillis
-    } else {
-        val offsetSeconds = eventsTimeZone.rules.getOffset(Instant.ofEpochMilli(pickerTimeMillis)).totalSeconds
-        pickerTimeMillis - (offsetSeconds * 1000)
-    }
-    return Instant.ofEpochMilli(actualUtcTimeMillis)
-}
-
-private fun instantToPickerDate(instant: Instant, eventsTimeZone: ZoneId): Long {
-    return if (eventsTimeZone.isUTC) {
-        instant.toEpochMilli()
-    } else {
-        instant.atZone(eventsTimeZone).toLocalDateTime().atZone(ZoneOffset.UTC).toInstant().toEpochMilli()
     }
 }
 
