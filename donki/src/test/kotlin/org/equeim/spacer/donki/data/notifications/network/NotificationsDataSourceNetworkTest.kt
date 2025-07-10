@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
+import mockwebserver3.MockResponse
+import mockwebserver3.MockWebServer
 import org.equeim.spacer.donki.CoroutinesRule
 import org.equeim.spacer.donki.MockkLogRule
 import org.equeim.spacer.donki.apiKey
@@ -54,18 +54,18 @@ class NotificationsDataSourceNetworkTest {
 
     @AfterTest
     fun after() {
-        server.shutdown()
+        server.close()
     }
 
     @Test
     fun `Validate url`() = runTest {
         val week = Week(LocalDate.of(2016, 8, 29))
-        server.enqueue(MockResponse().setBody(""))
+        server.enqueue(MockResponse(body = ""))
 
         dataSource.getNotifications(week)
 
         val request = server.takeRequest()
-        val url = assertNotNull(request.requestUrl)
+        val url = assertNotNull(request.url)
         assertEquals("notifications", url.pathSegments.single())
         assertEquals("2016-08-29", url.queryParameter("startDate"))
         assertEquals("2016-09-04", url.queryParameter("endDate"))
@@ -74,7 +74,7 @@ class NotificationsDataSourceNetworkTest {
 
     @Test
     fun `Validate 403 error handling`() = runTest {
-        server.enqueue(MockResponse().setResponseCode(403))
+        server.enqueue(MockResponse(code = 403))
         assertFailsWith<DonkiNetworkDataSourceException.InvalidApiKey> {
             dataSource.getNotifications(Week(LocalDate.of(2016, 8, 29)))
         }
@@ -82,7 +82,7 @@ class NotificationsDataSourceNetworkTest {
 
     @Test
     fun `Validate 429 error handling`() = runTest {
-        server.enqueue(MockResponse().setResponseCode(429))
+        server.enqueue(MockResponse(code = 429))
         assertFailsWith<DonkiNetworkDataSourceException.TooManyRequests> {
             dataSource.getNotifications(Week(LocalDate.of(2016, 8, 29)))
         }
@@ -90,8 +90,8 @@ class NotificationsDataSourceNetworkTest {
 
     @Test
     fun `Validate request interrupton on API key change`() = runTest {
-        server.enqueue(MockResponse().setHeadersDelay(2, TimeUnit.SECONDS))
-        server.enqueue(MockResponse().setResponseCode(HttpURLConnection.HTTP_OK).setBody(""))
+        server.enqueue(MockResponse.Builder().headersDelay(2, TimeUnit.SECONDS).build())
+        server.enqueue(MockResponse(code = HttpURLConnection.HTTP_OK, body = ""))
         val requestJob = launch {
             dataSource.getNotifications(Week(LocalDate.of(2016, 8, 29)))
         }

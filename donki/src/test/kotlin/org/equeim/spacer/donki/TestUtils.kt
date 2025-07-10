@@ -8,8 +8,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.asExecutor
+import mockwebserver3.RecordedRequest
 import okhttp3.HttpUrl
-import okhttp3.mockwebserver.RecordedRequest
 import okio.Buffer
 import org.equeim.spacer.donki.data.common.Week
 import java.io.InputStream
@@ -55,7 +55,7 @@ internal val HttpUrl.apiKey: String
     get() = assertNotNull(queryParameter("api_key"))
 
 internal val RecordedRequest.apiKey: String
-    get() = assertNotNull(requestUrl).apiKey
+    get() = assertNotNull(url).apiKey
 
 internal fun Class<*>.readTestResourceToBuffer(path: String): Buffer =
     getTestResourceInputStream(path).use { Buffer().apply { readFrom(it) } }
