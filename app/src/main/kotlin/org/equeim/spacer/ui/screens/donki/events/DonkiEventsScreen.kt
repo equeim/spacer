@@ -52,6 +52,8 @@ import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.ui.components.CARD_CONTENT_PADDING
 import org.equeim.spacer.ui.components.IconButtonWithTooltip
 import org.equeim.spacer.ui.components.RootScreenTopAppBar
+import org.equeim.spacer.ui.components.ScrollableFloatingActionButtonWithTooltip
+import org.equeim.spacer.ui.components.rememberFloatingActionButtonScrollBehavior
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.DialogDestinationNavHost
 import org.equeim.spacer.ui.screens.donki.BaseEventsList
@@ -122,20 +124,14 @@ private fun DonkiEventsScreen(
     DialogDestinationNavHost(dialogNavController, navHostEntries)
 
     val showFiltersAsDialog = shouldShowFiltersAsDialog()
+    val fabScrollBehavior = rememberFloatingActionButtonScrollBehavior()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             RootScreenTopAppBar(
-                stringResource(R.string.space_weather_events),
-                topAppBarScrollBehavior,
-                startActions = {
-                    if (showFiltersAsDialog.value) {
-                        IconButtonWithTooltip(Icons.Filled.FilterList, R.string.filters) {
-                            dialogNavController.navigate(EventFiltersDialog)
-                        }
-                    }
-                },
+                title = stringResource(R.string.space_weather_events),
+                scrollBehavior = topAppBarScrollBehavior,
                 endActions = {
                     IconButtonWithTooltip(
                         icon = Icons.Filled.Settings,
@@ -144,6 +140,16 @@ private fun DonkiEventsScreen(
                     )
                 }
             )
+        },
+        floatingActionButton = {
+            if (showFiltersAsDialog.value) {
+                ScrollableFloatingActionButtonWithTooltip(
+                    onClick = { dialogNavController.navigate(EventFiltersDialog) },
+                    icon = Icons.Filled.FilterList,
+                    tooltipText = R.string.filters,
+                    scrollBehavior = fabScrollBehavior
+                )
+            }
         }
     ) { contentPadding ->
         BaseEventsList(
@@ -153,7 +159,8 @@ private fun DonkiEventsScreen(
             snackbarHostState = snackbarHostState,
             mainContentNestedScrollConnections = listOf(
                 topAppBarScrollBehavior.nestedScrollConnection,
-                bottomAppBarScrollBehavior.nestedScrollConnection
+                bottomAppBarScrollBehavior.nestedScrollConnection,
+                fabScrollBehavior.nestedScrollConnection
             ),
 
             filtersUiState = filtersUiState,

@@ -67,6 +67,8 @@ import org.equeim.spacer.ui.MainActivityViewModel
 import org.equeim.spacer.ui.components.ElevatedCardWithPadding
 import org.equeim.spacer.ui.components.IconButtonWithTooltip
 import org.equeim.spacer.ui.components.RootScreenTopAppBar
+import org.equeim.spacer.ui.components.ScrollableFloatingActionButtonWithTooltip
+import org.equeim.spacer.ui.components.rememberFloatingActionButtonScrollBehavior
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.DialogDestinationNavHost
 import org.equeim.spacer.ui.screens.donki.BaseEventsList
@@ -156,6 +158,7 @@ private fun DonkiNotificationsScreen(
     DialogDestinationNavHost(dialogNavController, navHostEntries)
 
     val showFiltersAsDialog = shouldShowFiltersAsDialog()
+    val fabScrollBehavior = rememberFloatingActionButtonScrollBehavior()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -163,13 +166,6 @@ private fun DonkiNotificationsScreen(
             RootScreenTopAppBar(
                 title = stringResource(R.string.notifications),
                 scrollBehavior = topAppBarScrollBehavior,
-                startActions = {
-                    if (showFiltersAsDialog.value) {
-                        IconButtonWithTooltip(Icons.Filled.FilterList, R.string.filters) {
-                            dialogNavController.navigate(NotificationFiltersDialog)
-                        }
-                    }
-                },
                 endActions = {
                     AnimatedVisibility(haveUnreadNotifications.value) {
                         IconButtonWithTooltip(
@@ -184,6 +180,16 @@ private fun DonkiNotificationsScreen(
                         onClick = navigateToNotificationsSettings
                     )
                 })
+        },
+        floatingActionButton = {
+            if (showFiltersAsDialog.value) {
+                ScrollableFloatingActionButtonWithTooltip(
+                    onClick = { dialogNavController.navigate(NotificationFiltersDialog) },
+                    icon = Icons.Filled.FilterList,
+                    tooltipText = R.string.filters,
+                    scrollBehavior = fabScrollBehavior
+                )
+            }
         }
     ) { contentPadding ->
         BaseEventsList(
@@ -193,7 +199,8 @@ private fun DonkiNotificationsScreen(
             snackbarHostState = snackbarHostState,
             mainContentNestedScrollConnections = listOf(
                 topAppBarScrollBehavior.nestedScrollConnection,
-                bottomAppBarScrollBehavior.nestedScrollConnection
+                bottomAppBarScrollBehavior.nestedScrollConnection,
+                fabScrollBehavior.nestedScrollConnection
             ),
 
             filtersUiState = filtersUiState,
