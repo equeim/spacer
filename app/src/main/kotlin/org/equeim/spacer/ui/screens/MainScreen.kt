@@ -129,14 +129,12 @@ private fun MainScreenContent(
                 when (it) {
                     BottomNavigationScreen.Events -> DonkiEventsScreen(
                         navController,
-                        navHostEntries,
                         bottomAppBarScrollBehavior,
                         scrollToTopEvents
                     )
 
                     BottomNavigationScreen.Notifications -> DonkiNotificationsScreen(
                         navController,
-                        navHostEntries,
                         bottomAppBarScrollBehavior,
                         scrollToTopEvents
                     )

@@ -5,27 +5,20 @@
 package org.equeim.spacer.ui.screens.donki
 
 import android.os.Parcelable
-import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
@@ -33,39 +26,37 @@ import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.getSelectedEndDate
 import androidx.compose.material3.getSelectedStartDate
 import androidx.compose.material3.rememberDateRangePickerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.flowWithLifecycle
 import androidx.window.core.layout.WindowSizeClass
-import dev.olshevski.navigation.reimagined.NavController
-import dev.olshevski.navigation.reimagined.navEntry
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combineTransform
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -76,12 +67,15 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.common.DateRange
+import org.equeim.spacer.donki.data.events.EventType
+import org.equeim.spacer.donki.data.notifications.NotificationType
 import org.equeim.spacer.ui.LocalDefaultLocale
-import org.equeim.spacer.ui.components.Dialog
-import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.components.SwitchWithText
+import org.equeim.spacer.ui.screens.donki.events.DonkiEventsScreenViewModel.Companion.displayStringResId
+import org.equeim.spacer.ui.screens.donki.notifications.DonkiNotificationsScreenViewModel.Companion.displayStringResId
+import org.equeim.spacer.ui.theme.ComponentPreview
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.utils.isUTC
-import org.equeim.spacer.ui.utils.plus
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -97,8 +91,8 @@ data class FiltersUiState<EventType : Enum<EventType>>(
 ) : Parcelable
 
 @Composable
-fun <EventType : Enum<EventType>> BaseEventFiltersSideSheet(
-    contentPadding: PaddingValues = PaddingValues(),
+fun <EventType : Enum<EventType>> EventFiltersSideSheet(
+    contentPadding: PaddingValues,
     filtersUiState: State<FiltersUiState<EventType>>,
     updateFilters: (FiltersUiState<EventType>) -> Unit,
     allEventTypes: List<EventType>,
@@ -106,45 +100,36 @@ fun <EventType : Enum<EventType>> BaseEventFiltersSideSheet(
     eventsTimeZone: State<ZoneId?>,
     showDateRangeDialog: () -> Unit
 ) {
-    BaseEventFilters(
-        Modifier
-            .fillMaxHeight()
-            .width(256.dp),
-        contentPadding = contentPadding + Dimens.ScreenContentPadding(start = false),
-        title = {
-            Text(
-                stringResource(R.string.filters),
-                Modifier.align(Alignment.CenterHorizontally),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.titleLarge
-            )
-        },
+    EventFilters(
+        contentPadding = contentPadding,
         filtersUiState = filtersUiState,
         updateFilters = updateFilters,
         allEventTypes = allEventTypes,
         eventTypeDisplayStringId = eventTypeDisplayStringId,
         eventsTimeZone = eventsTimeZone,
-        showDateRangeDialog = showDateRangeDialog
+        showDateRangeDialog = showDateRangeDialog,
+        modifier = Modifier
+            .fillMaxHeight()
+            .width(256.dp)
     )
 }
 
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun <EventType : Enum<EventType>> BaseEventFiltersDialogContent(
+fun <EventType : Enum<EventType>> EventFiltersBottomSheet(
     filtersUiState: State<FiltersUiState<EventType>>,
     updateFilters: (FiltersUiState<EventType>) -> Unit,
     allEventTypes: List<EventType>,
     eventTypeDisplayStringId: (EventType) -> Int,
     eventsTimeZone: State<ZoneId?>,
-    closeDialog: () -> Unit,
+    onDismissRequest: () -> Unit,
     showDateRangeDialog: () -> Unit,
 ) {
-    Dialog(
-        title = stringResource(R.string.filters),
-        onDismissRequest = closeDialog,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        BaseEventFilters(
-            contentPadding = PaddingValues(horizontal = Dimens.DialogContentPadding),
+    val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismissRequest, sheetState = state) {
+        EventFilters(
+            contentPadding = PaddingValues(),
             filtersUiState = filtersUiState,
             updateFilters = updateFilters,
             allEventTypes = allEventTypes,
@@ -156,7 +141,7 @@ fun <EventType : Enum<EventType>> BaseEventFiltersDialogContent(
 }
 
 @Composable
-fun shouldShowFiltersAsDialog(): State<Boolean> {
+fun shouldShowFiltersAsBottomSheet(): State<Boolean> {
     val windowSizeClass = rememberUpdatedState(currentWindowAdaptiveInfo().windowSizeClass)
     return remember {
         derivedStateOf {
@@ -165,145 +150,82 @@ fun shouldShowFiltersAsDialog(): State<Boolean> {
     }
 }
 
-@Composable
-fun HandleFiltersDialogVisibility(
-    shouldShowFiltersAsDialog: State<Boolean>,
-    dialogNavController: NavController<Destination>,
-    filtersDialogDestination: Destination,
-    dateRangePickerDialogDestination: Destination,
-) {
-    val shouldShowFiltersAsDialogFlow = remember { snapshotFlow { shouldShowFiltersAsDialog.value } }
-    val showingFiltersDialog = remember(dialogNavController) {
-        snapshotFlow { dialogNavController.backstack.entries.find { it.destination == filtersDialogDestination } != null }
-    }
-    val showingDateRangeDialog = remember(dialogNavController) {
-        snapshotFlow { dialogNavController.backstack.entries.find { it.destination == dateRangePickerDialogDestination } != null }
-    }
-    LaunchedEffect(dialogNavController) {
-        combineTransform(
-            shouldShowFiltersAsDialogFlow,
-            showingFiltersDialog,
-            showingDateRangeDialog
-        ) { shouldShowFiltersAsDialog, showingFiltersDialog, showingDateRangeDialog ->
-            if (shouldShowFiltersAsDialog) {
-                if (showingDateRangeDialog && !showingFiltersDialog) {
-                    emit(true)
-                }
-            } else if (showingFiltersDialog) {
-                emit(false)
-            }
-        }.collect { addFiltersDialogToBackStack ->
-            dialogNavController.setNewBackstack(
-                if (addFiltersDialogToBackStack) {
-                    Log.d(TAG, "Adding filters dialog to back stack")
-                    buildList {
-                        add(navEntry(filtersDialogDestination))
-                        addAll(dialogNavController.backstack.entries)
-                    }
-                } else {
-                    Log.d(TAG, "Removing filters dialog from back stack")
-                    dialogNavController.backstack.entries.filterNot { it.destination == filtersDialogDestination }
-                }
-            )
-        }
-    }
-}
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun <EventType : Enum<EventType>> BaseEventFilters(
-    modifier: Modifier = Modifier,
-    contentPadding: PaddingValues = PaddingValues(),
-    title: @Composable ColumnScope.() -> Unit = {},
+private fun <EventType : Enum<EventType>> EventFilters(
+    contentPadding: PaddingValues,
     filtersUiState: State<FiltersUiState<EventType>>,
     updateFilters: (FiltersUiState<EventType>) -> Unit,
     allEventTypes: List<EventType>,
     eventTypeDisplayStringId: (EventType) -> Int,
     eventsTimeZone: State<ZoneId?>,
     showDateRangeDialog: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
     Column(
         modifier
+            .fillMaxWidth()
             .verticalScroll(scrollState)
-            .padding(bottom = contentPadding.calculateBottomPadding()),
+            .padding(contentPadding)
+            .padding(bottom = Dimens.SpacingLarge),
         verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
     ) {
-        val contentPaddingWithoutBottom: PaddingValues
-        val horizontalContentPadding: PaddingValues
-        LocalLayoutDirection.current.let {
-            horizontalContentPadding = PaddingValues(
-                start = contentPadding.calculateStartPadding(it),
-                end = contentPadding.calculateEndPadding(it)
-            )
-            contentPaddingWithoutBottom =
-                horizontalContentPadding + PaddingValues(top = contentPadding.calculateTopPadding())
-        }
+        val horizontalPadding = Dimens.ScreenContentPaddingHorizontal()
 
-        Column(
-            Modifier.padding(contentPaddingWithoutBottom),
-            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall)
+        Text(
+            text = stringResource(R.string.filters),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(horizontal = horizontalPadding)
+        )
+
+        Text(
+            stringResource(R.string.filter_types),
+            color = MaterialTheme.colorScheme.primary,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = horizontalPadding)
+        )
+
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall),
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = horizontalPadding)
         ) {
-            title()
-
-            Text(
-                stringResource(R.string.filter_types),
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(Dimens.SpacingSmall),
-                verticalArrangement = Arrangement.Center
-            ) {
-                val allTypesSelected: Boolean by remember {
-                    derivedStateOf {
-                        filtersUiState.value.types.size == allEventTypes.size
-                    }
+            val allTypesSelected: Boolean by remember {
+                derivedStateOf {
+                    filtersUiState.value.types.size == allEventTypes.size
                 }
-                EventTypeChip(R.string.all_event_types, allTypesSelected) {
-                    val newTypes = if (allTypesSelected) {
-                        emptyList()
-                    } else {
-                        allEventTypes
-                    }
-                    updateFilters(filtersUiState.value.copy(types = newTypes))
+            }
+            EventTypeChip(R.string.all_event_types, allTypesSelected) {
+                val newTypes = if (allTypesSelected) {
+                    emptyList()
+                } else {
+                    allEventTypes
                 }
-                for (type in allEventTypes) {
-                    val typeSelected: Boolean by remember { derivedStateOf { filtersUiState.value.types.contains(type) } }
-                    EventTypeChip(eventTypeDisplayStringId(type), typeSelected) {
-                        updateFilters(filtersUiState.value.run {
-                            val newTypes = if (typeSelected) types - type else types + type
-                            copy(types = newTypes)
-                        })
-                    }
+                updateFilters(filtersUiState.value.copy(types = newTypes))
+            }
+            for (type in allEventTypes) {
+                val typeSelected: Boolean by remember { derivedStateOf { filtersUiState.value.types.contains(type) } }
+                EventTypeChip(eventTypeDisplayStringId(type), typeSelected) {
+                    updateFilters(filtersUiState.value.run {
+                        val newTypes = if (typeSelected) types - type else types + type
+                        copy(types = newTypes)
+                    })
                 }
             }
         }
         val dateRangeEnabled: Boolean by remember { derivedStateOf { filtersUiState.value.dateRangeEnabled } }
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontalContentPadding),
-            shape = CircleShape,
-            color = Color.Transparent,
-            onClick = {
-                updateFilters(filtersUiState.value.run {
-                    copy(dateRangeEnabled = !dateRangeEnabled)
-                })
-            }
-        ) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Checkbox(dateRangeEnabled, onCheckedChange = null)
-                Text(stringResource(R.string.date_range_filter))
-            }
-        }
+
+        SwitchWithText(
+            checked = dateRangeEnabled,
+            onCheckedChange = { updateFilters(filtersUiState.value.copy(dateRangeEnabled = it)) },
+            text = R.string.date_range_filter,
+            modifier = Modifier.fillMaxWidth(),
+            horizontalContentPadding = horizontalPadding
+        )
 
         val lifecycleOwner = LocalLifecycleOwner.current
         LaunchedEffect(lifecycleOwner) {
@@ -335,7 +257,7 @@ fun <EventType : Enum<EventType>> BaseEventFilters(
                     onClick = showDateRangeDialog,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontalContentPadding),
+                        .padding(horizontal = horizontalPadding),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = if (dateRange == null) MaterialTheme.colorScheme.error else Color.Unspecified)
                 ) {
                     Text(dateRange?.let { range ->
@@ -368,13 +290,57 @@ private fun EventTypeChip(@StringRes label: Int, selected: Boolean, onClick: () 
     )
 }
 
+@Preview
+@Composable
+private fun EventFiltersPreview() = ComponentPreview {
+    EventFilters(
+        contentPadding = PaddingValues(),
+        filtersUiState = remember {
+            mutableStateOf(
+                FiltersUiState(
+                    types = EventType.entries - EventType.MagnetopauseCrossing,
+                    dateRange = null,
+                    dateRangeEnabled = true
+                )
+            )
+        },
+        updateFilters = {},
+        allEventTypes = EventType.entries,
+        eventTypeDisplayStringId = { it.displayStringResId },
+        eventsTimeZone = remember { mutableStateOf(ZoneId.systemDefault()) },
+        showDateRangeDialog = {}
+    )
+}
+
+@Preview
+@Composable
+private fun NotificationFiltersPreview() = ComponentPreview {
+    EventFilters(
+        contentPadding = PaddingValues(),
+        filtersUiState = remember {
+            mutableStateOf(
+                FiltersUiState(
+                    types = NotificationType.entries - NotificationType.MagnetopauseCrossing,
+                    dateRange = null,
+                    dateRangeEnabled = true
+                )
+            )
+        },
+        updateFilters = {},
+        allEventTypes = NotificationType.entries,
+        eventTypeDisplayStringId = { it.displayStringResId },
+        eventsTimeZone = remember { mutableStateOf(ZoneId.systemDefault()) },
+        showDateRangeDialog = {}
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun <EventType : Enum<EventType>> DateRangePickerDialogContent(
-    initialFilters: FiltersUiState<EventType>,
-    updateFilters: (FiltersUiState<EventType>) -> Unit,
+fun DateRangePickerDialog(
+    initialDateRange: DateRange?,
+    updateDateRange: (DateRange) -> Unit,
     eventsTimeZone: ZoneId,
-    closeDialog: () -> Unit,
+    onDismissRequest: () -> Unit,
 ) {
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
     val initialDisplayMode: DisplayMode by remember {
@@ -387,15 +353,15 @@ fun <EventType : Enum<EventType>> DateRangePickerDialogContent(
         }
     }
     val state = rememberDateRangePickerState(
-        initialSelectedStartDate = initialFilters.dateRange?.firstDayInstant?.atZone(eventsTimeZone)?.toLocalDate(),
-        initialSelectedEndDate = initialFilters.dateRange?.lastDayInstant?.atZone(eventsTimeZone)?.toLocalDate(),
+        initialSelectedStartDate = initialDateRange?.firstDayInstant?.atZone(eventsTimeZone)?.toLocalDate(),
+        initialSelectedEndDate = initialDateRange?.lastDayInstant?.atZone(eventsTimeZone)?.toLocalDate(),
         yearRange = DatePickerDefaults.YearRange.first..LocalDate.now(eventsTimeZone).year,
         selectableDates = DateRangePickerSelectableDates(eventsTimeZone),
         initialDisplayMode = initialDisplayMode
     )
     val confirmButtonEnabled by remember { derivedStateOf { state.selectedStartDateMillis != null && state.selectedEndDateMillis != null } }
     DatePickerDialog(
-        onDismissRequest = closeDialog,
+        onDismissRequest = onDismissRequest,
         confirmButton = {
             TextButton(
                 onClick = {
@@ -404,8 +370,8 @@ fun <EventType : Enum<EventType>> DateRangePickerDialogContent(
                     val instantAfterLastDay =
                         state.getSelectedEndDate()?.plusDays(1)?.atStartOfDay(eventsTimeZone)?.toInstant()
                     if (firstDayInstant != null && instantAfterLastDay != null) {
-                        closeDialog()
-                        updateFilters(initialFilters.copy(dateRange = DateRange(firstDayInstant, instantAfterLastDay)))
+                        updateDateRange(DateRange(firstDayInstant, instantAfterLastDay))
+                        onDismissRequest()
                     }
                 },
                 enabled = confirmButtonEnabled
@@ -414,7 +380,7 @@ fun <EventType : Enum<EventType>> DateRangePickerDialogContent(
             }
         },
         dismissButton = {
-            TextButton(onClick = closeDialog) {
+            TextButton(onClick = onDismissRequest) {
                 Text(stringResource(android.R.string.cancel))
             }
         }
@@ -456,4 +422,16 @@ private class DateRangePickerSelectableDates(private val eventsTimeZone: ZoneId)
     }
 }
 
-private const val TAG = "BaseEventFilters"
+
+@Preview
+@Composable
+private fun DateRangePickerDialogPreview() {
+    ComponentPreview {
+        DateRangePickerDialog(
+            initialDateRange = null,
+            updateDateRange = {},
+            eventsTimeZone = ZoneId.systemDefault(),
+            onDismissRequest = {}
+        )
+    }
+}

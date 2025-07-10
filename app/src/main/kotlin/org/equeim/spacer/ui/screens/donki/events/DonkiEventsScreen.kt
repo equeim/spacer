@@ -26,9 +26,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -39,9 +44,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import dev.olshevski.navigation.reimagined.NavController
-import dev.olshevski.navigation.reimagined.NavHostEntry
 import dev.olshevski.navigation.reimagined.navigate
-import dev.olshevski.navigation.reimagined.rememberNavController
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
@@ -55,20 +58,23 @@ import org.equeim.spacer.ui.components.RootScreenTopAppBar
 import org.equeim.spacer.ui.components.ScrollableFloatingActionButtonWithTooltip
 import org.equeim.spacer.ui.components.rememberFloatingActionButtonScrollBehavior
 import org.equeim.spacer.ui.screens.Destination
-import org.equeim.spacer.ui.screens.DialogDestinationNavHost
 import org.equeim.spacer.ui.screens.donki.BaseEventsList
 import org.equeim.spacer.ui.screens.donki.BaseEventsListStateHolder
+import org.equeim.spacer.ui.screens.donki.DateRangePickerDialog
 import org.equeim.spacer.ui.screens.donki.DateSeparator
+import org.equeim.spacer.ui.screens.donki.EventFiltersBottomSheet
+import org.equeim.spacer.ui.screens.donki.EventFiltersSideSheet
 import org.equeim.spacer.ui.screens.donki.FiltersUiState
 import org.equeim.spacer.ui.screens.donki.ListItem
 import org.equeim.spacer.ui.screens.donki.events.DonkiEventsScreenViewModel.Companion.displayStringResId
 import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreen
 import org.equeim.spacer.ui.screens.donki.rememberBaseEventsListStateHolder
-import org.equeim.spacer.ui.screens.donki.shouldShowFiltersAsDialog
+import org.equeim.spacer.ui.screens.donki.shouldShowFiltersAsBottomSheet
 import org.equeim.spacer.ui.screens.settings.SettingsScreen
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.FilterList
 import org.equeim.spacer.ui.theme.ScreenPreview
+import org.equeim.spacer.ui.utils.removeStart
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -77,7 +83,6 @@ import java.time.ZoneId
 @Composable
 fun DonkiEventsScreen(
     navController: NavController<Destination>,
-    navHostEntries: List<NavHostEntry<Destination>>,
     bottomAppBarScrollBehavior: BottomAppBarScrollBehavior,
     scrollToTopEvents: Flow<Unit>
 ) {
@@ -98,7 +103,6 @@ fun DonkiEventsScreen(
         filtersUiState = filters,
         updateFilters = model::updateFilters,
         eventsTimeZone = eventsTimeZone,
-        navHostEntries = { navHostEntries },
         navigateToDetailsScreen = { navController.navigate(DonkiEventDetailsScreen(it)) },
         navigateToSettingsScreen = { navController.navigate(SettingsScreen) },
         bottomAppBarScrollBehavior = bottomAppBarScrollBehavior
@@ -112,7 +116,6 @@ private fun DonkiEventsScreen(
     filtersUiState: State<FiltersUiState<EventType>>,
     updateFilters: (FiltersUiState<EventType>) -> Unit,
     eventsTimeZone: State<ZoneId?>,
-    navHostEntries: () -> List<NavHostEntry<Destination>>,
     navigateToDetailsScreen: (EventId) -> Unit,
     navigateToSettingsScreen: () -> Unit,
     bottomAppBarScrollBehavior: BottomAppBarScrollBehavior
@@ -120,10 +123,17 @@ private fun DonkiEventsScreen(
     val topAppBarScrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val dialogNavController = rememberNavController<Destination>(initialBackstack = emptyList())
-    DialogDestinationNavHost(dialogNavController, navHostEntries)
+    val showFiltersAsBottomSheet = shouldShowFiltersAsBottomSheet()
+    var showFiltersBottomSheet by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(null) {
+        snapshotFlow { showFiltersAsBottomSheet.value }.collect {
+            if (!it && showFiltersBottomSheet) {
+                showFiltersBottomSheet = false
+            }
+        }
+    }
+    var showDateRangeDialog by rememberSaveable { mutableStateOf(false) }
 
-    val showFiltersAsDialog = shouldShowFiltersAsDialog()
     val fabScrollBehavior = rememberFloatingActionButtonScrollBehavior()
 
     Scaffold(
@@ -142,9 +152,9 @@ private fun DonkiEventsScreen(
             )
         },
         floatingActionButton = {
-            if (showFiltersAsDialog.value) {
+            if (showFiltersAsBottomSheet.value) {
                 ScrollableFloatingActionButtonWithTooltip(
-                    onClick = { dialogNavController.navigate(EventFiltersDialog) },
+                    onClick = { showFiltersBottomSheet = true },
                     icon = Icons.Filled.FilterList,
                     tooltipText = R.string.filters,
                     scrollBehavior = fabScrollBehavior
@@ -163,16 +173,20 @@ private fun DonkiEventsScreen(
                 fabScrollBehavior.nestedScrollConnection
             ),
 
-            filtersUiState = filtersUiState,
-            updateFilters = updateFilters,
-            allEventTypes = EventType.entries,
-            eventTypeDisplayStringId = { it.displayStringResId },
-            eventsTimeZone = eventsTimeZone,
+            filtersSideSheet = {
+                if (!showFiltersAsBottomSheet.value) {
+                    EventFiltersSideSheet(
+                        contentPadding = contentPadding.removeStart(),
+                        filtersUiState = filtersUiState,
+                        updateFilters = updateFilters,
+                        allEventTypes = EventType.entries,
+                        eventTypeDisplayStringId = { it.displayStringResId },
+                        eventsTimeZone = eventsTimeZone,
+                        showDateRangeDialog = { showDateRangeDialog = true }
+                    )
+                }
+            },
 
-            dialogNavController = dialogNavController,
-            filtersDialogDestination = EventFiltersDialog,
-            dateRangePickerDialogDestination = EventsDateRangePickerDialog,
-            showFiltersAsDialog = showFiltersAsDialog,
             listItemKeyProvider = ListItem::lazyListKey,
             listContentTypeProvider = ListItem::lazyListContentType,
         ) { item ->
@@ -206,6 +220,28 @@ private fun DonkiEventsScreen(
                     }
                 }
             }
+        }
+    }
+
+    if (showFiltersBottomSheet) {
+        EventFiltersBottomSheet(
+            filtersUiState = filtersUiState,
+            updateFilters = updateFilters,
+            allEventTypes = EventType.entries,
+            eventTypeDisplayStringId = { it.displayStringResId },
+            eventsTimeZone = eventsTimeZone,
+            onDismissRequest = { showFiltersBottomSheet = false },
+            showDateRangeDialog = { showDateRangeDialog = true }
+        )
+    }
+    if (showDateRangeDialog) {
+        eventsTimeZone.value?.let { zone ->
+            DateRangePickerDialog(
+                initialDateRange = filtersUiState.value.dateRange,
+                updateDateRange = { updateFilters(filtersUiState.value.copy(dateRange = it)) },
+                eventsTimeZone = zone,
+                onDismissRequest = { showDateRangeDialog = false }
+            )
         }
     }
 }
@@ -284,7 +320,6 @@ fun DonkiEventsScreenPreview() {
             filtersUiState = filters,
             updateFilters = {},
             eventsTimeZone = remember { mutableStateOf(ZoneId.systemDefault()) },
-            navHostEntries = { emptyList() },
             navigateToDetailsScreen = {},
             navigateToSettingsScreen = {},
             bottomAppBarScrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
