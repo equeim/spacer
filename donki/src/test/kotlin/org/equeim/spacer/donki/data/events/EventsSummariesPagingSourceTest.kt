@@ -17,11 +17,11 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import okhttp3.mockwebserver.Dispatcher
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
-import okhttp3.mockwebserver.RecordedRequest
-import okhttp3.mockwebserver.SocketPolicy
+import mockwebserver3.Dispatcher
+import mockwebserver3.MockResponse
+import mockwebserver3.MockWebServer
+import mockwebserver3.RecordedRequest
+import mockwebserver3.SocketEffect
 import okio.Buffer
 import org.equeim.spacer.donki.CoroutinesRule
 import org.equeim.spacer.donki.FakeClock
@@ -90,8 +90,8 @@ internal class MockWebServerDispatcher : Dispatcher() {
     var respond: ((EventType) -> MockResponse)? = null
 
     override fun dispatch(request: RecordedRequest): MockResponse {
-        val respond = this.respond ?: return MockResponse().setResponseCode(500)
-        val eventType = when (assertNotNull(request.requestUrl).pathSegments.single()) {
+        val respond = this.respond ?: return MockResponse(code = 500)
+        val eventType = when (assertNotNull(request.url).pathSegments.single()) {
             "CME" -> EventType.CoronalMassEjection
             "FLR" -> EventType.SolarFlare
             "GST" -> EventType.GeomagneticStorm
@@ -100,7 +100,7 @@ internal class MockWebServerDispatcher : Dispatcher() {
             "MPC" -> EventType.MagnetopauseCrossing
             "RBE" -> EventType.RadiationBeltEnhancement
             "SEP" -> EventType.SolarEnergeticParticle
-            else -> fail("Unexpected URL ${request.requestUrl}")
+            else -> fail("Unexpected URL ${request.url}")
         }
         return respond(eventType)
     }
@@ -113,11 +113,11 @@ internal var MockWebServer.respond: ((EventType) -> MockResponse)?
     }
 
 internal fun MockWebServer.respondWithSampleEvents() {
-    respond = { MockResponse().setBody(SAMPLE_EVENTS[it]!!) }
+    respond = { MockResponse.Builder().body(SAMPLE_EVENTS[it]!!).build() }
 }
 
 internal fun MockWebServer.respondWithEmptyBody() {
-    respond = { MockResponse().setBody(Buffer()) }
+    respond = { MockResponse.Builder().body(Buffer()).build() }
 }
 
 internal fun MockWebServer.respondWithError() {
@@ -156,7 +156,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
 
     @AfterTest
     fun after() {
-        server.shutdown()
+        server.close()
         repository.close()
         pagingSource.invalidate()
     }
@@ -309,7 +309,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     @Test
     fun `Verify 403 error handling`() = runTest {
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
-        server.respond = { MockResponse().setResponseCode(403) }
+        server.respond = { MockResponse(code = 403) }
         val result = pagingSource.load(params).assertIsError()
         assertIs<DonkiNetworkDataSourceException.InvalidApiKey>(result.throwable)
     }
@@ -317,7 +317,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     @Test
     fun `Verify 429 error handling`() = runTest {
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
-        server.respond = { MockResponse().setResponseCode(429) }
+        server.respond = { MockResponse(code = 429) }
         val result = pagingSource.load(params).assertIsError()
         assertIs<DonkiNetworkDataSourceException.TooManyRequests>(result.throwable)
     }
@@ -325,7 +325,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     @Test
     fun `Verify 500 error handling`() = runTest {
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
-        server.respond = { MockResponse().setResponseCode(500) }
+        server.respond = { MockResponse(code = 500) }
         val result = pagingSource.load(params).assertIsError()
         assertIs<DonkiNetworkDataSourceException.HttpErrorResponse>(result.throwable)
     }
@@ -333,7 +333,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     @Test
     fun `Verify network error handling`() = runTest {
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
-        server.respond = { MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST) }
+        server.respond = { MockResponse.Builder().onResponseStart(SocketEffect.ShutdownConnection).build() }
         val result = pagingSource.load(params).assertIsError()
         assertIs<DonkiNetworkDataSourceException.NetworkError>(result.throwable)
     }
@@ -341,7 +341,7 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `Validate that load() handles cancellation`() = runTest {
-        server.respond = { MockResponse().setHeadersDelay(1, TimeUnit.SECONDS) }
+        server.respond = { MockResponse.Builder().headersDelay(1, TimeUnit.SECONDS).build() }
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         val job = launch {
             assertFailsWith<CancellationException> {
@@ -366,9 +366,9 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     @Test
     fun `Validate date range filtering when range is the same as week`() = runTest {
         server.respond = {
-            MockResponse().setBody(
+            MockResponse.Builder().body(
                 EventsParsingTest::class.java.readTestResourceToBuffer("datasets/${it.stringValue}_2016-01-01_2016-01-31.json")
-            )
+            ).build()
         }
         pagingSource.invalidate()
         pagingSource = repository.createPagingSource(
@@ -424,9 +424,9 @@ class EventsSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     @Test
     fun `Validate date range filtering when range is inside the week`() = runTest {
         server.respond = {
-            MockResponse().setBody(
+            MockResponse.Builder().body(
                 EventsParsingTest::class.java.readTestResourceToBuffer("datasets/${it.stringValue}_2016-01-01_2016-01-31.json")
-            )
+            ).build()
         }
         pagingSource.invalidate()
         pagingSource = repository.createPagingSource(

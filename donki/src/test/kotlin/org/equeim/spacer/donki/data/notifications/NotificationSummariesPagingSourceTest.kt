@@ -16,11 +16,11 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import okhttp3.mockwebserver.Dispatcher
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
-import okhttp3.mockwebserver.RecordedRequest
-import okhttp3.mockwebserver.SocketPolicy
+import mockwebserver3.Dispatcher
+import mockwebserver3.MockResponse
+import mockwebserver3.MockWebServer
+import mockwebserver3.RecordedRequest
+import mockwebserver3.SocketEffect
 import okio.Buffer
 import org.equeim.spacer.donki.CoroutinesRule
 import org.equeim.spacer.donki.FakeClock
@@ -77,7 +77,7 @@ internal class MockWebServerDispatcher : Dispatcher() {
     var respond: (() -> MockResponse)? = null
 
     override fun dispatch(request: RecordedRequest): MockResponse {
-        val respond = this.respond ?: return MockResponse().setResponseCode(500)
+        val respond = this.respond ?: return MockResponse(code = 500)
         return respond()
     }
 }
@@ -89,11 +89,11 @@ internal var MockWebServer.respond: (() -> MockResponse)?
     }
 
 internal fun MockWebServer.respondWithSampleNotification() {
-    respond = { MockResponse().setBody(SAMPLE_NOTIFICATION) }
+    respond = { MockResponse.Builder().body(SAMPLE_NOTIFICATION).build() }
 }
 
 internal fun MockWebServer.respondWithEmptyBody() {
-    respond = { MockResponse().setBody(Buffer()) }
+    respond = { MockResponse.Builder().body(Buffer()).build() }
 }
 
 internal fun MockWebServer.respondWithError() {
@@ -132,7 +132,7 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
 
     @AfterTest
     fun after() {
-        server.shutdown()
+        server.close()
         repository.close()
     }
 
@@ -298,7 +298,7 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     @Test
     fun `Verify 403 error handling`() = runTest {
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
-        server.respond = { MockResponse().setResponseCode(403) }
+        server.respond = { MockResponse(code = 403) }
         val result = pagingSource.load(params).assertIsError()
         assertIs<DonkiNetworkDataSourceException.InvalidApiKey>(result.throwable)
     }
@@ -306,7 +306,7 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     @Test
     fun `Verify 429 error handling`() = runTest {
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
-        server.respond = { MockResponse().setResponseCode(429) }
+        server.respond = { MockResponse(code = 429) }
         val result = pagingSource.load(params).assertIsError()
         assertIs<DonkiNetworkDataSourceException.TooManyRequests>(result.throwable)
     }
@@ -314,7 +314,7 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     @Test
     fun `Verify 500 error handling`() = runTest {
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
-        server.respond = { MockResponse().setResponseCode(500) }
+        server.respond = { MockResponse(code = 500) }
         val result = pagingSource.load(params).assertIsError()
         assertIs<DonkiNetworkDataSourceException.HttpErrorResponse>(result.throwable)
     }
@@ -322,7 +322,7 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     @Test
     fun `Verify network error handling`() = runTest {
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
-        server.respond = { MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST) }
+        server.respond = { MockResponse.Builder().onResponseStart(SocketEffect.ShutdownConnection).build() }
         val result = pagingSource.load(params).assertIsError()
         assertIs<DonkiNetworkDataSourceException.NetworkError>(result.throwable)
     }
@@ -330,7 +330,7 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `Validate that load() handles cancellation`() = runTest {
-        server.respond = { MockResponse().setHeadersDelay(1, TimeUnit.SECONDS) }
+        server.respond = { MockResponse.Builder().headersDelay(1, TimeUnit.SECONDS).build() }
         val params = PagingSource.LoadParams.Refresh<Week>(null, 20, false)
         val job = launch {
             assertFailsWith<CancellationException> {
@@ -355,9 +355,9 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     @Test
     fun `Validate date range filtering when range is the same as week`() = runTest {
         server.respond = {
-            MockResponse().setBody(
+            MockResponse.Builder().body(
                 NotificationsParsingTest::class.java.readTestResourceToBuffer("datasets/2016-01-01_2016-01-31.json")
-            )
+            ).build()
         }
         pagingSource.invalidate()
         pagingSource = repository.createPagingSource(
@@ -399,9 +399,9 @@ class NotificationSummariesPagingSourceTest(systemTimeZone: ZoneId) {
     @Test
     fun `Validate date range filtering when range is inside the week`() = runTest {
         server.respond = {
-            MockResponse().setBody(
+            MockResponse.Builder().body(
                 NotificationsParsingTest::class.java.readTestResourceToBuffer("datasets/2016-01-01_2016-01-31.json")
-            )
+            ).build()
         }
         pagingSource.invalidate()
         pagingSource = repository.createPagingSource(

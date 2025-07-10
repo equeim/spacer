@@ -17,9 +17,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
-import okhttp3.mockwebserver.SocketPolicy
+import mockwebserver3.MockResponse
+import mockwebserver3.MockWebServer
+import mockwebserver3.SocketEffect
 import org.equeim.spacer.donki.CoroutinesRule
 import org.equeim.spacer.donki.FakeClock
 import org.equeim.spacer.donki.TEST_INSTANT_INSIDE_TEST_WEEK
@@ -36,7 +36,7 @@ import org.junit.Rule
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.annotation.Config
-import java.net.ConnectException
+import java.io.IOException
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
@@ -86,7 +86,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
     @AfterTest
     fun after() {
         actualRefreshedEventsScope.cancel()
-        server.shutdown()
+        server.close()
         repository.close()
     }
 
@@ -300,7 +300,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
     @Test
     fun `Verify 403 error handling`() = runTest {
         prepareInitialState(TEST_WEEK, clock.instant - Duration.ofMinutes(61))
-        server.respond = { MockResponse().setResponseCode(403) }
+        server.respond = { MockResponse(code = 403) }
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Error>(result)
         assertIs<DonkiNetworkDataSourceException.InvalidApiKey>(result.throwable)
@@ -309,7 +309,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
     @Test
     fun `Verify 429 error handling`() = runTest {
         prepareInitialState(TEST_WEEK, clock.instant - Duration.ofMinutes(61))
-        server.respond = { MockResponse().setResponseCode(429) }
+        server.respond = { MockResponse(code = 429) }
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Error>(result)
         assertIs<DonkiNetworkDataSourceException.TooManyRequests>(result.throwable)
@@ -318,7 +318,7 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
     @Test
     fun `Verify 500 error handling`() = runTest {
         prepareInitialState(TEST_WEEK, clock.instant - Duration.ofMinutes(61))
-        server.respond = { MockResponse().setResponseCode(500) }
+        server.respond = { MockResponse(code = 500) }
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Error>(result)
         assertIs<DonkiNetworkDataSourceException.HttpErrorResponse>(result.throwable)
@@ -327,10 +327,10 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
     @Test
     fun `Verify network error handling`() = runTest {
         prepareInitialState(TEST_WEEK, clock.instant - Duration.ofMinutes(61))
-        server.respond = { MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST) }
+        server.respond = { MockResponse.Builder().onResponseStart(SocketEffect.ShutdownConnection).build() }
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Error>(result)
-        assertTrue(result.throwable.allExceptions().filterIsInstance<ConnectException>().any())
+        assertTrue(result.throwable.allExceptions().filterIsInstance<IOException>().any())
     }
 
     companion object {

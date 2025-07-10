@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
+import mockwebserver3.MockResponse
+import mockwebserver3.MockWebServer
 import org.equeim.spacer.donki.CoroutinesRule
 import org.equeim.spacer.donki.MockkLogRule
 import org.equeim.spacer.donki.apiKey
@@ -48,19 +48,19 @@ class EventsDataSourceNetworkTest {
 
     @AfterTest
     fun after() {
-        server.shutdown()
+        server.close()
     }
 
     @Test
     fun `Validate urls`() = runTest {
         val week = Week(LocalDate.of(2016, 8, 29))
         for (eventType in EventType.entries) {
-            server.enqueue(MockResponse().setBody(""))
+            server.enqueue(MockResponse(body = ""))
 
             dataSource.getEvents(week, eventType)
 
             val request = server.takeRequest()
-            val url = assertNotNull(request.requestUrl)
+            val url = assertNotNull(request.url)
 
             val path = url.pathSegments.single()
             assertNotNull(EventType.entries.find { it.stringValue == path })
@@ -75,8 +75,8 @@ class EventsDataSourceNetworkTest {
 
     @Test
     fun `Validate request interrupton on API key change`() = runTest {
-        server.enqueue(MockResponse().setHeadersDelay(2, TimeUnit.SECONDS))
-        server.enqueue(MockResponse().setResponseCode(HttpURLConnection.HTTP_OK).setBody(""))
+        server.enqueue(MockResponse.Builder().headersDelay(2, TimeUnit.SECONDS).build())
+        server.enqueue(MockResponse(code = HttpURLConnection.HTTP_OK, body = ""))
         val requestJob = launch {
             dataSource.getEvents(Week(LocalDate.of(2016, 8, 29)), EventType.GeomagneticStorm)
         }
