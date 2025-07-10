@@ -32,7 +32,6 @@ import androidx.compose.material3.pulltorefresh.pullToRefresh
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -49,50 +48,30 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
-import dev.olshevski.navigation.reimagined.NavController
-import dev.olshevski.navigation.reimagined.navigate
 import org.equeim.spacer.R
-import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.utils.plus
-import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun <EventType : Enum<EventType>> BaseEventsList(
+fun BaseEventsList(
     holder: BaseEventsListStateHolder,
 
     contentPadding: PaddingValues,
     snackbarHostState: SnackbarHostState,
     mainContentNestedScrollConnections: List<NestedScrollConnection>,
 
-    filtersUiState: State<FiltersUiState<EventType>>,
-    updateFilters: (FiltersUiState<EventType>) -> Unit,
-    allEventTypes: List<EventType>,
-    eventTypeDisplayStringId: (EventType) -> Int,
-    eventsTimeZone: State<ZoneId?>,
-
-    dialogNavController: NavController<Destination>,
-    filtersDialogDestination: Destination,
-    dateRangePickerDialogDestination: Destination,
-    showFiltersAsDialog: State<Boolean>,
+    filtersSideSheet: @Composable () -> Unit,
 
     listItemKeyProvider: (ListItem) -> Any,
     listContentTypeProvider: (ListItem) -> Any?,
-    listItemSlot: @Composable (ListItem) -> Unit,
+    listItemSlot: @Composable (ListItem) -> Unit
 ) {
     val listIsEmpty by remember(holder) { derivedStateOf { holder.items.itemCount == 0 } }
     val initialLazyListState = rememberLazyListState()
     val lazyListState = if (listIsEmpty) initialLazyListState else holder.listState
 
     ShowSnackbarError(holder, snackbarHostState)
-
-    HandleFiltersDialogVisibility(
-        showFiltersAsDialog,
-        dialogNavController,
-        filtersDialogDestination,
-        dateRangePickerDialogDestination
-    )
 
     val pullToRefreshState = rememberPullToRefreshState()
     val enableRefreshIndicator: Boolean by holder.enableRefreshIndicator.collectAsStateWithLifecycle()
@@ -138,21 +117,7 @@ fun <EventType : Enum<EventType>> BaseEventsList(
                 )
             }
 
-            if (!showFiltersAsDialog.value) {
-                BaseEventFiltersSideSheet(
-                    contentPadding = contentPadding,
-                    filtersUiState = filtersUiState,
-                    updateFilters = updateFilters,
-                    allEventTypes = allEventTypes,
-                    eventTypeDisplayStringId = eventTypeDisplayStringId,
-                    eventsTimeZone = eventsTimeZone,
-                    showDateRangeDialog = {
-                        dialogNavController.navigate(
-                            dateRangePickerDialogDestination
-                        )
-                    },
-                )
-            }
+            filtersSideSheet()
         }
         Box(
             Modifier

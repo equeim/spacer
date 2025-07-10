@@ -20,3 +20,13 @@ infix operator fun PaddingValues.plus(other: PaddingValues): PaddingValues {
         bottom = calculateBottomPadding() + other.calculateBottomPadding()
     )
 }
+
+@Composable
+fun PaddingValues.removeStart(): PaddingValues {
+    val layoutDirection = LocalLayoutDirection.current
+    return PaddingValues(
+        top = calculateTopPadding(),
+        end = calculateEndPadding(layoutDirection),
+        bottom = calculateBottomPadding()
+    )
+}
