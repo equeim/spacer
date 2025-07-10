@@ -21,19 +21,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
@@ -57,6 +51,7 @@ import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.DonkiSystemNotificationsWorker
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.notifications.NotificationType
+import org.equeim.spacer.ui.components.ComboBox
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.donki.notifications.DonkiNotificationsScreenViewModel.Companion.displayStringResId
@@ -227,44 +222,16 @@ fun DonkiNotificationsSettings(
             }
         }
 
-        val expanded = remember { mutableStateOf(false) }
-        ExposedDropdownMenuBox(
-            expanded = expanded.value,
-            onExpandedChange = {
-                expanded.value = it
-            },
-        ) {
-            val currentValue = remember { mutableStateOf(backgroundNotificationsUpdateInterval.value) }
-            val enabled = remember { derivedStateOf { backgroundNotificationsEnabledTypes.value.isNotEmpty() } }
-            TextField(
-                value = updateIntervalToString(currentValue.value),
-                onValueChange = {},
-                readOnly = true,
-                label = { Text(stringResource(R.string.notifications_background_update_interval)) },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded.value) },
-                colors = ExposedDropdownMenuDefaults.textFieldColors(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled.value),
-                enabled = enabled.value,
-            )
-            ExposedDropdownMenu(
-                expanded = expanded.value,
-                onDismissRequest = { expanded.value = false }
-            ) {
-                for (interval in DonkiSystemNotificationsWorker.INTERVALS) {
-                    DropdownMenuItem(
-                        text = { Text(updateIntervalToString(interval)) },
-                        onClick = {
-                            currentValue.value = interval
-                            expanded.value = false
-                            setBackgroundNotificationsUpdateInterval(interval)
-                        },
-                        leadingIcon = { RadioButton(selected = (interval == currentValue.value), onClick = null) }
-                    )
-                }
-            }
-        }
+        val intervalEnabled = remember { derivedStateOf { backgroundNotificationsEnabledTypes.value.isNotEmpty() } }
+        ComboBox(
+            currentItem = backgroundNotificationsUpdateInterval::value,
+            updateCurrentItem = setBackgroundNotificationsUpdateInterval,
+            items = DonkiSystemNotificationsWorker.INTERVALS,
+            itemDisplayString = { updateIntervalToString(it) },
+            enabled = intervalEnabled.value,
+            label = R.string.notifications_background_update_interval,
+            modifier = Modifier.fillMaxWidth()
+        )
 
         Text(stringResource(R.string.update_interval_warning), style = MaterialTheme.typography.bodyMedium)
     }
