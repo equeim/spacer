@@ -3,34 +3,34 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [versions]
-android-gradle-plugin = "8.11.0"
-kotlin = "2.2.0"
-ksp = "2.2.0-2.0.2"
+android-gradle-plugin = "8.13.0"
+kotlin = "2.2.20"
+ksp = "2.2.20-2.0.3"
 deezer-caupain = "1.6.1"
 
-sdk-platform-compile = "35"
+sdk-platform-compile = "36"
 sdk-platform-min = "27"
 sdk-platform-target = "35"
 
-androidx-activity = "1.10.1"
-androidx-compose = "2025.06.01"
-androidx-compose-material3 = "1.4.0-alpha17"
-androidx-core = "1.16.0"
+androidx-activity = "1.11.0"
+androidx-compose = "2025.09.01"
+androidx-compose-material3 = "1.5.0-alpha04"
+androidx-core = "1.17.0"
 androidx-datastore = "1.1.7"
-androidx-lifecycle = "2.9.1"
+androidx-lifecycle = "2.9.4"
 androidx-paging = "3.3.6"
-androidx-room = "2.7.2"
-androidx-test-core = "1.6.1"
-androidx-work = "2.10.2"
+androidx-room = "2.8.1"
+androidx-test-core = "1.7.0"
+androidx-work = "2.10.5"
 
 coroutines = "1.10.2"
 junit = "4.13.2"
 okhttp = "5.1.0"
 leakcanary = "2.14"
-mockk = "1.14.4"
+mockk = "1.14.6"
 navigation-reimagined = "1.5.0"
 retrofit = "3.0.0"
-robolectric = "4.15.1"
+robolectric = "4.16"
 serialization = "1.9.0"
 
 [libraries]
