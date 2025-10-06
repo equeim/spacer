@@ -6,7 +6,7 @@
 android-gradle-plugin = "8.11.0"
 kotlin = "2.2.0"
 ksp = "2.2.0-2.0.2"
-gradle-versions-plugin = "0.52.0"
+deezer-caupain = "1.6.1"
 
 sdk-platform-compile = "35"
 sdk-platform-min = "27"
@@ -81,4 +81,4 @@ kotlin-plugin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", versio
 kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-plugin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-gradle-versions = { id = "com.github.ben-manes.versions", version.ref = "gradle-versions-plugin" }
+deezer-caupain = { id = "com.deezer.caupain", version.ref = "deezer-caupain" }
