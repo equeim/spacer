@@ -2,10 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import com.deezer.caupain.model.StabilityLevelPolicy
-import com.deezer.caupain.plugin.DependenciesUpdateTask
-import java.util.Locale
-
 plugins {
     alias(libs.plugins.android.application) apply (false)
     alias(libs.plugins.android.library) apply (false)
@@ -18,8 +14,4 @@ plugins {
 
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
-}
-
-tasks.withType<DependenciesUpdateTask> {
-    selectIf(StabilityLevelPolicy)
 }
