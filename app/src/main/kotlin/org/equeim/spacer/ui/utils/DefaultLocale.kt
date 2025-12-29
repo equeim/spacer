@@ -21,6 +21,7 @@ fun Context.defaultLocaleFlow(): Flow<Locale> = callbackFlow {
         override fun onConfigurationChanged(newConfig: Configuration) {
             launch { send(newConfig.locales[0]) }
         }
+        @Suppress("OVERRIDE_DEPRECATION")
         override fun onLowMemory() = Unit
     }
     registerComponentCallbacks(callback)
