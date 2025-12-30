@@ -60,7 +60,9 @@ private fun SettingsScreen(popBackStack: () -> Unit) {
         SubScreenTopAppBar(stringResource(R.string.settings), popBackStack)
     }) { contentPadding ->
         val model = viewModel<SettingsScreenViewModel>()
-        if (!model.loaded) {
+        val notificationsSettingsScreenViewModel = viewModel<DonkiNotificationsSettingsScreenViewModel>()
+        LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) { notificationsSettingsScreenViewModel.onActivityResumed() }
+        if (!model.loaded || !notificationsSettingsScreenViewModel.loadedSettings.value) {
             return@Scaffold
         }
         Column(
@@ -167,17 +169,13 @@ private fun SettingsScreen(popBackStack: () -> Unit) {
                 Modifier.padding(horizontal = horizontalPadding)
             )
 
-            val notificationsSettingsScreenViewModel = viewModel<DonkiNotificationsSettingsScreenViewModel>()
-            LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) { notificationsSettingsScreenViewModel.onActivityResumed() }
-            if (notificationsSettingsScreenViewModel.loadedSettings.value) {
-                DonkiNotificationsSettings(
-                    backgroundNotificationsEnabledTypes = notificationsSettingsScreenViewModel.backgroundNotificationsEnabledTypes.collectAsStateWithLifecycle(),
-                    setBackgroundNotificationsEnabledTypes = notificationsSettingsScreenViewModel::setBackgroundNotificationsEnabledTypes,
-                    backgroundNotificationsUpdateInterval = notificationsSettingsScreenViewModel.backgroundNotificationsUpdateInterval.collectAsStateWithLifecycle(),
-                    setBackgroundNotificationsUpdateInterval = notificationsSettingsScreenViewModel::setBackgroundNotificationsUpdateInterval,
-                    issues = notificationsSettingsScreenViewModel.issues,
-                )
-            }
+            DonkiNotificationsSettings(
+                backgroundNotificationsEnabledTypes = notificationsSettingsScreenViewModel.backgroundNotificationsEnabledTypes.collectAsStateWithLifecycle(),
+                setBackgroundNotificationsEnabledTypes = notificationsSettingsScreenViewModel::setBackgroundNotificationsEnabledTypes,
+                backgroundNotificationsUpdateInterval = notificationsSettingsScreenViewModel.backgroundNotificationsUpdateInterval.collectAsStateWithLifecycle(),
+                setBackgroundNotificationsUpdateInterval = notificationsSettingsScreenViewModel::setBackgroundNotificationsUpdateInterval,
+                issues = notificationsSettingsScreenViewModel.issues,
+            )
 
             HorizontalDivider()
 
