@@ -45,7 +45,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -203,11 +202,11 @@ private fun ShowSnackbarError(
 ) {
     val snackbarError: String? by model.snackbarError.collectAsStateWithLifecycle()
     snackbarError?.let { error ->
-        val context = LocalContext.current
-        LaunchedEffect(snackbarHostState) {
+        val actionLabel = stringResource(R.string.retry)
+        LaunchedEffect(snackbarHostState, error, actionLabel) {
             val result = snackbarHostState.showSnackbar(
                 message = error,
-                actionLabel = context.getString(R.string.retry),
+                actionLabel = actionLabel,
                 withDismissAction = true,
                 duration = SnackbarDuration.Indefinite
             )

@@ -46,7 +46,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
@@ -64,7 +63,6 @@ import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.common.NeedToRefreshState
 import org.equeim.spacer.donki.data.notifications.NotificationId
 import org.equeim.spacer.donki.data.notifications.NotificationType
-import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.MainActivityViewModel
 import org.equeim.spacer.ui.components.ElevatedCardWithPadding
 import org.equeim.spacer.ui.components.IconButtonWithTooltip
@@ -282,12 +280,13 @@ private fun DonkiNotificationsScreen(
         } else {
             null
         }
-        val context = LocalContext.current
-        LaunchedEffect(LocalDefaultLocale.current) {
+        val message = stringResource(R.string.system_notifications_question)
+        val actionLabel = stringResource(R.string.yes)
+        LaunchedEffect(message, actionLabel) {
             if (shouldAskAboutEnablingNotifications()) {
                 val result = snackbarHostState.showSnackbar(
-                    context.getString(R.string.system_notifications_question),
-                    context.getString(R.string.yes),
+                    message = message,
+                    actionLabel = actionLabel,
                     withDismissAction = true,
                     duration = SnackbarDuration.Indefinite
                 )

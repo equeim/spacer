@@ -39,7 +39,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -156,11 +155,11 @@ private fun ShowSnackbarError(
 ) {
     val snackbarError = holder.snackbarError
     if (snackbarError != null) {
-        val context = LocalContext.current
-        LaunchedEffect(snackbarHostState) {
+        val actionLabel = stringResource(R.string.retry)
+        LaunchedEffect(snackbarHostState, snackbarError, actionLabel) {
             val result = snackbarHostState.showSnackbar(
                 message = snackbarError,
-                actionLabel = context.getString(R.string.retry),
+                actionLabel = actionLabel,
                 withDismissAction = true,
                 duration = SnackbarDuration.Indefinite
             )
