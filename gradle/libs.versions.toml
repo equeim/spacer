@@ -3,35 +3,35 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [versions]
-android-gradle-plugin = "8.13.2"
-kotlin = "2.3.0"
-ksp = "2.3.4"
-deezer-caupain = "1.7.1"
+android-gradle-plugin = "9.0.0"
+kotlin = "2.3.10"
+ksp = "2.3.5"
+deezer-caupain = "1.8.1"
 
 sdk-platform-compile = "36"
 sdk-platform-min = "27"
 sdk-platform-target = "35"
 
-androidx-activity = "1.12.2"
-androidx-compose = "2025.12.01"
-androidx-compose-material3 = "1.5.0-alpha11"
+androidx-activity = "1.12.3"
+androidx-compose = "2026.01.01"
+androidx-compose-material3 = "1.5.0-alpha13"
 androidx-core = "1.17.0"
 androidx-datastore = "1.2.0"
 androidx-lifecycle = "2.10.0"
-androidx-paging = "3.3.6"
+androidx-paging = "3.4.0"
 androidx-room = "2.8.4"
 androidx-test-core = "1.7.0"
-androidx-work = "2.11.0"
+androidx-work = "2.11.1"
 
 coroutines = "1.10.2"
 junit = "4.13.2"
 okhttp = "5.3.2"
 leakcanary = "2.14"
-mockk = "1.14.7"
+mockk = "1.14.9"
 navigation-reimagined = "1.5.0"
 retrofit = "3.0.0"
-robolectric = "4.16"
-serialization = "1.9.0"
+robolectric = "4.16.1"
+serialization = "1.10.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
@@ -76,7 +76,7 @@ serialization-json-okio = { module = "org.jetbrains.kotlinx:kotlinx-serializatio
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android-gradle-plugin" }
 android-library = { id = "com.android.library", version.ref = "android-gradle-plugin" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-plugin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
 kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-plugin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
