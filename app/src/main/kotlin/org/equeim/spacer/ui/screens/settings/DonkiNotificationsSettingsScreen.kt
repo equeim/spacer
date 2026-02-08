@@ -44,9 +44,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.olshevski.navigation.reimagined.NavController
-import dev.olshevski.navigation.reimagined.NavHostEntry
-import dev.olshevski.navigation.reimagined.pop
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.DonkiSystemNotificationsWorker
 import org.equeim.spacer.R
@@ -54,6 +51,7 @@ import org.equeim.spacer.donki.data.notifications.NotificationType
 import org.equeim.spacer.ui.components.ComboBox
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.NavController
 import org.equeim.spacer.ui.screens.donki.notifications.DonkiNotificationsScreenViewModel.Companion.displayStringResId
 import org.equeim.spacer.ui.theme.ComponentPreview
 import org.equeim.spacer.ui.theme.Dimens
@@ -64,16 +62,11 @@ import java.time.Duration
 @Parcelize
 object DonkiNotificationsSettingsScreen : Destination {
     @Composable
-    override fun Content(
-        navController: NavController<Destination>,
-        navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntries: List<NavHostEntry<Destination>>?
-    ) =
-        DonkiNotificationsSettingsScreen(navController)
+    override fun Content(navController: NavController) = DonkiNotificationsSettingsScreen(navController::popBackStack)
 }
 
 @Composable
-private fun DonkiNotificationsSettingsScreen(navController: NavController<Destination>) {
+private fun DonkiNotificationsSettingsScreen(popBackStack: () -> Unit) {
     val model = viewModel<DonkiNotificationsSettingsScreenViewModel>()
     LifecycleEventEffect(event = Lifecycle.Event.ON_RESUME) { model.onActivityResumed() }
     if (model.loadedSettings.value) {
@@ -83,7 +76,7 @@ private fun DonkiNotificationsSettingsScreen(navController: NavController<Destin
             backgroundNotificationsUpdateInterval = model.backgroundNotificationsUpdateInterval.collectAsStateWithLifecycle(),
             setBackgroundNotificationsUpdateInterval = model::setBackgroundNotificationsUpdateInterval,
             issues = model.issues,
-            popBackStack = navController::pop
+            popBackStack = popBackStack
         )
     }
 }

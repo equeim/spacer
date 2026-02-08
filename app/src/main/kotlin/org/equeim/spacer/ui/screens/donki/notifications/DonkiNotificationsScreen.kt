@@ -54,8 +54,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
-import dev.olshevski.navigation.reimagined.NavController
-import dev.olshevski.navigation.reimagined.navigate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
@@ -69,7 +67,7 @@ import org.equeim.spacer.ui.components.IconButtonWithTooltip
 import org.equeim.spacer.ui.components.RootScreenTopAppBar
 import org.equeim.spacer.ui.components.ScrollableFloatingActionButtonWithTooltip
 import org.equeim.spacer.ui.components.rememberFloatingActionButtonScrollBehavior
-import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.NavController
 import org.equeim.spacer.ui.screens.donki.BaseEventsList
 import org.equeim.spacer.ui.screens.donki.BaseEventsListStateHolder
 import org.equeim.spacer.ui.screens.donki.DateRangePickerDialog
@@ -96,7 +94,7 @@ import java.time.ZoneId
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DonkiNotificationsScreen(
-    navController: NavController<Destination>,
+    navController: NavController,
     bottomAppBarScrollBehavior: BottomAppBarScrollBehavior,
     scrollToTopEvents: Flow<Unit>
 ) {
@@ -121,10 +119,10 @@ fun DonkiNotificationsScreen(
         shouldAskAboutEnablingNotifications = model::shouldAskAboutEnablingNotifications,
         askedAboutEnablingNotification = {
             model.askedAboutEnabledNotifications(it)
-            if (it) navController.navigate(DonkiNotificationsSettingsScreen)
+            if (it) navController.navigateTo(DonkiNotificationsSettingsScreen)
         },
-        navigateToDetailsScreen = { navController.navigate(NotificationDetailsScreen(it)) },
-        navigateToNotificationsSettings = { navController.navigate(DonkiNotificationsSettingsScreen) },
+        navigateToDetailsScreen = { navController.navigateTo(NotificationDetailsScreen(it)) },
+        navigateToNotificationsSettings = { navController.navigateTo(DonkiNotificationsSettingsScreen) },
         bottomAppBarScrollBehavior = bottomAppBarScrollBehavior
     )
 

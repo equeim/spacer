@@ -15,6 +15,9 @@ import android.view.Window
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -35,19 +38,20 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.IntentCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
-import dev.olshevski.navigation.reimagined.navigate
-import dev.olshevski.navigation.reimagined.popUpTo
-import dev.olshevski.navigation.reimagined.rememberNavController
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.notifications.NotificationId
-import org.equeim.spacer.ui.screens.Destination
 import org.equeim.spacer.ui.screens.MainScreen
-import org.equeim.spacer.ui.screens.ScreenDestinationNavHost
+import org.equeim.spacer.ui.screens.NavController
 import org.equeim.spacer.ui.screens.donki.notifications.details.NotificationDetailsScreen
+import org.equeim.spacer.ui.screens.rememberNavController
 import org.equeim.spacer.ui.theme.ApplicationTheme
+import org.equeim.spacer.utils.rememberExtendedViewModelStoreNavEntryDecorator
 
 private const val TAG = "MainActivity"
 
@@ -63,6 +67,7 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) {
             handleDeepLink(intent)
         }
+
         setContent {
             MainActivityScreen(this, notificationsDeepLinks)
         }
@@ -131,14 +136,26 @@ private fun MainActivityScreen(
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
             ) {
-                val navController = rememberNavController<Destination>(MainScreen)
+                val viewModelStoreDecorator = rememberExtendedViewModelStoreNavEntryDecorator<NavController.BackStackEntry>()
+                val navController = rememberNavController(MainScreen, viewModelStoreDecorator)
                 LaunchedEffect(navController) {
                     for (notificationId in notificationsDeepLinks) {
-                        navController.popUpTo { it is MainScreen }
-                        navController.navigate(NotificationDetailsScreen(notificationId))
+                        navController.popUpTo(MainScreen)
+                        navController.navigateTo(NotificationDetailsScreen(notificationId))
                     }
                 }
-                ScreenDestinationNavHost(navController)
+                NavDisplay(
+                    backStack = navController.backStack,
+                    onBack = navController::popBackStack,
+                    entryProvider = { key ->
+                        NavEntry(key = key, contentKey = key.contentKey) { key.destination.Content(navController) }
+                    },
+                    entryDecorators = listOf(
+                        rememberSaveableStateHolderNavEntryDecorator(),
+                        viewModelStoreDecorator
+                    ),
+                    predictivePopTransitionSpec = { ContentTransform(EnterTransition.None, ExitTransition.None) }
+                )
             }
         }
     }
