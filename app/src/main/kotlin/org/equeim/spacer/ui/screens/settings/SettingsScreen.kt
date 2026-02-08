@@ -30,9 +30,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.olshevski.navigation.reimagined.NavController
-import dev.olshevski.navigation.reimagined.NavHostEntry
-import dev.olshevski.navigation.reimagined.pop
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.AppSettings.DarkThemeMode
 import org.equeim.spacer.R
@@ -41,21 +38,19 @@ import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.components.SwitchWithText
 import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.NavController
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.utils.safeOpenUri
 
 @Parcelize
 object SettingsScreen : Destination {
     @Composable
-    override fun Content(
-        navController: NavController<Destination>,
-        navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntries: List<NavHostEntry<Destination>>?
-    ) = SettingsScreen(navController::pop)
+    override fun Content(navController: NavController) =
+        SettingsScreen(navController::navigateTo, navController::popBackStack)
 }
 
 @Composable
-private fun SettingsScreen(popBackStack: () -> Unit) {
+private fun SettingsScreen(navigateTo: (Destination) -> Unit, popBackStack: () -> Unit) {
     Scaffold(topBar = {
         SubScreenTopAppBar(stringResource(R.string.settings), popBackStack)
     }) { contentPadding ->
@@ -100,7 +95,9 @@ private fun SettingsScreen(popBackStack: () -> Unit) {
                         }
                     )
                 },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = horizontalPadding),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = horizontalPadding),
                 label = R.string.dark_theme
             )
 
@@ -108,7 +105,7 @@ private fun SettingsScreen(popBackStack: () -> Unit) {
                 val useSystemColors: Boolean by model.useSystemColors.collectAsStateWithLifecycle()
                 SwitchWithText(
                     checked = useSystemColors,
-                    onCheckedChange = { model.settings.useSystemColors.set(!useSystemColors) },
+                    onCheckedChange = { navigateTo(SettingsScreen) },
                     text = R.string.use_system_colors,
                     horizontalContentPadding = horizontalPadding,
                     modifier = Modifier.fillMaxWidth()

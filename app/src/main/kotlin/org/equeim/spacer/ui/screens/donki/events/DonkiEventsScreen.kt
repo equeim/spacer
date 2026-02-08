@@ -43,8 +43,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
-import dev.olshevski.navigation.reimagined.NavController
-import dev.olshevski.navigation.reimagined.navigate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
@@ -57,7 +55,7 @@ import org.equeim.spacer.ui.components.IconButtonWithTooltip
 import org.equeim.spacer.ui.components.RootScreenTopAppBar
 import org.equeim.spacer.ui.components.ScrollableFloatingActionButtonWithTooltip
 import org.equeim.spacer.ui.components.rememberFloatingActionButtonScrollBehavior
-import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.NavController
 import org.equeim.spacer.ui.screens.donki.BaseEventsList
 import org.equeim.spacer.ui.screens.donki.BaseEventsListStateHolder
 import org.equeim.spacer.ui.screens.donki.DateRangePickerDialog
@@ -82,7 +80,7 @@ import java.time.ZoneId
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DonkiEventsScreen(
-    navController: NavController<Destination>,
+    navController: NavController,
     bottomAppBarScrollBehavior: BottomAppBarScrollBehavior,
     scrollToTopEvents: Flow<Unit>
 ) {
@@ -103,8 +101,8 @@ fun DonkiEventsScreen(
         filtersUiState = filters,
         updateFilters = model::updateFilters,
         eventsTimeZone = eventsTimeZone,
-        navigateToDetailsScreen = { navController.navigate(DonkiEventDetailsScreen(it)) },
-        navigateToSettingsScreen = { navController.navigate(SettingsScreen) },
+        navigateToDetailsScreen = { navController.navigateTo(DonkiEventDetailsScreen(it)) },
+        navigateToSettingsScreen = { navController.navigateTo(SettingsScreen) },
         bottomAppBarScrollBehavior = bottomAppBarScrollBehavior
     )
 }

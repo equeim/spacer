@@ -4,6 +4,10 @@
 
 package org.equeim.spacer.ui.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material.icons.Icons
@@ -27,20 +31,16 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.State
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.olshevski.navigation.reimagined.AnimatedNavHost
-import dev.olshevski.navigation.reimagined.NavController
-import dev.olshevski.navigation.reimagined.NavHostEntry
-import dev.olshevski.navigation.reimagined.moveToTop
-import dev.olshevski.navigation.reimagined.navigate
-import dev.olshevski.navigation.reimagined.rememberNavController
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.parcelize.Parcelize
@@ -52,23 +52,13 @@ import org.equeim.spacer.ui.theme.Timeline
 @Parcelize
 object MainScreen : Destination {
     @Composable
-    override fun Content(
-        navController: NavController<Destination>,
-        navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntries: List<NavHostEntry<Destination>>?
-    ) = MainScreenContent(navController, navHostEntries)
+    override fun Content(navController: NavController) = MainScreenContent(navController)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ComponentOverrideApi::class)
 @Composable
-private fun MainScreenContent(
-    navController: NavController<Destination>,
-    navHostEntries: List<NavHostEntry<Destination>>
-) {
-    val bottomNavigationNavController = rememberNavController(BottomNavigationScreen.Events)
-    val currentScreen: State<BottomNavigationScreen> = remember {
-        derivedStateOf { bottomNavigationNavController.backstack.entries.last().destination }
-    }
+private fun MainScreenContent(navController: NavController) {
+    var currentScreen: BottomNavigationScreen by rememberSaveable { mutableStateOf(BottomNavigationScreen.Events) }
 
     val viewModel = viewModel<MainScreenViewModel>()
     val numberOfUnreadNotifications = viewModel.numberOfUnreadNotifications.collectAsStateWithLifecycle()
@@ -87,12 +77,10 @@ private fun MainScreenContent(
                 for (screen in BottomNavigationScreen.entries) {
                     NavigationSuiteItem(
                         navigationSuiteType = navigationSuiteType,
-                        selected = screen == currentScreen.value,
+                        selected = screen == currentScreen,
                         onClick = {
-                            if (currentScreen.value != screen) {
-                                if (!bottomNavigationNavController.moveToTop { it == screen }) {
-                                    bottomNavigationNavController.navigate(screen)
-                                }
+                            if (currentScreen != screen) {
+                                currentScreen = screen
                             } else {
                                 scrollToTopEvents.tryEmit(Unit)
                             }
@@ -125,8 +113,11 @@ private fun MainScreenContent(
                 }
             }
         ) {
-            AnimatedNavHost(bottomNavigationNavController) {
-                when (it) {
+            AnimatedContent(
+                targetState = currentScreen,
+                transitionSpec = { fadeIn().togetherWith(fadeOut()) }
+            ) { screen ->
+                when (screen) {
                     BottomNavigationScreen.Events -> DonkiEventsScreen(
                         navController,
                         bottomAppBarScrollBehavior,

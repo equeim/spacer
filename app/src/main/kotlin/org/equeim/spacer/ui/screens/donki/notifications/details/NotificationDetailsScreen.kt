@@ -44,10 +44,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.olshevski.navigation.reimagined.NavController
-import dev.olshevski.navigation.reimagined.NavHostEntry
-import dev.olshevski.navigation.reimagined.navigate
-import dev.olshevski.navigation.reimagined.pop
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.events.EventId
@@ -55,6 +51,7 @@ import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.donki.data.notifications.NotificationId
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.NavController
 import org.equeim.spacer.ui.screens.donki.LinkedEventPresentation
 import org.equeim.spacer.ui.screens.donki.LinkedEventsList
 import org.equeim.spacer.ui.screens.donki.events.DonkiEventsScreenViewModel.Companion.displayStringResId
@@ -73,11 +70,7 @@ import java.time.ZonedDateTime
 @Parcelize
 data class NotificationDetailsScreen(val notificationId: NotificationId) : Destination {
     @Composable
-    override fun Content(
-        navController: NavController<Destination>,
-        navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntries: List<NavHostEntry<Destination>>?
-    ) {
+    override fun Content(navController: NavController) {
         val model = viewModel {
             NotificationDetailsScreenViewModel(
                 notificationId,
@@ -87,9 +80,9 @@ data class NotificationDetailsScreen(val notificationId: NotificationId) : Desti
         val state: ContentState by model.contentState.collectAsStateWithLifecycle()
         ScreenContent(
             state = state,
-            popBackStack = navController::pop,
+            popBackStack = navController::popBackStack,
             showEventDetailsScreen = {
-                navController.navigate(DonkiEventDetailsScreen(it))
+                navController.navigateTo(DonkiEventDetailsScreen(it))
             }
         )
     }

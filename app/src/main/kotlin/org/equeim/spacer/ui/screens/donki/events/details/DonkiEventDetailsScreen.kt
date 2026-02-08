@@ -54,10 +54,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.olshevski.navigation.reimagined.NavController
-import dev.olshevski.navigation.reimagined.NavHostEntry
-import dev.olshevski.navigation.reimagined.navigate
-import dev.olshevski.navigation.reimagined.pop
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.events.EventId
@@ -73,6 +69,7 @@ import org.equeim.spacer.donki.data.events.network.json.SolarFlare
 import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.NavController
 import org.equeim.spacer.ui.screens.donki.LinkedEventsList
 import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreenViewModel.ContentState.Empty
 import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreenViewModel.ContentState.ErrorPlaceholder
@@ -89,16 +86,11 @@ import java.time.format.DateTimeFormatter
 @Parcelize
 data class DonkiEventDetailsScreen(val eventId: EventId) : Destination {
     @Composable
-    override fun Content(
-        navController: NavController<Destination>,
-        navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntries: List<NavHostEntry<Destination>>?
-    ) =
-        ScreenContent(eventId, navController)
+    override fun Content(navController: NavController) = ScreenContent(eventId, navController)
 }
 
 @Composable
-private fun ScreenContent(eventId: EventId, navController: NavController<Destination>) {
+private fun ScreenContent(eventId: EventId, navController: NavController) {
     val model = viewModel {
         DonkiEventDetailsScreenViewModel(
             eventId,
@@ -112,7 +104,7 @@ private fun ScreenContent(eventId: EventId, navController: NavController<Destina
 @Composable
 private fun ScreenContent(
     model: DonkiEventDetailsScreenViewModel,
-    navController: NavController<Destination>,
+    navController: NavController
 ) {
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME, onEvent = model::onActivityResumed)
 
@@ -121,7 +113,7 @@ private fun ScreenContent(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = { SubScreenTopAppBar(stringResource(R.string.event_details), navController::pop) },
+        topBar = { SubScreenTopAppBar(stringResource(R.string.event_details), navController::popBackStack) },
         floatingActionButton = {
             val state = model.contentState.collectAsState()
             val eventLink by remember(model) {
@@ -155,7 +147,7 @@ private fun ScreenContent(
                     state = pullToRefreshState,
                     onRefresh = model::refreshIfNotAlreadyLoading
                 )
-        )  {
+        ) {
             val contentState by model.contentState.collectAsState()
             Crossfade(contentState, label = "Content state crossfade") { state ->
                 Box(
@@ -174,10 +166,10 @@ private fun ScreenContent(
                             ScreenContentEventData(
                                 state = state,
                                 showEventDetailsScreen = {
-                                    navController.navigate(DonkiEventDetailsScreen(it))
+                                    navController.navigateTo(DonkiEventDetailsScreen(it))
                                 },
                                 navigateToCmeAnalysisScreen = {
-                                    navController.navigate(CmeAnalysisScreen(state.event.id, it.link))
+                                    navController.navigateTo(CmeAnalysisScreen(state.event.id, it.link))
                                 }
                             )
                         }
@@ -237,7 +229,11 @@ private fun BoxScope.ScreenContentErrorPlaceholder(error: String) {
 }
 
 @Composable
-private fun ScreenContentEventData(state: EventData, showEventDetailsScreen: (EventId) -> Unit, navigateToCmeAnalysisScreen: (CoronalMassEjection.Analysis) -> Unit) {
+private fun ScreenContentEventData(
+    state: EventData,
+    showEventDetailsScreen: (EventId) -> Unit,
+    navigateToCmeAnalysisScreen: (CoronalMassEjection.Analysis) -> Unit
+) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -256,7 +252,12 @@ private fun ScreenContentEventData(state: EventData, showEventDetailsScreen: (Ev
             )
         }
         Spacer(Modifier.height(Dimens.SpacingMedium - Dimens.SpacingSmall))
-        SpecificEventDetails(state.event, state::eventTimeFormatter, state::eventDateTimeFormatter, navigateToCmeAnalysisScreen)
+        SpecificEventDetails(
+            state.event,
+            state::eventTimeFormatter,
+            state::eventDateTimeFormatter,
+            navigateToCmeAnalysisScreen
+        )
         if (state.linkedEvents.isNotEmpty()) {
             LinkedEventsList(state.linkedEvents, showEventDetailsScreen)
         }

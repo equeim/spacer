@@ -37,9 +37,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import dev.olshevski.navigation.reimagined.NavController
-import dev.olshevski.navigation.reimagined.NavHostEntry
-import dev.olshevski.navigation.reimagined.pop
 import kotlinx.parcelize.Parcelize
 import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.events.EventId
@@ -49,10 +46,11 @@ import org.equeim.spacer.ui.components.SectionHeader
 import org.equeim.spacer.ui.components.SectionPlaceholder
 import org.equeim.spacer.ui.components.SubScreenTopAppBar
 import org.equeim.spacer.ui.screens.Destination
+import org.equeim.spacer.ui.screens.NavController
+import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreen
 import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreenViewModel
 import org.equeim.spacer.ui.screens.donki.events.details.DonkiEventDetailsScreenViewModel.ContentState
 import org.equeim.spacer.ui.screens.donki.events.details.LabelFieldPair
-import org.equeim.spacer.ui.screens.previous
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.theme.Public
 import org.equeim.spacer.ui.utils.rememberCoordinatesFormatter
@@ -65,13 +63,11 @@ import java.time.format.DateTimeFormatter
 @Parcelize
 data class CmeAnalysisScreen(val eventId: EventId, val cmeLink: String) : Destination {
     @Composable
-    override fun Content(
-        navController: NavController<Destination>,
-        navHostEntries: List<NavHostEntry<Destination>>,
-        parentNavHostEntries: List<NavHostEntry<Destination>>?
-    ) {
+    override fun Content(navController: NavController) {
         val model: DonkiEventDetailsScreenViewModel =
-            viewModel(viewModelStoreOwner = navHostEntries.previous) {
+            viewModel(
+                viewModelStoreOwner = navController.viewModelStoreOwnerForDestination(DonkiEventDetailsScreen(eventId))
+            ) {
                 DonkiEventDetailsScreenViewModel(
                     eventId,
                     checkNotNull(get(ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY))
@@ -102,8 +98,8 @@ data class CmeAnalysisScreen(val eventId: EventId, val cmeLink: String) : Destin
             }
         }
         when (val s = state) {
-            null -> SideEffect { navController.pop() }
-            else -> ScreenContent(s, navController::pop)
+            null -> SideEffect { navController.popBackStack() }
+            else -> ScreenContent(s, navController::popBackStack)
         }
     }
 }
