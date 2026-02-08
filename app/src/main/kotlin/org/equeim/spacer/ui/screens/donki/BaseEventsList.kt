@@ -81,17 +81,17 @@ fun BaseEventsList(
             val mainContentModifier = Modifier
                 .fillMaxHeight()
                 .weight(1.0f)
-                .run {
-                    mainContentNestedScrollConnections.fold(this) { modifier, connection ->
-                        modifier.nestedScroll(connection)
-                    }
-                }
                 .pullToRefresh(
                     isRefreshing = showPullToRefreshIndicator,
                     state = pullToRefreshState,
                     enabled = enableRefreshIndicator,
                     onRefresh = holder::refreshIfNotAlreadyLoading
                 )
+                .run {
+                    mainContentNestedScrollConnections.fold(this) { modifier, connection ->
+                        modifier.nestedScroll(connection)
+                    }
+                }
             val mainContentPadding = contentPadding + Dimens.ScreenContentPadding()
             when {
                 fullscreenError != null -> ErrorPlaceholder(
