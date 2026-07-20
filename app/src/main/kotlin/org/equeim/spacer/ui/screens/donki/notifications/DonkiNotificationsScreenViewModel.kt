@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
@@ -111,16 +112,16 @@ class DonkiNotificationsScreenViewModel(
     init {
         val defaultLocaleFlow =
             application.defaultLocaleFlow()
+                .onEach { Log.d(TAG, "locale = $it") }
                 .stateIn(viewModelScope, SharingStarted.Eagerly, application.defaultLocale)
 
         notificationsTimeZone = combine(
-            defaultLocaleFlow,
             application.defaultTimeZoneFlow(),
             settings.displayEventsTimeInUTC.flow()
-        ) { locale, defaultZone, displayEventsTimeInUTC ->
+        ) { defaultZone, displayEventsTimeInUTC ->
             Log.d(
                 TAG,
-                "locale = $locale, defaultZone = $defaultZone, displayEventsTimeInUTC = $displayEventsTimeInUTC"
+                "defaultZone = $defaultZone, displayEventsTimeInUTC = $displayEventsTimeInUTC"
             )
             determineEventTimeZone(defaultZone, displayEventsTimeInUTC)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
