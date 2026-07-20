@@ -6,8 +6,8 @@ package org.equeim.spacer.ui.utils
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalLocale
 import org.equeim.spacer.donki.data.events.network.json.units.Angle
-import org.equeim.spacer.ui.LocalDefaultLocale
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.text.NumberFormat
@@ -16,13 +16,13 @@ import kotlin.math.abs
 
 @Composable
 fun rememberIntegerFormatter(): NumberFormat {
-    val locale = LocalDefaultLocale.current
+    val locale = LocalLocale.current.platformLocale
     return remember(locale) { NumberFormat.getIntegerInstance(locale) }
 }
 
 @Composable
 fun rememberFloatFormatter(): DecimalFormat {
-    val locale = LocalDefaultLocale.current
+    val locale = LocalLocale.current.platformLocale
     return remember(locale) { DecimalFormat("0.##", DecimalFormatSymbols.getInstance(locale)) }
 }
 
@@ -56,6 +56,6 @@ class CoordinatesFormatter(locale: Locale) {
 
 @Composable
 fun rememberCoordinatesFormatter(): CoordinatesFormatter {
-    val locale = LocalDefaultLocale.current
+    val locale = LocalLocale.current.platformLocale
     return remember(locale) { CoordinatesFormatter(locale) }
 }

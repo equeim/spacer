@@ -49,6 +49,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -70,7 +71,6 @@ import org.equeim.spacer.R
 import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.events.EventType
 import org.equeim.spacer.donki.data.notifications.NotificationType
-import org.equeim.spacer.ui.LocalDefaultLocale
 import org.equeim.spacer.ui.components.SwitchWithText
 import org.equeim.spacer.ui.screens.donki.events.DonkiEventsScreenViewModel.Companion.displayStringResId
 import org.equeim.spacer.ui.screens.donki.notifications.DonkiNotificationsScreenViewModel.Companion.displayStringResId
@@ -265,7 +265,7 @@ private fun <EventType : Enum<EventType>> EventFilters(
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = if (dateRange == null) MaterialTheme.colorScheme.error else Color.Unspecified)
                 ) {
                     Text(dateRange?.let { range ->
-                        val locale = LocalDefaultLocale.current
+                        val locale = LocalLocale.current.platformLocale
                         val formatter = remember(locale, zone) {
                             DateTimeFormatterBuilder()
                                 .appendLocalized(FormatStyle.LONG, null)
@@ -395,7 +395,7 @@ fun DateRangePickerDialog(
                 Text(
                     stringResource(
                         R.string.date_range_picker_headline,
-                        eventsTimeZone.getDisplayName(TextStyle.NARROW, LocalDefaultLocale.current)
+                        eventsTimeZone.getDisplayName(TextStyle.NARROW, LocalLocale.current.platformLocale)
                     ), Modifier.padding(start = 64.dp, end = 12.dp)
                 )
             },

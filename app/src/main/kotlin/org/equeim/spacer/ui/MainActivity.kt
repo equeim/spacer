@@ -25,7 +25,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -40,7 +39,6 @@ import dev.olshevski.navigation.reimagined.navigate
 import dev.olshevski.navigation.reimagined.popUpTo
 import dev.olshevski.navigation.reimagined.rememberNavController
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.equeim.spacer.AppSettings
 import org.equeim.spacer.R
@@ -50,9 +48,6 @@ import org.equeim.spacer.ui.screens.MainScreen
 import org.equeim.spacer.ui.screens.ScreenDestinationNavHost
 import org.equeim.spacer.ui.screens.donki.notifications.details.NotificationDetailsScreen
 import org.equeim.spacer.ui.theme.ApplicationTheme
-import org.equeim.spacer.ui.utils.defaultLocale
-import org.equeim.spacer.ui.utils.defaultLocaleFlow
-import java.util.Locale
 
 private const val TAG = "MainActivity"
 
@@ -108,7 +103,6 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-val LocalDefaultLocale = compositionLocalOf<Locale> { throw IllegalStateException() }
 val LocalAppSettings = staticCompositionLocalOf<AppSettings> { throw IllegalStateException() }
 
 @Composable
@@ -126,15 +120,9 @@ private fun MainActivityScreen(
             }
     }
 
-    val defaultLocale by remember(activity) {
-        activity.defaultLocaleFlow().onEach {
-            Log.d(TAG, "Default locale is $it")
-        }
-    }.collectAsState(activity.defaultLocale)
     val settings = remember { AppSettings(activity) }
 
     CompositionLocalProvider(
-        LocalDefaultLocale provides defaultLocale,
         LocalAppSettings provides settings
     ) {
         ApplicationTheme(isDarkTheme) {
