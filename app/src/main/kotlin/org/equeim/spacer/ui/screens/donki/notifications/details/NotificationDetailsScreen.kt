@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -68,7 +69,6 @@ import org.equeim.spacer.ui.utils.createEventDateTimeFormatter
 import org.equeim.spacer.utils.safeOpenUri
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.util.Locale
 
 @Parcelize
 data class NotificationDetailsScreen(val notificationId: NotificationId) : Destination {
@@ -221,7 +221,7 @@ private fun NotificationDetailsScreenViewModel.BodyWithLinks.annotateLinks(): An
 @Preview
 @Composable
 fun NotificationDetailsScreenPreview() {
-    val formatter = createEventDateTimeFormatter(Locale.getDefault(), ZoneId.systemDefault())
+    val formatter = createEventDateTimeFormatter(LocalLocale.current.platformLocale, ZoneId.systemDefault())
     val body = """
         ## Community Coordinated Modeling Center Database Of Notifications, Knowledge, Information ( CCMC DONKI )
         ## Message Type: Space Weather Notification - CME update (Lucy, Solar Orbiter, STEREO A, Missions Near Earth)
