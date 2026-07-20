@@ -28,8 +28,9 @@ fun RadioButtonListItem(
                 onClick = null
             )
         },
-        headlineContent = { Text(text = text) },
         colors = ListItemDefaults.colors(containerColor = containerColor),
         modifier = Modifier.clickable(onClick = onClick).then(modifier)
-    )
+    ) {
+        Text(text = text)
+    }
 }
