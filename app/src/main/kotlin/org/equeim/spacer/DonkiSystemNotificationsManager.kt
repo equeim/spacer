@@ -76,7 +76,7 @@ class DonkiSystemNotificationsManager(private val context: Context) {
                         .setContentIntent(
                             PendingIntent.getActivities(
                                 context,
-                                Random.Default.nextInt(),
+                                Random.nextInt(),
                                 arrayOf(
                                     // Make sure that OS doesn't remember Intent with notification deep link
                                     // as a base Intent for the task (when our task didn't exist when clicking on notification)
@@ -123,7 +123,7 @@ class DonkiSystemNotificationsManager(private val context: Context) {
             return
         }
         notificationManager.notify(
-            Random.Default.nextInt(),
+            Random.nextInt(),
             Notification.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.warning_24px)
                 .setContentTitle(context.getText(R.string.notifications_update_error))
@@ -132,7 +132,7 @@ class DonkiSystemNotificationsManager(private val context: Context) {
                     // TODO: show error details in a dialog
                     PendingIntent.getActivity(
                         context,
-                        Random.Default.nextInt(),
+                        Random.nextInt(),
                         context.packageManager.getLaunchIntentForPackage(context.packageName),
                         PendingIntent.FLAG_IMMUTABLE
                     )

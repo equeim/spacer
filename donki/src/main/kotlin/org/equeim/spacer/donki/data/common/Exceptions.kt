@@ -44,7 +44,7 @@ class DonkiCacheDataSourceException(context: String, cause: Throwable) :
 
 internal fun Exception.toDonkiNetworkDataSourceException(context: String): DonkiNetworkDataSourceException {
     return if (this is HttpException) {
-        return when (code()) {
+        when (code()) {
             403 -> DonkiNetworkDataSourceException.InvalidApiKey(context, this)
             429 -> DonkiNetworkDataSourceException.TooManyRequests(context, this)
             else -> DonkiNetworkDataSourceException.HttpErrorResponse(context, this)
