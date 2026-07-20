@@ -16,6 +16,7 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -30,14 +31,21 @@ fun BaseButtonWithTooltip(
     val tooltipTextString = stringResource(tooltipText)
     // Passing modifier to TooltipBox is broken
     Box(modifier) {
+        val state = rememberTooltipState()
+        val view = LocalView.current
+        LaunchedEffect(state, view) {
+            snapshotFlow { state.isVisible }.collect {
+                if (it) {
+                    view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                }
+            }
+        }
         TooltipBox(
             positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
             tooltip = {
                 PlainTooltip { Text(tooltipTextString) }
-                val view = LocalView.current
-                LaunchedEffect(null) { view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS) }
             },
-            state = rememberTooltipState(),
+            state = state,
             focusable = false
         ) {
             button(tooltipTextString)
