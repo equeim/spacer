@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 
@@ -71,9 +70,4 @@ object Dimens {
      * Padding that needs to be applied to the content of scrollable view so that it's not obscured by FAB when scrolled to the bottom
      */
     val FloatingActionButtonPadding = 96.dp
-
-    fun listItemHorizontalPadding(horizontalPadding: Dp): Dp {
-        // 16dp is ListItem's own hardcoded padding
-        return (horizontalPadding - 16.dp).coerceAtLeast(0.dp)
-    }
 }

@@ -8,7 +8,6 @@ import android.os.Parcelable
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import dev.olshevski.navigation.reimagined.AnimatedNavHost
-import dev.olshevski.navigation.reimagined.DialogNavHost
 import dev.olshevski.navigation.reimagined.NavBackHandler
 import dev.olshevski.navigation.reimagined.NavController
 import dev.olshevski.navigation.reimagined.NavHostEntry
@@ -27,13 +26,6 @@ fun ScreenDestinationNavHost(navController: NavController<Destination>, modifier
     NavBackHandler(navController)
     AnimatedNavHost(navController, modifier) {
         it.Content(navController, hostEntries, parentNavHostEntries = null)
-    }
-}
-
-@Composable
-fun DialogDestinationNavHost(navController: NavController<Destination>, parentNavHostEntries: () -> List<NavHostEntry<Destination>>) {
-    DialogNavHost(navController) {
-        it.Content(navController, hostEntries, parentNavHostEntries())
     }
 }
 
