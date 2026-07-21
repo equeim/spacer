@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -140,10 +141,10 @@ private fun SettingsScreen(navigateTo: (Destination) -> Unit, popBackStack: () -
                 modifier = Modifier.fillMaxWidth()
             )
 
-            val apiKeyIsBlank: Boolean by remember { derivedStateOf { model.apiKeyTextFieldContent.isBlank() } }
+            val apiKeyIsBlank: Boolean by remember { derivedStateOf { model.apiKeyTextFieldState.text.isBlank() } }
             OutlinedTextField(
-                value = model.apiKeyTextFieldContent,
-                onValueChange = model::setNasaApiKey,
+                state = model.apiKeyTextFieldState,
+                lineLimits = TextFieldLineLimits.SingleLine,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = horizontalPadding),
