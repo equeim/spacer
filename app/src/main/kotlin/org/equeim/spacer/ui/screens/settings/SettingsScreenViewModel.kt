@@ -5,14 +5,18 @@
 package org.equeim.spacer.ui.screens.settings
 
 import android.app.Application
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -33,15 +37,15 @@ class SettingsScreenViewModel(application: Application) : AndroidViewModel(appli
     val displayEventsTimeInUTC: StateFlow<Boolean> by PreferenceStateFlow(settings.displayEventsTimeInUTC)
 
     val useCustomApiKey: StateFlow<Boolean> by PreferenceStateFlow(settings.useCustomNasaApiKey)
-    private val _apiKeyTextFieldContent = mutableStateOf("")
-    val apiKeyTextFieldContent: String by _apiKeyTextFieldContent
+
+    val apiKeyTextFieldState = TextFieldState()
 
     val rateLimit: Int? = DonkiNetworkStats.rateLimit
     val remainingRequests: Int? = DonkiNetworkStats.remainingRequests
 
     init {
         loadJobs.add(viewModelScope.launch {
-            _apiKeyTextFieldContent.value = settings.customNasaApiKey.get()
+            apiKeyTextFieldState.setTextAndPlaceCursorAtEnd(settings.customNasaApiKey.get())
         })
 
         viewModelScope.launch {
@@ -50,12 +54,13 @@ class SettingsScreenViewModel(application: Application) : AndroidViewModel(appli
                 clear()
             }
             loaded = true
-        }
-    }
 
-    fun setNasaApiKey(apiKey: String) {
-        _apiKeyTextFieldContent.value = apiKey
-        settings.customNasaApiKey.set(apiKey)
+            viewModelScope.launch {
+                snapshotFlow { apiKeyTextFieldState.text }.drop(1).collect {
+                    settings.customNasaApiKey.set(it.toString())
+                }
+            }
+        }
     }
 
     private inner class PreferenceStateFlow<T : Any>(flow: Flow<T>) :
