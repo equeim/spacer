@@ -45,7 +45,7 @@ class NavController private constructor(
     fun popUpTo(destination: Destination) {
         val index = _backStack.indexOfLast { it.destination == destination }
         if (index in 0..<_backStack.lastIndex) {
-            _backStack.removeRange(index + 1, _backStack.lastIndex)
+            _backStack.removeRange(index + 1, _backStack.size)
         }
     }
 
