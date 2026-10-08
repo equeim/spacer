@@ -32,7 +32,7 @@ import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.getSelectedEndDate
 import androidx.compose.material3.getSelectedStartDate
 import androidx.compose.material3.rememberBottomSheetState
@@ -146,7 +146,7 @@ fun <EventType : Enum<EventType>> EventFiltersBottomSheet(
 
 @Composable
 fun shouldShowFiltersAsBottomSheet(): State<Boolean> {
-    val windowSizeClass = rememberUpdatedState(currentWindowAdaptiveInfo().windowSizeClass)
+    val windowSizeClass = rememberUpdatedState(currentWindowAdaptiveInfoV2().windowSizeClass)
     return remember {
         derivedStateOf {
             !windowSizeClass.value.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
@@ -154,7 +154,6 @@ fun shouldShowFiltersAsBottomSheet(): State<Boolean> {
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun <EventType : Enum<EventType>> EventFilters(
     contentPadding: PaddingValues,
@@ -338,7 +337,6 @@ private fun NotificationFiltersPreview() = ComponentPreview {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateRangePickerDialog(
     initialDateRange: DateRange?,
@@ -346,7 +344,7 @@ fun DateRangePickerDialog(
     eventsTimeZone: ZoneId,
     onDismissRequest: () -> Unit,
 ) {
-    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
     val initialDisplayMode: DisplayMode by remember {
         derivedStateOf {
             if (windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)) {
@@ -406,7 +404,6 @@ fun DateRangePickerDialog(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 private class DateRangePickerSelectableDates(private val eventsTimeZone: ZoneId) : SelectableDates {
     override fun isSelectableDate(utcTimeMillis: Long): Boolean {
         // utcTimeMillis is not an actual time but a way to represent a date as a number

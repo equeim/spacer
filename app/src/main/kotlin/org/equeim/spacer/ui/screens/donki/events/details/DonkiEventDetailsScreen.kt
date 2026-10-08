@@ -100,7 +100,6 @@ private fun ScreenContent(eventId: EventId, navController: NavController) {
     ScreenContent(model, navController)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ScreenContent(
     model: DonkiEventDetailsScreenViewModel,

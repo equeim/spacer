@@ -114,7 +114,6 @@ private fun DonkiNotificationsSettingsScreen(
 }
 
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DonkiNotificationsSettings(
     backgroundNotificationsEnabledTypes: State<Set<NotificationType>>,
