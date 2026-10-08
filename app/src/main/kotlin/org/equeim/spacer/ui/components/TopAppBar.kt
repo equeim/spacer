@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.equeim.spacer.R
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RootScreenTopAppBar(
     title: String,
@@ -47,7 +46,6 @@ fun RootScreenTopAppBar(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubScreenTopAppBar(
     title: String,

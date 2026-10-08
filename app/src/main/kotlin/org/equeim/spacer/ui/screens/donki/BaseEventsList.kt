@@ -51,7 +51,6 @@ import org.equeim.spacer.R
 import org.equeim.spacer.ui.theme.Dimens
 import org.equeim.spacer.ui.utils.plus
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BaseEventsList(
     holder: BaseEventsListStateHolder,

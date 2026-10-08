@@ -91,7 +91,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DonkiNotificationsScreen(
     navController: NavController,
@@ -134,7 +133,6 @@ fun DonkiNotificationsScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DonkiNotificationsScreen(
     holder: BaseEventsListStateHolder,
@@ -337,7 +335,6 @@ private val ListItem.lazyListContentType: Any
         else -> ContentType.Notification
     }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @PreviewScreenSizes
 @Composable
 fun DonkiNotificationsScreenPreview() {

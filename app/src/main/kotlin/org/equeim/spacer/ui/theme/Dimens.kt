@@ -6,7 +6,7 @@ package org.equeim.spacer.ui.theme
 
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -24,7 +24,7 @@ object Dimens {
         end: Boolean = true,
         bottom: Boolean = true,
     ): PaddingValues {
-        val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+        val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
         val horizontal = ScreenContentPaddingHorizontal(windowSizeClass)
         val vertical = ScreenContentPaddingVertical(windowSizeClass)
         return PaddingValues(
@@ -37,11 +37,11 @@ object Dimens {
 
     @SuppressLint("ComposableNaming")
     @Composable
-    fun ScreenContentPaddingHorizontal(): Dp = ScreenContentPaddingHorizontal(currentWindowAdaptiveInfo().windowSizeClass)
+    fun ScreenContentPaddingHorizontal(): Dp = ScreenContentPaddingHorizontal(currentWindowAdaptiveInfoV2().windowSizeClass)
 
     @SuppressLint("ComposableNaming")
     @Composable
-    fun ScreenContentPaddingVertical(): Dp = ScreenContentPaddingVertical(currentWindowAdaptiveInfo().windowSizeClass)
+    fun ScreenContentPaddingVertical(): Dp = ScreenContentPaddingVertical(currentWindowAdaptiveInfoV2().windowSizeClass)
 
     private fun ScreenContentPaddingHorizontal(windowSizeClass: WindowSizeClass): Dp =
         if (windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)) {
