@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.kotlin.plugin.parcelize)
     alias(libs.plugins.kotlin.plugin.serialization)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.androidx.room)
 }
 
 android {
@@ -29,9 +30,9 @@ android {
 
 kotlin.compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
 
-ksp {
-    arg("room.incremental", "true")
-    arg("room.generateKotlin", "true")
+room {
+    generateKotlin = true
+    schemaDirectory(layout.projectDirectory.dir("src/main/roomSchemas"))
 }
 
 dependencies {
