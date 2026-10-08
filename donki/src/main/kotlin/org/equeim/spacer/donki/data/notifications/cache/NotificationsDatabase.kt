@@ -4,9 +4,9 @@
 
 package org.equeim.spacer.donki.data.notifications.cache
 
-import androidx.room.Database
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
+import androidx.room3.ColumnTypeConverters
+import androidx.room3.Database
+import androidx.room3.RoomDatabase
 import org.equeim.spacer.donki.data.common.InstantConverters
 
 @Database(
@@ -14,7 +14,7 @@ import org.equeim.spacer.donki.data.common.InstantConverters
     exportSchema = true,
     version = 1
 )
-@TypeConverters(InstantConverters::class, NotificationTypeConverters::class)
+@ColumnTypeConverters(InstantConverters::class, NotificationTypeConverters::class)
 internal abstract class NotificationsDatabase : RoomDatabase() {
     abstract fun cachedWeeks(): CachedNotificationsWeeksDao
     abstract fun cachedNotifications(): CachedNotificationsDao

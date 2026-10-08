@@ -9,6 +9,8 @@ package org.equeim.spacer.donki.data.events
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadType
 import androidx.paging.RemoteMediator
+import androidx.room3.executeSQL
+import androidx.room3.useWriterConnection
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -284,14 +286,14 @@ class EventsSummariesRemoteMediatorTest(systemTimeZone: ZoneId) {
 
     @Test
     fun `Verify that initialize() handles SQLite errors`() = runTest {
-        db.openHelper.writableDatabase.execSQL("DROP TABLE cached_weeks")
+        db.useWriterConnection { it.executeSQL("DROP TABLE cached_weeks") }
         val action = mediator.initialize()
         assertEquals(RemoteMediator.InitializeAction.SKIP_INITIAL_REFRESH, action)
     }
 
     @Test
     fun `Verify that load() handles SQLite errors`() = runTest {
-        db.openHelper.writableDatabase.execSQL("DROP TABLE cached_weeks")
+        db.useWriterConnection { it.executeSQL("DROP TABLE cached_weeks") }
         val result = mediator.load(LoadType.REFRESH, EMPTY_PAGING_STATE)
         assertIs<RemoteMediator.MediatorResult.Error>(result)
         assertEquals(0, actualRefreshedEvents)

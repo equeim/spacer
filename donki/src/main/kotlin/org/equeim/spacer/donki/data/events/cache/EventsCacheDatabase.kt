@@ -4,9 +4,9 @@
 
 package org.equeim.spacer.donki.data.events.cache
 
-import androidx.room.Database
-import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
+import androidx.room3.ColumnTypeConverters
+import androidx.room3.Database
+import androidx.room3.RoomDatabase
 import org.equeim.spacer.donki.data.common.InstantConverters
 import org.equeim.spacer.donki.data.events.cache.entities.CachedEvent
 import org.equeim.spacer.donki.data.events.cache.entities.CachedEventsDao
@@ -33,7 +33,7 @@ import org.equeim.spacer.donki.data.events.cache.entities.SolarFlareExtras
     exportSchema = true,
     version = 1
 )
-@TypeConverters(InstantConverters::class, EventTypeConverters::class)
+@ColumnTypeConverters(InstantConverters::class, EventTypeConverters::class)
 internal abstract class EventsCacheDatabase : RoomDatabase() {
     abstract fun cachedWeeks(): CachedEventsWeeksDao
     abstract fun events(): CachedEventsDao

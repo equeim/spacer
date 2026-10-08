@@ -9,8 +9,8 @@ import android.os.storage.StorageManager
 import android.util.Log
 import androidx.annotation.WorkerThread
 import androidx.core.content.getSystemService
-import androidx.room.Room
-import androidx.room.withTransaction
+import androidx.room3.Room
+import androidx.room3.withWriteTransaction
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -347,7 +347,7 @@ internal class EventsDataSourceCache(
                 updateCachedWeek(week, eventType, loadTime)
             } else {
                 val db = awaitDb()
-                db.withTransaction {
+                db.withWriteTransaction {
                     Log.d(TAG, "cacheWeek: starting transaction for $week")
                     updateCachedWeek(week, eventType, loadTime)
                     db.events()
