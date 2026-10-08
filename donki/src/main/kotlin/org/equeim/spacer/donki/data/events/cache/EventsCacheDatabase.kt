@@ -30,7 +30,7 @@ import org.equeim.spacer.donki.data.events.cache.entities.SolarFlareExtras
         InterplanetaryShockExtras::class,
         SolarFlareExtras::class
     ],
-    exportSchema = false,
+    exportSchema = true,
     version = 1
 )
 @TypeConverters(InstantConverters::class, EventTypeConverters::class)

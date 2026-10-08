@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.kotlin.plugin.parcelize) apply (false)
     alias(libs.plugins.kotlin.plugin.serialization) apply (false)
     alias(libs.plugins.kotlin.plugin.compose) apply (false)
+    alias(libs.plugins.androidx.room) apply (false)
     alias(libs.plugins.ksp) apply (false)
     alias(libs.plugins.deezer.caupain)
 }

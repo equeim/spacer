@@ -11,7 +11,7 @@ import org.equeim.spacer.donki.data.common.InstantConverters
 
 @Database(
     entities = [CachedNotification::class, CachedNotificationsWeek::class],
-    exportSchema = false,
+    exportSchema = true,
     version = 1
 )
 @TypeConverters(InstantConverters::class, NotificationTypeConverters::class)
