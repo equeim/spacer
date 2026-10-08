@@ -4,10 +4,9 @@
 
 package org.equeim.spacer.donki
 
-import androidx.room.Room
-import androidx.room.RoomDatabase
+import androidx.room3.Room
+import androidx.room3.RoomDatabase
 import androidx.test.core.app.ApplicationProvider
-import kotlinx.coroutines.asExecutor
 import mockwebserver3.RecordedRequest
 import okhttp3.HttpUrl
 import okio.Buffer
@@ -87,8 +86,7 @@ internal fun Throwable.allExceptions(): Sequence<Throwable> = sequence {
 internal inline fun <reified T : RoomDatabase> createInMemoryTestDatabase(
     coroutineDispatchers: CoroutineDispatchers
 ): T {
-    val executor = coroutineDispatchers.Default.asExecutor()
     return Room.inMemoryDatabaseBuilder(
         ApplicationProvider.getApplicationContext(), T::class.java
-    ).setQueryExecutor(executor).setTransactionExecutor(executor).allowMainThreadQueries().build()
+    ).setQueryCoroutineContext(coroutineDispatchers.Default).allowMainThreadQueries().build()
 }

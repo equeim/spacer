@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IconButtonWithTooltip(icon: ImageVector, @StringRes textId: Int, modifier: Modifier = Modifier, onClick: () -> Unit) {
     BaseButtonWithTooltip(textId, modifier) { text ->

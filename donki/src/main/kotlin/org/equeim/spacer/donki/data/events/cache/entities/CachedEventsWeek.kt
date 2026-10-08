@@ -4,12 +4,12 @@
 
 package org.equeim.spacer.donki.data.events.cache.entities
 
-import androidx.room.ColumnInfo
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy.Companion.REPLACE
-import androidx.room.Query
+import androidx.room3.ColumnInfo
+import androidx.room3.Dao
+import androidx.room3.Entity
+import androidx.room3.Insert
+import androidx.room3.OnConflictStrategy.Companion.REPLACE
+import androidx.room3.Query
 import kotlinx.coroutines.flow.Flow
 import org.equeim.spacer.donki.data.common.DateRange
 import org.equeim.spacer.donki.data.events.EventType

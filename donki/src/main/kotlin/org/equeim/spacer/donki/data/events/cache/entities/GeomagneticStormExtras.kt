@@ -6,15 +6,15 @@
 
 package org.equeim.spacer.donki.data.events.cache.entities
 
-import androidx.room.ColumnInfo
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.ForeignKey
-import androidx.room.ForeignKey.Companion.CASCADE
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.PrimaryKey
-import androidx.room.Query
+import androidx.room3.ColumnInfo
+import androidx.room3.Dao
+import androidx.room3.Entity
+import androidx.room3.ForeignKey
+import androidx.room3.ForeignKey.Companion.CASCADE
+import androidx.room3.Insert
+import androidx.room3.OnConflictStrategy
+import androidx.room3.PrimaryKey
+import androidx.room3.Query
 import org.equeim.spacer.donki.data.events.EventId
 import org.equeim.spacer.donki.data.events.network.json.GeomagneticStorm
 import org.equeim.spacer.donki.data.events.network.json.GeomagneticStormSummary

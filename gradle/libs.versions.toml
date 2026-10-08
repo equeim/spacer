@@ -3,34 +3,34 @@
 # SPDX-License-Identifier: CC0-1.0
 
 [versions]
-android-gradle-plugin = "9.3.0"
-kotlin = "2.4.10"
+android-gradle-plugin = "9.4.1"
+kotlin = "2.4.21"
 ksp = "2.3.10"
-deezer-caupain = "1.9.1"
+deezer-caupain = "1.10.1"
 
 sdk-platform-compile = "37"
 sdk-platform-min = "27"
 sdk-platform-target = "35"
 
 androidx-activity = "1.13.0"
-androidx-compose = "2026.06.01"
-androidx-compose-material3 = "1.5.0-alpha24"
-androidx-core = "1.19.0"
+androidx-compose = "2026.09.00"
+androidx-compose-material3 = "1.5.0-beta01"
+androidx-core = "1.19.1"
 androidx-datastore = "1.2.1"
 androidx-lifecycle = "2.11.0"
-androidx-navigation3 = "1.1.4"
-androidx-paging = "3.5.0"
-androidx-room = "2.8.4"
+androidx-navigation3 = "1.2.0"
+androidx-paging = "3.5.2"
+androidx-room = "3.0.3"
 androidx-test-core = "1.7.0"
-androidx-work = "2.11.2"
+androidx-work = "2.12.0"
 
 coroutines = "1.11.0"
 junit = "4.13.2"
-okhttp = "5.4.0"
+okhttp = "5.5.0"
 leakcanary = "2.14"
 mockk = "1.14.11"
 retrofit = "3.0.0"
-robolectric = "4.16.1"
+robolectric = "4.17"
 serialization = "1.11.0"
 
 [libraries]
@@ -53,8 +53,8 @@ androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runt
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "androidx-navigation3" }
 androidx-paging = { module = "androidx.paging:paging-runtime", version.ref = "androidx-paging" }
 androidx-paging-compose = { module = "androidx.paging:paging-compose", version.ref = "androidx-paging" }
-androidx-room = { module = "androidx.room:room-ktx", version.ref = "androidx-room" }
-androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "androidx-room" }
+androidx-room-runtime = { module = "androidx.room3:room3-runtime", version.ref = "androidx-room" }
+androidx-room-compiler = { module = "androidx.room3:room3-compiler", version.ref = "androidx-room" }
 androidx-test-core = { module = "androidx.test:core-ktx", version.ref = "androidx-test-core" }
 androidx-work = { module = "androidx.work:work-runtime", version.ref = "androidx-work" }
 
@@ -82,4 +82,5 @@ kotlin-plugin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", versio
 kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-plugin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+androidx-room = { id = "androidx.room3", version.ref = "androidx-room" }
 deezer-caupain = { id = "com.deezer.caupain", version.ref = "deezer-caupain" }

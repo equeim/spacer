@@ -6,8 +6,8 @@ package org.equeim.spacer.donki.data.notifications.cache
 
 import android.content.Context
 import android.util.Log
-import androidx.room.Room
-import androidx.room.withTransaction
+import androidx.room3.Room
+import androidx.room3.withWriteTransaction
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -239,7 +239,7 @@ internal class NotificationsDataSourceCache(
         )
         try {
             val db = this.db.await()
-            db.withTransaction {
+            db.withWriteTransaction {
                 Log.d(TAG, "cacheWeek: starting transaction for $week")
                 db.cachedWeeks()
                     .updateWeek(
