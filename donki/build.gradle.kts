@@ -30,8 +30,7 @@ android {
 
 kotlin.compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
 
-room {
-    generateKotlin = true
+room3 {
     schemaDirectory(layout.projectDirectory.dir("src/main/roomSchemas"))
 }
 
@@ -48,7 +47,7 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     compileOnly(libs.androidx.compose.runtime)
 
-    implementation(libs.androidx.room)
+    implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.androidx.test.core)

@@ -4,15 +4,15 @@
 
 package org.equeim.spacer.donki.data.notifications.cache
 
-import androidx.room.TypeConverter
+import androidx.room3.ColumnTypeConverter
 import org.equeim.spacer.donki.data.notifications.NotificationType
 
 @Suppress("unused")
 internal object NotificationTypeConverters {
-    @TypeConverter
+    @ColumnTypeConverter
     fun toString(type: NotificationType): String = type.stringValue
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun fromString(string: String): NotificationType =
         NotificationType.entries.find { it.stringValue == string }
             ?: throw IllegalArgumentException("Failed to convert notification type $string")

@@ -4,13 +4,13 @@
 
 package org.equeim.spacer.donki.data.common
 
-import androidx.room.TypeConverter
+import androidx.room3.ColumnTypeConverter
 import java.time.Instant
 
 internal object InstantConverters {
-    @TypeConverter
+    @ColumnTypeConverter
     fun instantToEpoch(instant: Instant): Long = instant.epochSecond
 
-    @TypeConverter
+    @ColumnTypeConverter
     fun instantFromEpoch(long: Long): Instant = Instant.ofEpochSecond(long)
 }
